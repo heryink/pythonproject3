@@ -1,0 +1,1611 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    
+  <script type="text/javascript">
+    function getPreferredTheme() {
+      const storedTheme = localStorage.getItem('theme')
+      if (storedTheme) {
+        return storedTheme
+      }
+      return 'auto';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    };
+
+    setTheme(getPreferredTheme());
+  </script>
+  
+    <title>
+  
+    The Flask Mega-Tutorial, Part XVI: Full-Text Search - miguelgrinberg.com
+  
+</title>
+  
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="miguelgrinberg.com">
+  <meta name="copyright" content="Copyright (c) 2012-2024 Miguel Grinberg">
+  <meta name="author" content="Miguel Grinberg">
+  
+  <meta name="keywords" content="flask, python, programming, database, elasticsearch, full-text search">
+  
+  
+  <link rel="canonical" href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvi-full-text-search">
+  
+
+  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+
+  <link href="/static/tomorrow.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/tomorrow-night.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/social.css" rel="stylesheet" type="text/css" />
+  <link href="/static/style_20260305.css" rel="stylesheet" type="text/css" />
+
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  <link rel="alternate" type="application/rss+xml" href="/feed" title="miguelgrinberg.com RSS feed">
+
+    <meta property="og:title" content="The Flask Mega-Tutorial, Part XVI: Full-Text Search">
+    <meta property="og:description" content="This is the sixteenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to add a full-text search capability to Microblog.You are reading the 2024 edition of the Flask Mega-Tutorial…">
+    <meta property="og:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xvi-full-text-search.jpg">
+    <meta property="og:url" content="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvi-full-text-search">
+    <meta name="twitter:title" content="The Flask Mega-Tutorial, Part XVI: Full-Text Search">
+    <meta name="twitter:description" content="This is the sixteenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to add a full-text search capability to Microblog.You are reading the 2024 edition of the Flask Mega-Tutorial…">
+    <meta name="twitter:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xvi-full-text-search.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@miguelgrinberg">
+
+  </head>
+  <body>
+    <svg style="display: none" version="2.0">
+      <defs>
+        <symbol id="icon-theme-auto" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-circle-half" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/>
+        </symbol>
+        <symbol id="icon-theme-light" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </symbol>
+        <symbol id="icon-theme-dark" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-moon-stars-fill" viewBox="0 0 16 16">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+        </symbol>
+      </defs>
+    </svg>
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/index">miguelgrinberg.com</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/index">Home</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/my-courses-and-books">My Courses and Books</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/hire-me">Consulting</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/about-me">About Me</a></li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <svg width="20" height="20" version="2.0"><use id="current-theme" href="#icon-theme-light"></svg>
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a id="select-theme-light" class="dropdown-item" href="javascript:updateTheme('light'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-light"></svg>&nbsp; Light Mode
+              </a>
+            </li>
+            <li>
+              <a id="select-theme-dark" class="dropdown-item" href="javascript:updateTheme('dark'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-dark"></svg>&nbsp; Dark Mode
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a id="select-theme-auto" class="dropdown-item" href="javascript:updateTheme('auto'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-auto"></svg>&nbsp; System Default
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item social-icons">
+          <a href="http://github.com/miguelgrinberg"><img src="/static/social/github.png" alt="GitHub" title="GitHub" /></a>
+          <a href="http://www.linkedin.com/in/miguelgrinberg"><img src="/static/social/linkedin.png" alt="LinkedIn" title="LinkedIn" /></a>
+          <a href="https://bsky.app/profile/miguelgrinberg.com"><img src="/static/social/bluesky.png" alt="Bluesky" title="Bluesky" /></a>
+          <a rel="me" href="https://mstdn.social/@miguelgrinberg"><img src="/static/social/mastodon.png" alt="Mastodon" title="Mastodon" /></a>
+          <a href="https://twitter.com/miguelgrinberg"><img src="/static/social/twitter.png" alt="Twitter" title="Twitter" /></a>
+          <a href="https://youtube.com/miguelgrinberg"><img src="/static/social/youtube.png" alt="YouTube" title="YouTube" /></a>
+          <a href="https://www.buymeacoffee.com/miguelgrinberg"><img src="/static/social/buymeacoffee.png" alt="Buy Me a Coffee" title="Buy Me a Coffee" /></a>
+          <a href="https://patreon.com/miguelgrinberg"><img src="/static/social/patreon.png" alt="Patreon" title="Patreon" /></a>
+          <a type="application/rss+xml" href="/feed"><img src="/static/social/rss.png" alt="RSS Feed" title="RSS Feed" /></a>
+          <!--<a href="https://www.facebook.com/miguelgrinbergblog"><img src="/static/social/facebook.png" alt="Facebook" title="Facebook" /></a>-->
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <div id="main">
+        
+        
+        
+        
+        
+
+<div class="post">
+
+<div class="post-header">
+  <h1><a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">The Flask Mega-Tutorial, Part XVI: Full-Text Search</a></h1>
+  <h2>
+    Posted by
+    <form action="/author/Miguel%20Grinberg" method="POST">
+      <input type="submit" class="btn btn-danger btn-sm" value="Miguel Grinberg" />
+    </form>
+    on
+    <button class="btn btn-secondary btn-sm" disabled><span class="flask-moment" data-timestamp="2023-12-03T10:40:20Z" data-function="format" data-format="LL" data-refresh="0" style="display: none">2023-12-03T10:40:20Z</span></button>
+    under
+    
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" />
+      </form>
+    
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" />
+      </form>
+    
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" />
+      </form>
+    
+      <form action="/category/Database" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Database" />
+      </form>
+    
+    
+  </h2>
+</div>
+<div class="post-body"><p>This is the sixteenth installment of the Flask Mega-Tutorial series, in which I'm going to add a full-text search capability to Microblog.</p>
+<p>You are reading the 2024 edition of the Flask Mega-Tutorial. The complete course is also available to order in e-book and paperback formats from <a href="https://amzn.to/3ahVnPN">Amazon</a>. Thank you for your support!</p>
+<p>If you are looking for the 2018 edition of this course, you can find it <a href="/post/the-flask-mega-tutorial-part-i-hello-world-2018">here</a>.</p>
+<p>For your reference, here is the complete list of articles in this series:</p>
+<ul>
+<li><a href="/post/the-flask-mega-tutorial-part-i-hello-world">Chapter 1:  Hello, World!</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ii-templates">Chapter 2:  Templates</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iii-web-forms">Chapter 3:  Web Forms</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iv-database">Chapter 4:  Database</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5:  User Logins</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vi-profile-page-and-avatars">Chapter 6:  Profile Page and Avatars</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7:  Error Handling</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-viii-followers">Chapter 8:  Followers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ix-pagination">Chapter 9:  Pagination</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-x-email-support">Chapter 10:  Email Support</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xi-facelift">Chapter 11:  Facelift</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xii-dates-and-times">Chapter 12:  Dates and Times</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiii-i18n-and-l10n">Chapter 13:  I18n and L10n</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiv-ajax">Chapter 14:  Ajax</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15:  A Better Application Structure</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16:  Full-Text Search</a> (this article)</li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17:  Deployment on Linux</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18:  Deployment on Heroku</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">Chapter 19:  Deployment on Docker Containers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">Chapter 20:  Some JavaScript Magic</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21:  User Notifications</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">Chapter 22:  Background Jobs</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">Chapter 23:  Application Programming Interfaces (APIs)</a></li>
+</ul>
+<p>The goal of this chapter is to implement a search feature for Microblog, so that users can find interesting posts using natural language. For many types of websites, it is possible to just let Google, Bing, etc. index all the content and provide search results through their search APIs. This works well for sites that have mostly static pages. But in my application the basic unit of content is a user post, which is a small portion of the entire web page. The type of search results that I want are for these individual blog posts and not entire pages. For example, if I search for the word "dog" I want to see blog posts from any users that include that word. Obviously a page that shows all blog posts that have the word "dog" (or any other possible search term) does not really exist as a page that the big search engines can find and index, so clearly I have no choice other than to roll my own search feature.</p>
+<p><em>The GitHub links for this chapter are: <a href="https://github.com/miguelgrinberg/microblog/tree/v0.16">Browse</a>, <a href="https://github.com/miguelgrinberg/microblog/archive/v0.16.zip">Zip</a>, <a href="https://github.com/miguelgrinberg/microblog/compare/v0.15...v0.16">Diff</a>.</em></p>
+<h2>Introduction to Full-Text Search Engines</h2>
+<p>Support for full-text search is not standardized like relational databases are. There are several open-source full-text engines: <a href="https://www.elastic.co/products/elasticsearch">Elasticsearch</a>, <a href="http://lucene.apache.org/solr/">Apache Solr</a>, <a href="http://whoosh.readthedocs.io/">Whoosh</a>, <a href="https://xapian.org/">Xapian</a>, <a href="http://sphinxsearch.com/">Sphinx</a>, etc. As if this isn't enough choice, there are several databases that also provide searching capabilities that are comparable to dedicated search engines like the ones I enumerated above. <a href="https://www.sqlite.org">SQLite</a>, <a href="https://www.mysql.com/">MySQL</a> and <a href="https://www.postgresql.org/">PostgreSQL</a> all offer some support for searching text, and NoSQL databases such as <a href="https://www.mongodb.com/">MongoDB</a> and <a href="http://couchdb.apache.org/">CouchDB</a> do too.</p>
+<p>If you are wondering which of these can work within a Flask application, the answer is all of them! That is one of the strengths of Flask, it does its job while not being opinionated. So what's the best choice?</p>
+<p>From the list of dedicated search engines, Elasticsearch is one that stands out to me as being fairly popular, in part due to its popularity as the "E" in the ELK stack for indexing logs, along with Logstash and Kibana. Using the searching capabilities of one of the relational databases could also be a good choice, but given the fact that SQLAlchemy does not support this functionality, I would have to handle the searching with raw SQL statements, or else find a package that provides high-level access to text searches while being able to coexist with SQLAlchemy.</p>
+<p>Based on the above analysis, I'm going to use Elasticsearch, but I'm going to implement all the text indexing and searching functions in a way that is very easy to switch to another engine. That will allow you to replace my implementation with an alternative one based on a different engine just by rewriting a few functions in a single module.</p>
+<h2>Installing Elasticsearch</h2>
+<p>There are several ways to install Elasticsearch, including one-click installers, zip file with the binaries that you need to install yourself, and even a Docker image. The documentation has an <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html">Installation</a> page with detailed information on all these options. If you are using Linux, you will likely have a package available for your distribution, but you will need to make sure it is a recent version, ideally 8.0 or newer.</p>
+<p>To start a single-node Elasticsearch node for development I suggest the following configuration options:</p>
+<ul>
+<li><code>memory="2GB"</code> to request enough memory for a small index.</li>
+<li><code>discovery.type=single-node</code> to indicate that this is a single-node instead of a cluster.</li>
+<li><code>xpack.security.enabled=false</code> to disable the use of an SSL certificate and user credentials, which are not needed during development.</li>
+</ul>
+<p>When running Elasticsearch with Docker, the command to start it is:</p>
+<pre><code>$ docker run --name elasticsearch -d --rm -p 9200:9200 \
+    --memory=&quot;2GB&quot; \
+    -e discovery.type=single-node -e xpack.security.enabled=false \
+    -t docker.elastic.co/elasticsearch/elasticsearch:9.0.3
+</code></pre>
+<p>You may need to adjust the version in the command above.</p>
+<p>Since I will be managing Elasticsearch from Python, I will also be using the Python client library:</p>
+<pre><code>(venv) $ pip install elasticsearch
+</code></pre>
+<p>You may also want to update your <em>requirements.txt</em> file:</p>
+<pre><code>(venv) $ pip freeze &gt; requirements.txt
+</code></pre>
+<p>To avoid compatibility issues, make sure that the major version of the Elasticsearch Docker image (version 9 if you use the same version as me) matches the major version of the <code>elasticsearch</code> Python package. If the Python package has a higher major version number, then consult the <a href="https://www.docker.elastic.co/r/elasticsearch">Elasticsearch Docker page</a> to find the most recent image with matching major version.</p>
+<h2>Elasticsearch Tutorial</h2>
+<p>I'm going to start by showing you the basics of working with Elasticsearch from a Python shell. This will help you familiarize with this service, so that you can understand the implementation that I will discuss later.</p>
+<p>To create a connection to Elasticsearch, create an instance of class <code>Elasticsearch</code>, passing a connection URL as an argument:</p>
+<pre><code class="language-python">&gt;&gt;&gt; from elasticsearch import Elasticsearch
+&gt;&gt;&gt; es = Elasticsearch('http://localhost:9200')
+</code></pre>
+<p>Data in Elasticsearch is written to <em>indexes</em>. Unlike a relational database, the data is just a <a href="http://www.json.org/">JSON</a> object. The following example writes an object with a field called <code>text</code> to an index called <code>my_index</code>:</p>
+<pre><code class="language-python">&gt;&gt;&gt; es.index(index='my_index', id=1, document={'text': 'this is a test'})
+</code></pre>
+<p>For each document stored, Elasticsearch takes a unique id and a dictionary with the data to be stored.</p>
+<p>Let's store a second document on this index:</p>
+<pre><code class="language-python">&gt;&gt;&gt; es.index(index='my_index', id=2, document={'text': 'a second test'})
+</code></pre>
+<p>And now that there are two documents in this index, I can issue a free-form search. In this example, I'm going to search for <code>this test</code>:</p>
+<pre><code class="language-python">&gt;&gt;&gt; es.search(index='my_index', query={'match': {'text': 'this test'}})
+</code></pre>
+<p>The response from the <code>es.search()</code> call is a response object that wraps a Python dictionary with the search results:</p>
+<pre><code class="language-python">ObjectApiResponse({
+    'took': 6,
+    'timed_out': False,
+    '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0},
+    'hits': {
+        'total': {'value': 2, 'relation': 'eq'},
+        'max_score': 0.82713,
+        'hits': [
+            {
+                '_index': 'my_index',
+                '_id': '1',
+                '_score': 0.82713,
+                '_source': {'text': 'this is a test'}
+            },
+            {
+                '_index': 'my_index',
+                '_id': '2',
+                '_score': 0.19363807,
+                '_source': {'text': 'a second test'}
+            }
+        ]
+    }
+})
+</code></pre>
+<p>Here you can see that the search returned the two documents, each with an assigned score. The document with the highest score contains the two words I searched for, and the other document contains only one. You can see that even the best result does not have a perfect score of 1, because the words do not exactly match the text.</p>
+<p>Now this is the result if I search for the word <code>second</code>:</p>
+<pre><code class="language-python">&gt;&gt;&gt; es.search(index='my_index', query={'match': {'text': 'second'}})
+ObjectApiResponse({
+    'took': 2,
+    'timed_out': False,
+    '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0},
+    'hits': {
+        'total': {'value': 1, 'relation': 'eq'},
+        'max_score': 0.7361701,
+        'hits': [
+            {
+                '_index': 'my_index',
+                '_id': '2',
+                '_score': 0.7361701,
+                '_source': {'text': 'a second test'}
+            }
+        ]
+    }
+})
+</code></pre>
+<p>I still get a less than perfect score because my search does not exactly match the text in this document, but since only one of the two documents contains the word "second", the other document does not show up at all.</p>
+<p>The Elasticsearch query object has more options, all well <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html">documented</a>, and includes options such as pagination and sorting, just like relational databases.</p>
+<p>Feel free to add more entries to this index and try different searches. When you are done experimenting, you can delete the index with the following command:</p>
+<pre><code class="language-python">&gt;&gt;&gt; es.indices.delete(index='my_index')
+</code></pre>
+<h2>Elasticsearch Configuration</h2>
+<p>Integrating Elasticsearch into the application is a great example of the power of Flask. This is a service and Python package combination that does not have anything to do with Flask, yet, I'm going to get a pretty good level of integration, starting from the configuration, which I'm going to write in the <code>app.config</code> dictionary from Flask:</p>
+<p class="code_title"><em>config.py</em>: Elasticsearch configuration.</p>
+
+<pre><code class="language-python">class Config:
+    # ...
+    ELASTICSEARCH_URL = os.environ.get('ELASTICSEARCH_URL')
+</code></pre>
+<p>Like with many other configuration entries, the connection URL for Elasticsearch is going to be sourced from an environment variable. If the variable is not defined, I'm going to let the setting be set to <code>None</code>, and I'll use that as a signal to disable Elasticsearch. This is mainly for convenience, so that you are not forced to always have the Elasticsearch service up and running when you work on the application, and in particular when you run unit tests. So to make sure the service is used, I need to define the <code>ELASTICSEARCH_URL</code> environment variable, either directly in the terminal or by adding it to the <em>.env</em> file as follows:</p>
+<pre><code>ELASTICSEARCH_URL=http://localhost:9200
+</code></pre>
+<p>Elasticsearch presents the challenge that it isn't wrapped by a Flask extension. I cannot create the Elasticsearch instance in the global scope like I did in the examples above because to initialize it I need access to <code>app.config</code>, which only becomes available after the <code>create_app()</code> function is invoked. My solution is to add a <code>elasticsearch</code> attribute to the <code>app</code> instance in the application factory function:</p>
+<p class="code_title"><em>app/__init__.py</em>: Elasticsearch instance.</p>
+
+<pre><code class="language-python"># ...
+from elasticsearch import Elasticsearch
+
+# ...
+
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+
+    # ...
+    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) \
+        if app.config['ELASTICSEARCH_URL'] else None
+
+    # ...
+</code></pre>
+<p>Adding a new attribute to the <code>app</code> instance may seem a little strange, but Python objects are not strict in their structure, and new attributes can be added to them at any time. An alternative that you may also consider is to create a subclass of <code>Flask</code> (maybe called <code>Microblog</code>), with the <code>elasticsearch</code> attribute defined in its <code>__init__()</code> function.</p>
+<p>Note how I use a <a href="https://docs.python.org/3/reference/expressions.html#conditional-expressions">conditional expression</a> to make the Elasticsearch instance <code>None</code> when a URL for the Elasticsearch service wasn't defined in the environment.</p>
+<h2>A Full-Text Search Abstraction</h2>
+<p>As I said in the chapter's introduction, I want to make it easy to switch from Elasticsearch to other search engines, and I also don't want to code this feature specifically for searching blog posts, I prefer to design a solution that in the future I can easily extend to other models if I need to. For all these reasons, I decided to create an <em>abstraction</em> for the search functionality. The idea is to design the feature in generic terms, so I will not be assuming that the <code>Post</code> model is the only one that needs to be indexed, and I will also not be assuming that Elasticsearch is the index engine of choice. But if I can't make any assumptions about anything, how can I get this work done?</p>
+<p>The first thing that I need, is to somehow find a generic way to indicate which model and which field or fields in it are to be indexed. I'm going to say that any model that needs indexing needs to define a <code>__searchable__</code> class attribute that lists the fields that need to be included in the index. For the <code>Post</code> model, these are the changes:</p>
+<p class="code_title"><em>app/models.py</em>: Add a <strong>searchable</strong> attribute to the Post model.</p>
+
+<pre><code class="language-python">class Post(db.Model):
+    __searchable__ = ['body']
+    # ...
+</code></pre>
+<p>So here I'm saying that this model needs to have its <code>body</code> field indexed for searching. But just to make sure this is perfectly clear, this <code>__searchable__</code> attribute that I added is just a variable, it does not have any behavior associated with it. It will just help me write my indexing functions in a generic way.</p>
+<p>I'm going to write all the code that interacts with the Elasticsearch index in a <em>app/search.py</em> module. The idea is to keep all the Elasticsearch code in this module. The rest of the application will use the functions in this new module to access the index and will not have direct access to Elasticsearch. This is important, because if one day I decided I don't like Elasticsearch anymore and want to switch to a different engine, all I need to do is rewrite the functions in this module, and the application will continue to work as before.</p>
+<p>For this application, I decided that I need three supporting functions related to text indexing: I need to add entries to a full-text index, I need to remove entries from the index (assuming one day I will support deleting blog posts), and I need to execute a search query. Here is the <em>app/search.py</em> module that implements these three functions for Elasticsearch, using the functionality I showed you above from the Python console:</p>
+<p class="code_title"><em>app/search.py</em>: Search functions.</p>
+
+<pre><code class="language-python">from flask import current_app
+
+def add_to_index(index, model):
+    if not current_app.elasticsearch:
+        return
+    payload = {}
+    for field in model.__searchable__:
+        payload[field] = getattr(model, field)
+    current_app.elasticsearch.index(index=index, id=model.id, document=payload)
+
+def remove_from_index(index, model):
+    if not current_app.elasticsearch:
+        return
+    current_app.elasticsearch.delete(index=index, id=model.id)
+
+def query_index(index, query, page, per_page):
+    if not current_app.elasticsearch:
+        return [], 0
+    search = current_app.elasticsearch.search(
+        index=index,
+        query={'multi_match': {'query': query, 'fields': ['*']}},
+        from_=(page - 1) * per_page,
+        size=per_page)
+    ids = [int(hit['_id']) for hit in search['hits']['hits']]
+    return ids, search['hits']['total']['value']
+</code></pre>
+<p>These functions all start by checking if <code>app.elasticsearch</code> is <code>None</code>, and in that case return without doing anything. This is so that when the Elasticsearch server isn't configured, the application continues to run without the search capability and without giving any errors. This is just as a matter of convenience during development or when running unit tests.</p>
+<p>The functions accept the index name as an argument. The functions that add and remove entries from the index take the SQLAlchemy model as a second argument. The <code>add_to_index()</code> function uses the <code>__searchable__</code> class variable I added to the model to build the document that is inserted into the index. If you recall, Elasticsearch documents also needed a unique identifier. For that I'm using the <code>id</code> field of the SQLAlchemy model, which is also conveniently unique. Using the same <code>id</code> value for SQLAlchemy and Elasticsearch is very useful when running the searches, as it allows me to link entries in the two databases. Something I did not mention above is that if you attempt to add an entry with an existing <code>id</code>, then Elasticsearch replaces the old entry with the new one, so <code>add_to_index()</code> can be used for new objects as well as for modified ones.</p>
+<p>I did not show you the <code>es.delete()</code> function that I'm using in <code>remove_from_index()</code> before. This function deletes the document stored under the given <code>id</code>. Here is a good example of the convenience of using the same <code>id</code> to link entries in both databases.</p>
+<p>The <code>query_index()</code> function takes the index name and a text to search for, along with pagination controls, so that search results can be paginated like Flask-SQLAlchemy results are. You have already seen an example usage of the <code>es.search()</code> function from the Python console. The call I'm issuing here is fairly similar, but instead of using a <code>match</code> query type, I decided to use <code>multi_match</code>, which can search across multiple fields. By passing a field name of <code>*</code>, I'm telling Elasticsearch to look in all the fields that are indexed, so basically I'm searching the entire index. This is useful to make this function generic, since different models can have different field names in the index.</p>
+<p>The <code>from_</code> and <code>size</code> arguments control what subset of the entire result set needs to be returned. Elasticsearch does not provide a nice <code>Pagination</code> object like the one from Flask-SQLAlchemy, so I have to do the pagination math to calculate the <code>from</code> value.</p>
+<p>The <code>return</code> statement in the <code>query_index()</code> function is somewhat complex. It returns two values: the first is a list of <code>id</code> elements for the search results, and the second returned value is the total number of results. Both are obtained from the Python dictionary returned by the <code>es.search()</code> function. If you are not familiar with the expression that I'm using to obtain the list of IDs, this is called a <em>list comprehension</em>, and is a fantastic feature of the Python language that allows you to transform lists from one format to another. In this case I'm using the list comprehension to extract the <code>id</code> values from the much larger list of results provided by Elasticsearch.</p>
+<p>Is this too confusing? Maybe a demonstration of these functions from the Python console can help you understand them a bit more. In the following session, I manually add all the posts from the database to the Elasticsearch index. In my development database, I wrote a few posts that had the numbers "one", "two", "three", "four" and "five" in them, so I used that as a search query. You may need to adapt your query to match the contents of your database:</p>
+<pre><code class="language-python">&gt;&gt;&gt; from app.search import add_to_index, remove_from_index, query_index
+&gt;&gt;&gt; for post in db.session.scalars(sa.select(Post)):
+...     add_to_index('posts', post)
+&gt;&gt;&gt; query_index('posts', 'one two three four five', 1, 100)
+([15, 13, 12, 4, 11, 8, 14], 7)
+&gt;&gt;&gt; query_index('posts', 'one two three four five', 1, 3)
+([15, 13, 12], 7)
+&gt;&gt;&gt; query_index('posts', 'one two three four five', 2, 3)
+([4, 11, 8], 7)
+&gt;&gt;&gt; query_index('posts', 'one two three four five', 3, 3)
+([14], 7)
+</code></pre>
+<p>The query that I issued returned seven results. When I asked for page 1 with 100 items per page I get all seven, but then the next three examples shows how I can paginate the results in a way that is very similar to what I did for Flask-SQLAlchemy, with the exception that the results come as a list of IDs instead of SQLAlchemy objects.</p>
+<p>If you want to keep things clean, delete the <code>posts</code> index after you are doing experimenting with it:</p>
+<pre><code class="language-python">&gt;&gt;&gt; app.elasticsearch.indices.delete(index='posts')
+</code></pre>
+<h2>Integrating Searches with SQLAlchemy</h2>
+<p>The solution that I showed you in the previous section is decent, but it still has a couple of problems. The most obvious problem is that results come as a list of numeric IDs. This is highly inconvenient, I need SQLAlchemy models so that I can pass them down to templates for rendering, and I need a way to replace that list of numbers with the corresponding models from the database. The second problem is that this solution requires the application to explicitly issue indexing calls as posts are added or removed, which is not terrible, but less than ideal, since a bug that causes a missed indexing call when making a change on the SQLAlchemy side is not going to be easily detected, the two databases will get out of sync more and more each time the bug occurs and you will probably not notice for a while. A better solution would be for these calls to be triggered automatically as changes are made on the SQLAlchemy database.</p>
+<p>The problem of replacing the IDs with objects can be addressed by creating a SQLAlchemy query that reads those objects from the database. This sounds easy in practice, but doing it efficiently with a single query is actually a bit tricky to implement.</p>
+<p>For the problem of triggering the indexing changes automatically, I decided to drive updates to the Elasticsearch index from SQLAlchemy <em>events</em>. SQLAlchemy provides a large list of <a href="http://docs.sqlalchemy.org/en/latest/core/event.html">events</a> that applications can be notified about. For example, each time a session is committed, I can have a function in the application invoked by SQLAlchemy, and in that function I can apply the same updates that were made on the SQLAlchemy session to the Elasticsearch index.</p>
+<p>To implement the solutions to these two problems I'm going to write a <em>mixin</em> class. Remember mixin classes? In <a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5</a>, I added the <code>UserMixin</code> class from Flask-Login to the <code>User</code> model, to give it some features that were required by Flask-Login. For the search support I'm going to define my own <code>SearchableMixin</code> class, that when attached to a model, will give it the ability to automatically manage an associated full-text index. The mixin class will act as a "glue" layer between the SQLAlchemy and Elasticsearch worlds, providing solutions to the two problems I stated above.</p>
+<p>Let me show you the implementation, then I'll go over some interesting details. Note that this makes use of several advanced techniques, so you will need to study this code carefully to fully understand it.</p>
+<p class="code_title"><em>app/models.py</em>: SearchableMixin class.</p>
+
+<pre><code class="language-python">from app.search import add_to_index, remove_from_index, query_index
+
+class SearchableMixin(object):
+    @classmethod
+    def search(cls, expression, page, per_page):
+        ids, total = query_index(cls.__tablename__, expression, page, per_page)
+        if total == 0:
+            return [], 0
+        when = []
+        for i in range(len(ids)):
+            when.append((ids[i], i))
+        query = sa.select(cls).where(cls.id.in_(ids)).order_by(
+            db.case(*when, value=cls.id))
+        return db.session.scalars(query), total
+
+    @classmethod
+    def before_commit(cls, session):
+        session._changes = {
+            'add': list(session.new),
+            'update': list(session.dirty),
+            'delete': list(session.deleted)
+        }
+
+    @classmethod
+    def after_commit(cls, session):
+        for obj in session._changes['add']:
+            if isinstance(obj, SearchableMixin):
+                add_to_index(obj.__tablename__, obj)
+        for obj in session._changes['update']:
+            if isinstance(obj, SearchableMixin):
+                add_to_index(obj.__tablename__, obj)
+        for obj in session._changes['delete']:
+            if isinstance(obj, SearchableMixin):
+                remove_from_index(obj.__tablename__, obj)
+        session._changes = None
+
+    @classmethod
+    def reindex(cls):
+        for obj in db.session.scalars(sa.select(cls)):
+            add_to_index(cls.__tablename__, obj)
+
+db.event.listen(db.session, 'before_commit', SearchableMixin.before_commit)
+db.event.listen(db.session, 'after_commit', SearchableMixin.after_commit)
+</code></pre>
+<p>There are four functions in this mixin class, all class methods. Just as a refresher, a class method is a special method that is associated with the class and not a particular instance. Note how I renamed the <code>self</code> argument used in regular instance methods to <code>cls</code>, to make it clear that this method receives a class and not an instance as its first argument. Once attached to the <code>Post</code> model for example, the <code>search()</code> method above would be invoked as <code>Post.search()</code>, without having to have an actual instance of class <code>Post</code>.</p>
+<p>The <code>search()</code> class method wraps the <code>query_index()</code> function from <em>app/search.py</em> to replace the list of object IDs with actual objects from SQLAlchemy. You can see that the first thing this function does is call <code>query_index()</code>, passing <code>cls.__tablename__</code> as the index name. This is going to be a convention, all indexes will be named with the name Flask-SQLAlchemy assigned to the relational table. The function returns the list of result IDs, and the total number of results. The SQLAlchemy query that retrieves the list of objects by their IDs is based on a <code>CASE</code> statement from the SQL language, which needs to be used to ensure that the results from the database come in the same order as the IDs returned by Elasticsearch, which are sorted by relevance. If you want to learn more about the way this query works, you can consult the accepted answer to this <a href="https://stackoverflow.com/a/6332081/904393">StackOverflow question</a>. The <code>search()</code> function returns the results from the query that replaces the list of IDs with objects, and also passes through the total number of search results as a second return value.</p>
+<p>The <code>before_commit()</code> and <code>after_commit()</code> methods are going to respond to two events from SQLAlchemy, which are triggered before and after a commit takes place respectively. The before handler is useful because the session hasn't been committed yet, so I can look at it and figure out what objects are going to be added, modified and deleted, available as <code>session.new</code>, <code>session.dirty</code> and <code>session.deleted</code> respectively. These objects are not going to be available anymore after the session is committed, so I need to save them before the commit takes place. I'm using a <code>session._changes</code> dictionary to write these objects in a place that is going to survive the session commit, because as soon as the session is committed I will be using them to update the Elasticsearch index.</p>
+<p>When the <code>after_commit()</code> handler is invoked, the session has been successfully committed, so this is the proper time to make changes on the Elasticsearch side. The session object has the <code>_changes</code> variable that I added in <code>before_commit()</code>, so now I can iterate over the added, modified and deleted objects, and make the corresponding calls to the indexing functions in <em>app/search.py</em> for the objects that have the <code>SearchableMixin</code> class.</p>
+<p>The <code>reindex()</code> class method is a simple helper method that you can use to refresh an index with all the data from the relational side. You saw me do something similar from the Python shell session above to do an initial load of all the posts into a test index. With this method in place, I can issue <code>Post.reindex()</code> to add all the posts in the database to the search index.</p>
+<p>After the class definition I made two calls to SQLALchemy's function <code>db.event.listen()</code>. Note that these calls are not inside the class, but after it. The purpose of these two statements is to set up the event handlers that will make SQLAlchemy call the <code>before_commit()</code> and <code>after_commit()</code> methods before and after each commit respectively.</p>
+<p>To incorporate the <code>SearchableMixin</code> class into the <code>Post</code> model I have to add it as a subclass, and I also need to hook up the before and after commit events:</p>
+<p class="code_title"><em>app/models.py</em>: Adding the SearchableMixin class to the Post model.</p>
+
+<pre><code class="language-python">class Post(SearchableMixin, db.Model):
+    # ...
+</code></pre>
+<p>Now the <code>Post</code> model is automatically maintaining a full-text search index for posts. I can use the <code>reindex()</code> method to initialize the index from all the posts currently in the database:</p>
+<pre><code class="language-python">&gt;&gt;&gt; Post.reindex()
+</code></pre>
+<p>And I can search posts working with SQLAlchemy models by running <code>Post.search()</code>. In the following example, I ask for the first page of five elements for my query:</p>
+<pre><code class="language-python">&gt;&gt;&gt; query, total = Post.search('one two three four five', 1, 5)
+&gt;&gt;&gt; total
+7
+&gt;&gt;&gt; query.all()
+[&lt;Post five&gt;, &lt;Post two&gt;, &lt;Post one&gt;, &lt;Post one more&gt;, &lt;Post one&gt;]
+</code></pre>
+<h2>Search Form</h2>
+<p>This was very intense. The work that I've done above to keep things generic touches on several advanced topics, so it may take you time to fully understand it. But now I have a complete system to work with natural language searches for blog posts. What I need to do now is integrate all this functionality with the application.</p>
+<p>A fairly standard approach for web-based searches is to have the search term as a <code>q</code> argument in the query string of the URL. For example, if you wanted to search for <code>Python</code> on Google, and you want to save a couple of seconds, you can just type the following URL in your browser's address bar to go directly to the results:</p>
+<pre><code>https://www.google.com/search?q=python
+</code></pre>
+<p>Allowing searches to be completely encapsulated in a URL is nice, because these can be shared with other people, who just by clicking on the link have access to the search results.</p>
+<p>This introduces a change in the way I showed you to handle web forms in the past. I have used <code>POST</code> requests to submit form data for all the forms the application has so far, but to implement searches as above, the form submission will have to go as a <code>GET</code> request, which is the request method that is used when you type a URL in your browser or click a link. Another interesting difference is that the search form is going to be in the navigation bar, so it needs to be present in all pages of the application.</p>
+<p>Here is the search form class, with just the <code>q</code> text field:</p>
+<p class="code_title"><em>app/main/forms.py</em>: Search form.</p>
+
+<pre><code class="language-python">from flask import request
+
+class SearchForm(FlaskForm):
+    q = StringField(_l('Search'), validators=[DataRequired()])
+
+    def __init__(self, *args, **kwargs):
+        if 'formdata' not in kwargs:
+            kwargs['formdata'] = request.args
+        if 'meta' not in kwargs:
+            kwargs['meta'] = {'csrf': False}
+        super(SearchForm, self).__init__(*args, **kwargs)
+</code></pre>
+<p>The <code>q</code> field does not require any explanation, as it is similar to other text fields I've used in the past. For this form, I decided not to have a submit button. For a form that has a text field, the browser will submit the form when you press Enter with the focus on the field, so a button is not needed. I have also added a <code>__init__</code> constructor function, which provides values for the <code>formdata</code> and <code>meta</code> arguments if they are not provided by the caller. The <code>formdata</code> argument determines from where Flask-WTF gets form submissions. The default is to use <code>request.form</code>, which is where Flask puts form values that are submitted via <code>POST</code> request. Forms that are submitted via <code>GET</code> request have the field values in the query string, so I need to point Flask-WTF at <code>request.args</code>, which is where Flask writes the query string arguments. And as you remember, forms have CSRF protection added by default, with the inclusion of a CSRF token that is added to the form via the <code>form.hidden_tag()</code> construct in templates. For clickable search links to work, CSRF needs to be disabled, so I'm setting <code>meta</code> to <code>{'csrf': False}</code> so that Flask-WTF knows that it needs to bypass CSRF validation for this form.</p>
+<p>Since I'm going to need to have this form visible in all pages, I need to create an instance of the <code>SearchForm</code> class regardless of the page the user is viewing. The only requirement is that the user is logged in, because for anonymous users I am not currently showing any content. Instead of creating a form object in every route, and then passing the form to all the templates, I'm going to show you a very useful trick that eliminates duplication of code when you need to implement a feature across the entire application. I already used a <code>before_request</code> handler before, back in <a href="/post/the-flask-mega-tutorial-part-vi-profile-page-and-avatars">Chapter 6</a>, to record the time of last visit for each user. What I'm going to do is create my search form in that same function, but with a twist:</p>
+<p class="code_title"><em>app/main/routes.py</em>: Instantiate the search form in the before_request handler.</p>
+
+<pre><code class="language-python">from flask import g
+from app.main.forms import SearchForm
+
+@bp.before_app_request
+def before_request():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.now(timezone.utc) 
+        db.session.commit()
+        g.search_form = SearchForm()
+    g.locale = str(get_locale())
+</code></pre>
+<p>Here I create an instance of the search form class when I have an authenticated user. But of course, I need this form object to persist until it can be rendered at the end of the request, so I need to store it somewhere. That somewhere is going to be the <code>g</code> container, provided by Flask. This <code>g</code> variable provided by Flask is a place where the application can store data that needs to persist through the life of a request. Here I'm storing the form in <code>g.search_form</code>, so then when the before request handler ends and Flask invokes the view function that handles the requested URL, the <code>g</code> object is going to be the same, and will still have the form attached to it. It's important to note that this <code>g</code> variable is specific to each request and each client, so even if your web server is handling multiple requests at a time for different clients, you can still rely on <code>g</code> to work as private storage for each request, independently of what goes on in other requests that are handled concurrently.</p>
+<p>The next step is to render the form to the page. I said above that I wanted this form in all pages, so what makes more sense is to render it as part of the navigation bar. This is, in fact, simple, because templates can also see the data stored in the <code>g</code> variable, so I don't need to worry about adding the form as an explicit template argument in all the <code>render_template()</code> calls in the application. Here is how I can render the form in the base template:</p>
+<p class="code_title"><em>app/templates/base.html</em>: Render the search form in the navigation bar.</p>
+
+<pre><code class="language-html">            ...
+            &lt;div class=&quot;collapse navbar-collapse&quot; id=&quot;navbarSupportedContent&quot;&gt;
+                &lt;ul class=&quot;navbar-nav me-auto mb-2 mb-lg-0&quot;&gt;
+                    ... home and explore links ...
+                &lt;/ul&gt;
+                {% if g.search_form %}
+                &lt;form class=&quot;navbar-form navbar-left&quot; method=&quot;get&quot;
+                        action=&quot;{{ url_for('main.search') }}&quot;&gt;
+                    &lt;div class=&quot;form-group&quot;&gt;
+                        {{ g.search_form.q(size=20, class='form-control',
+                            placeholder=g.search_form.q.label.text) }}
+                    &lt;/div&gt;
+                &lt;/form&gt;
+                {% endif %}
+                ...
+</code></pre>
+<p>The form is rendered only if <code>g.search_form</code> is defined. This check is necessary because some pages, such as error pages, may not have it defined. This form is slightly different from the ones I did previously. I'm setting its <code>method</code> attribute to <code>get</code>, because I want the form data to be submitted on the query string with a <code>GET</code> request. Also, the other forms I created had the <code>action</code> attribute empty, because they were submitted to the same page that rendered the form. This form is special because it appears in all pages, so I need to tell it explicitly where it needs to be submitted, which is a new route that is specifically dedicated to handling searches.</p>
+<h2>Search View Function</h2>
+<p>The last bit of functionality to complete the search feature is the view function that receives the search form submission. This view function is going to be attached to the <em>/search</em> route, so that you can send a search request with a <em>http://localhost:5000/search?q=search-words</em>, just like Google.</p>
+<p class="code_title"><em>app/main/routes.py</em>: Search view function.</p>
+
+<pre><code class="language-python">@bp.route('/search')
+@login_required
+def search():
+    if not g.search_form.validate():
+        return redirect(url_for('main.explore'))
+    page = request.args.get('page', 1, type=int)
+    posts, total = Post.search(g.search_form.q.data, page,
+                               current_app.config['POSTS_PER_PAGE'])
+    next_url = url_for('main.search', q=g.search_form.q.data, page=page + 1) \
+        if total &gt; page * current_app.config['POSTS_PER_PAGE'] else None
+    prev_url = url_for('main.search', q=g.search_form.q.data, page=page - 1) \
+        if page &gt; 1 else None
+    return render_template('search.html', title=_('Search'), posts=posts,
+                           next_url=next_url, prev_url=prev_url)
+</code></pre>
+<p>You have seen that in the other forms I used the <code>form.validate_on_submit()</code> method to check if the form submission was valid. Unfortunately that method only works for forms submitted via <code>POST</code> request, so for this form I need to use <code>form.validate()</code> which just validates field values, without checking how the data was submitted. If the validation fails, it is because the user submitted an empty search form, so in that case I just redirect to the explore page, which shows all blog posts.</p>
+<p>The <code>Post.search()</code> method from my <code>SearchableMixin</code> class is used to obtain the list of search results. The pagination is handled in a very similar way to that of the index and explore pages, but generating the next and previous links is a bit trickier without the help of the <code>Pagination</code> object from Flask-SQLAlchemy. This is where the total number of results passed as a second return value from <code>Post.search()</code> is useful.</p>
+<p>Once the page of search results and pagination links are calculated, all that is left is to render a template with all this data. I could have figured out a way to reuse the <em>index.html</em> template to display search results, but given that there are a few differences I decided to create a dedicated <em>search.html</em> template that is dedicated to showing search results, taking advantage of the <em>_post.html</em> sub-template to render the search results:</p>
+<p class="code_title"><em>app/templates/search.html</em>: Search results template.</p>
+
+<pre><code class="language-html">{% extends &quot;base.html&quot; %}
+
+{% block content %}
+    &lt;h1&gt;{{ _('Search Results') }}&lt;/h1&gt;
+    {% for post in posts %}
+        {% include '_post.html' %}
+    {% endfor %}
+    &lt;nav aria-label=&quot;Post navigation&quot;&gt;
+        &lt;ul class=&quot;pagination&quot;&gt;
+            &lt;li class=&quot;page-item{% if not prev_url %} disabled{% endif %}&quot;&gt;
+                &lt;a class=&quot;page-link&quot; href=&quot;{{ prev_url }}&quot;&gt;
+                    &lt;span aria-hidden=&quot;true&quot;&gt;&amp;larr;&lt;/span&gt; {{ _('Newer posts') }}
+                &lt;/a&gt;
+            &lt;/li&gt;
+            &lt;li class=&quot;page-item{% if not next_url %} disabled{% endif %}&quot;&gt;
+                &lt;a class=&quot;page-link&quot; href=&quot;{{ next_url }}&quot;&gt;
+                    {{ _('Older posts') }} &lt;span aria-hidden=&quot;true&quot;&gt;&amp;rarr;&lt;/span&gt;
+                &lt;/a&gt;
+            &lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/nav&gt;
+{% endblock %}
+</code></pre>
+<p>The rendering logic for the previous and next links is similar to what I used in the <em>index.html</em> and <em>user.html</em> templates.</p>
+<p><img alt="Search Results" src="/static/images/mega-tutorial/ch10-search-results.png" /></p>
+<p>What do you think? This was an intense chapter, where I presented some fairly advanced techniques. Some concepts in this chapter may take some time to sink in. The most important take away from this chapter is that if you want to use a different search engine than Elasticsearch, all you need to do is re-implement the three functions in <em>app/search.py</em>. The other important benefit of going through this effort is that in the future, if I need to add search support for a different database model, I can simply do so by adding the <code>SearchableMixin</code> class to it, the <code>__searchable__</code> attribute with the list of fields to index and the SQLAlchemy event handler connections. I think it was well worth the effort, because from now on, it is going to be easy to deal with full-text indexes.</p>
+<p>Continue on to the <a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">next chapter</a>.</p></div>
+
+<h2>Buy me a coffee?</h2>
+<p class="card-text">Thank you for visiting my blog! If you enjoyed this article, please consider supporting my work and keeping me caffeinated with a small one-time donation through <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy me a coffee</a>. Thanks!</p>
+<a href="https://www.buymeacoffee.com/miguelgrinberg" target="_blank"><img src="/static/buymeacoffee-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+
+<h2>Share this post</h2>
+<!-- Sharingbutton Hacker News -->
+<a class="resp-sharing-button__link" href="https://news.ycombinator.com/submitlink?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvi-full-text-search&amp;t=The%20Flask%20Mega-Tutorial%2C%20Part%20XVI%3A%20Full-Text%20Search" target="_blank" rel="noopener" aria-label="Hacker News">
+  <div class="resp-sharing-button resp-sharing-button--hackernews resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><path fill-rule="evenodd" d="M60.94 82.314L17 0h20.08l25.85 52.093c.397.927.86 1.888 1.39 2.883.53.994.995 2.02 1.393 3.08.265.4.463.764.596 1.095.13.334.262.63.395.898.662 1.325 1.26 2.618 1.79 3.877.53 1.26.993 2.42 1.39 3.48 1.06-2.254 2.22-4.673 3.48-7.258 1.26-2.585 2.552-5.27 3.877-8.052L103.49 0h18.69L77.84 83.308v53.087h-16.9v-54.08z"></path></svg></div>Hacker News</div>
+</a>
+
+<!-- Sharingbutton Reddit -->
+<a class="resp-sharing-button__link" href="https://reddit.com/submit/?url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvi-full-text-search&amp;resubmit=true&amp;title=The Flask Mega-Tutorial, Part XVI: Full-Text Search" target="_blank" rel="noopener" aria-label="Reddit">
+  <div class="resp-sharing-button resp-sharing-button--reddit resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-6.07-1.72.08-1.1.4-3.05 1.52-3.7.72-.4 1.73-.24 3 .5C17.2 6.3 18.46 7.5 20 7.5c1.65 0 3-1.35 3-3s-1.35-3-3-3c-1.38 0-2.54.94-2.88 2.22-1.43-.72-2.64-.8-3.6-.25-1.64.94-1.95 3.47-2 4.55-2.33.08-4.45.7-6.1 1.72C4.86 8.98 3.96 8.5 3 8.5c-1.65 0-3 1.35-3 3 0 1.32.84 2.44 2.05 2.84-.03.22-.05.44-.05.66 0 3.86 4.5 7 10 7s10-3.14 10-7c0-.22-.02-.44-.05-.66 1.2-.4 2.05-1.54 2.05-2.84zM2.3 13.37C1.5 13.07 1 12.35 1 11.5c0-1.1.9-2 2-2 .64 0 1.22.32 1.6.82-1.1.85-1.92 1.9-2.3 3.05zm3.7.13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9.8 4.8c-1.08.63-2.42.96-3.8.96-1.4 0-2.74-.34-3.8-.95-.24-.13-.32-.44-.2-.68.15-.24.46-.32.7-.18 1.83 1.06 4.76 1.06 6.6 0 .23-.13.53-.05.67.2.14.23.06.54-.18.67zm.2-2.8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm5.7-2.13c-.38-1.16-1.2-2.2-2.3-3.05.38-.5.97-.82 1.6-.82 1.1 0 2 .9 2 2 0 .84-.53 1.57-1.3 1.87z"/></svg></div>Reddit</div>
+</a>
+
+<!-- Sharingbutton Twitter -->
+<a class="resp-sharing-button__link" href="https://twitter.com/intent/tweet/?text=The%20Flask%20Mega-Tutorial%2C%20Part%20XVI%3A%20Full-Text%20Search&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvi-full-text-search" target="_blank" rel="noopener" aria-label="Twitter">
+  <div class="resp-sharing-button resp-sharing-button--twitter resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/></svg></div>Twitter</div>
+</a>
+
+<!-- Sharingbutton LinkedIn -->
+<a class="resp-sharing-button__link" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvi-full-text-search&amp;title=The%20Flask%20Mega-Tutorial%2C%20Part%20XVI%3A%20Full-Text%20Search&amp;summary=The%20Flask%20Mega-Tutorial%2C%20Part%20XVI%3A%20Full-Text%20Search&amp;source=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvi-full-text-search" target="_blank" rel="noopener" aria-label="LinkedIn">
+  <div class="resp-sharing-button resp-sharing-button--linkedin resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.5 21.5h-5v-13h5v13zM4 6.5C2.5 6.5 1.5 5.3 1.5 4s1-2.4 2.5-2.4c1.6 0 2.5 1 2.6 2.5 0 1.4-1 2.5-2.6 2.5zm11.5 6c-1 0-2 1-2 2v7h-5v-13h5V10s1.6-1.5 4-1.5c3 0 5 2.2 5 6.3v6.7h-5v-7c0-1-1-2-2-2z"/></svg></div>LinkedIn</div>
+</a>
+
+<!-- Sharingbutton Facebook -->
+<a class="resp-sharing-button__link" href="https://facebook.com/sharer/sharer.php?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvi-full-text-search" target="_blank" rel="noopener" aria-label="Facebook">
+  <div class="resp-sharing-button resp-sharing-button--facebook resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/></svg></div>Facebook</div>
+</a>
+
+<!-- Sharingbutton E-Mail -->
+<a class="resp-sharing-button__link" href="mailto:?subject=The%20Flask%20Mega-Tutorial%2C%20Part%20XVI%3A%20Full-Text%20Search&amp;body=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvi-full-text-search" target="_self" rel="noopener" aria-label="E-Mail">
+  <div class="resp-sharing-button resp-sharing-button--email resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 4H2C.9 4 0 4.9 0 6v12c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7.25 14.43l-3.5 2c-.08.05-.17.07-.25.07-.17 0-.34-.1-.43-.25-.14-.24-.06-.55.18-.68l3.5-2c.24-.14.55-.06.68.18.14.24.06.55-.18.68zm4.75.07c-.1 0-.2-.03-.27-.08l-8.5-5.5c-.23-.15-.3-.46-.15-.7.15-.22.46-.3.7-.14L12 13.4l8.23-5.32c.23-.15.54-.08.7.15.14.23.07.54-.16.7l-8.5 5.5c-.08.04-.17.07-.27.07zm8.93 1.75c-.1.16-.26.25-.43.25-.08 0-.17-.02-.25-.07l-3.5-2c-.24-.13-.32-.44-.18-.68s.44-.32.68-.18l3.5 2c.24.13.32.44.18.68z"/></svg></div>E-Mail</div>
+</a>
+
+<div id="comments" class="post-comment-count">
+  
+  <a class="btn btn-outline-secondary" href="/post/the-flask-mega-tutorial-part-xvi-full-text-search#comments">25 comments</a>
+  
+</div>
+
+
+<div class="comments">
+  <ul>
+    
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/0286c6a87475f8dae95c0bc9bc493893?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#1</span> <span class="badge text-bg-warning">Vladimir Kuzmenkov</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-09T21:59:36Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-09T21:59:36Z</span>
+  </p>
+  <div>
+    <p>Intense chapter indeed. Way too advanced to wrap one's head around it from the first time for sure.</p>
+<p>Would like to share that upon downloading elasticsearch one might want to amend elasticsearch.yml config file and set xpack.security.enabled to false in order to access via http://localhost:9200. Otherwise elasticserarch service available only via https and requires credentials.</p>
+<p>Thanks!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#2</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-09T23:46:29Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-09T23:46:29Z</span>
+  </p>
+  <div>
+    <p>@Vladimir: you can disable security in the command that starts the Docker container, as shown above in this article.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/cca2cfc633f3c18262e0dbcee6dfc9c4?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#3</span> <span class="badge text-bg-warning">Leo</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-15T21:36:42Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-15T21:36:42Z</span>
+  </p>
+  <div>
+    <p>since you've only allowed g.search_form to be created if user authed, the login page fails since a user is not authed but the base template still tries to find g.search_form</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#4</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-17T16:30:04Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-17T16:30:04Z</span>
+  </p>
+  <div>
+    <p>@Leo: if you have a specific error to share, please do so. The base template should not have any issues because it checks that <code>g.search_form</code> exists before rendering the search form.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7f938fb84fb6703f6dc2c75e3b84930b?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#5</span> <span class="badge text-bg-warning">David</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-03-04T08:09:34Z" data-function="fromNow" data-refresh="0" style="display: none">2024-03-04T08:09:34Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, thanks a lot for this great tutorial. I'm applying all the techniques you showed in this post on my own project.</p>
+<p>In my case, inside the function "add_to_index", it needs to retrieve a relationship model to get all the data for the payload. And I use "SearchableMixin" the same way you showed here. Now, I've been getting this error each time I try to call db.session.commit() after updating a model record. Here is the partial error message:</p>
+<p>"sqlalchemy.exc.InvalidRequestError: This session is in 'committed' state; no further SQL can be emitted within this transaction."</p>
+<p>The error occurs during calling add_to_index() inside the after_commit() method for obj stored in session._changes['update']. Is there any way I can avoid this error? Thanks.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#6</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-03-08T15:35:17Z" data-function="fromNow" data-refresh="0" style="display: none">2024-03-08T15:35:17Z</span>
+  </p>
+  <div>
+    <p>@David: the solution that I present in this chapter integrates an Elasticsearch index with one (only one) database table. It is not designed to have an ES index that maps to multiple database tables. I suggest if you need something like that you implement separate functions to maintain the index, because the one-to-one mapping between database and ES is key to this solution.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/06b7b39e582c094be216c382dc039576?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#7</span> <span class="badge text-bg-warning">Yuming</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-02T17:59:21Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-02T17:59:21Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel,<br>
+This is a follow up to my comment #389 in Chapter 16 of your 2018 tutorial at <a href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvi-full-text-search-2018/page/16#comments" rel="nofollow">https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvi-full-text-search-2018/page/16#comments</a></p>
+<p>In that comment I reported a problem with using Elasticsearch (ES) with Chinese language: While ES uses English words as “search terms”, it treats Chinese characters as search terms because Chinese words are composed of 2 ~ 4 characters and each character has its own definite and rich meaning (which is different from English syllables).  For example, if I search for Chinese word “牛肉” (beef), which is composed of two characters 牛(cow) and 肉(meat), documents containing only 牛 or 肉 will also be reported as hits and the documents that have both characters may have lower scores if at least one of the two characters is used frequently by other words.  This problem makes ES almost useless for searching for Chinese words.</p>
+<p>I came up with an idea:  To allow users to search for a Chinese word instead of its characters, my code searches for all the characters of the word one by one.  Searching for each character returns a hit list, then I merge the hit lists of all the characters into a hit list for the word,  which contains only the IDs of the documents that use ALL of the characters.  In other words, although ES considers documents that contain any character used by the word as hits, my code considers only the documents that contain all the characters of the word as hits.</p>
+<p>This method has a problem if I search for Chinese words using ES pagination:  If the document IDs reported by ES based on character searching appear in different pages, then my algorithm will fail to merge them into a merged list for the word.  My solution is to use a page size that is guaranteed to be larger than the total number of documents my app will ever have.  In other words, I make sure that the first page of ES’s pagination is larger enough to carry the searching result.</p>
+<p>How do I display search results nicely with a huge ES pagination if the hit list is very long?  My solution is to do my own pagination with Javascript at the frontend.</p>
+<p>This method can be used to search not only for Chinese words, but also for Chinese sentences. With about 60 documents currently in my ES index and searching for some long Chinese sentences, I don’t see any performance problems due to the large ES pagination page size.  You can try it at <a href="http://www.chinesesong.net" rel="nofollow">www.chinesesong.net</a> if interested, this app implements almost all the advanced features covered by your tutorial plus some other features such as AWS lambda, Youtube API, etc.</p>
+<p>Of course, if an ES index has more than a few thousands of documents, this method will probably cause search performance to drop, so this is not a generic solution, but it works for apps like mine, which has only a limited number of Chinese documents in the ES index.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#8</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-02T22:31:44Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-02T22:31:44Z</span>
+  </p>
+  <div>
+    <p>@Yuming: The problem here is that the default method in which Elasticsearch processes the text is not appropriate for Chinese and other Asian languages. But you can configure your index to analyze text using a better method. See <a href="https://www.elastic.co/blog/how-to-search-ch-jp-kr-part-1" rel="nofollow">this blog post</a>.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/06b7b39e582c094be216c382dc039576?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#9</span> <span class="badge text-bg-warning">Yuming</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-04T04:55:29Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-04T04:55:29Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel,<br>
+Thank you for the information about the Elasticsearch (ES) plugins for handling some East Asian languages.  Obviously the plugins try to solve the problem that I encountered when using ES for Chinese documents.  I guess the plugins are able to “analyze” Chinese documents and figure out if a sequence of 2~4 characters should be treated as independent characters or a Chinese word (Chinese characters can be as meaningful as words), then those words will be used by ES as "search terms" in addition to characters.  </p>
+<p>It is interesting that the author of the blog said that the standard ES analyzer still has problems processing some nouns that are not words (the author used “冬季奥运会“, which means “Winter Olympics”, as an example), so in addition to the standard analyzer, it may also be necessary to install language specific plugins.</p>
+<p>My approach is not generic, but seems to be able to solve the problem without those plugins for apps that will never use more than a limited amount of data in its ES index.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/61995bb5b31430c33106212d5ecc3b85?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#10</span> <span class="badge text-bg-warning">Noah</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-19T15:24:57Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-19T15:24:57Z</span>
+  </p>
+  <div>
+    <p>Hi, Miguel.</p>
+<blockquote>
+<p>a bug that causes a missed indexing call when making a change on the SQLAlchemy side is not going to be easily detected</p>
+</blockquote>
+<p>Could you elaborate this bug? I don't understand which scenarios will cause this.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/23b131c4bac17fd832903791e3867143?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#11</span> <span class="badge text-bg-warning">Quy</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-22T10:27:41Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-22T10:27:41Z</span>
+  </p>
+  <div>
+    <p>Thanks for the great tutorial Miguel!</p>
+<p>I'm just wondering is it a good idea to get this search functionality be a module/blueprint of its own? Was there any design decision you have made about this matter?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#12</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-23T11:44:00Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-23T11:44:00Z</span>
+  </p>
+  <div>
+    <p>@Noah: this would happen when you add new code that adds blog posts to the database and you forget that you also need to add the code updates the full-text search index with the same change.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#13</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-23T12:53:57Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-23T12:53:57Z</span>
+  </p>
+  <div>
+    <p>@Quy: The search functionality is already in a module of its own called <code><a href="http://search.py" rel="nofollow">search.py</a></code>.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/bd103b4d396dabf67bfe33a832655c31?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#14</span> <span class="badge text-bg-warning">Amos</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-18T18:09:17Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-18T18:09:17Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel. Thanks for the great tutorial. I am getting the error below while trying to implement the search functionality. elasticsearch.NotFoundError: NotFoundError(404, '&lt;!doctype html&gt;\n&lt;html lang=en&gt;\n&lt;title&gt;404 Not Found&lt;/title&gt;\n&lt;h1&gt;Not Found&lt;/h1&gt;\n</p><p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>\n')<br>
+I am wondering if the issue stems around this part of the <a href="http://route.py" rel="nofollow">route.py</a>:<br>
+@bp.route('/search')<br>
+@login_required<br>
+def search():<br>
+.....<br>
+next_url = url_for('main.search', q=g.search_form.q.data, page=page + 1) \<br>
+Is it okay for one to define a route for the first time  as @bp.route('/search') and apply the same route within the body of its definition function as url_for('main.search'). I am thinking that the function is searching for the 'main.search' route which is in the process of being defined.<p></p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#15</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-20T16:20:31Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-20T16:20:31Z</span>
+  </p>
+  <div>
+    <p>@Amos: please compare your code against mine carefully, you must have a mistake that is causing this.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/e077243ae3098f86bc760dc3fd68d311?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#16</span> <span class="badge text-bg-warning">joshua</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-10-09T07:12:24Z" data-function="fromNow" data-refresh="0" style="display: none">2024-10-09T07:12:24Z</span>
+  </p>
+  <div>
+    <p>Ever worked with typesense.Can we get your guide on using it for full text search as alternative to elastic search.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#17</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-10-09T08:46:24Z" data-function="fromNow" data-refresh="0" style="display: none">2024-10-09T08:46:24Z</span>
+  </p>
+  <div>
+    <p>@joshua: I explain in this article how you can replace Elasticsearch with the search engine of your choice. I can't provide the code for every single full-text search engine out there.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/e165f66fcb036473debe7de23ea73295?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#18</span> <span class="badge text-bg-warning">Dev</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-12-02T18:09:50Z" data-function="fromNow" data-refresh="0" style="display: none">2024-12-02T18:09:50Z</span>
+  </p>
+  <div>
+    <p>I have been following your tutorial for a while now, and I gotta say... This is one of the hardest lessons in this tutorial another one being the followers chapter. But all in all I'm learning a lot from these chapters. So thank you!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/45d72f61086fd60da7e7daf3534b7c77?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#19</span> <span class="badge text-bg-warning">DS</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-03-01T15:36:29Z" data-function="fromNow" data-refresh="0" style="display: none">2025-03-01T15:36:29Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, this tutorial has taught me a lot so far, so thank you! I made it to this chapter and everything works, except for two things:</p>
+<p>Email - because my SMTP settings are not in agreement apparently, but I will check this later.<br>
+Ajax translation - because I don't have a credit card and cannot sign up for Azure or Google Cloud.</p>
+<p>I can live without those functionalities for now, but getting to this chapter, I feel like I'm missing something. I'm creating my app on PythonAnywhere and syncing it with GitHub, but now all of a sudden it seems like I need Docker, so do I need to move the whole project to my laptop? I want to prevent not being able to have my app run on an actual live server.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#20</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-03-01T16:32:10Z" data-function="fromNow" data-refresh="0" style="display: none">2025-03-01T16:32:10Z</span>
+  </p>
+  <div>
+    <p>@DS: Docker is not required, it is just the most convenient when you are developing the application locally, which is what I had in mind when I designed this tutorial. Another option that you have is to get an Elastic cloud account (free for 14 days only, sadly) and host your Elasticsearch database there. Aside from slightly more complex connection arguments everything else related to Elasticsearch should work the same with a cloud hosted database.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/45d72f61086fd60da7e7daf3534b7c77?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#21</span> <span class="badge text-bg-warning">DS</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-03-02T10:55:02Z" data-function="fromNow" data-refresh="0" style="display: none">2025-03-02T10:55:02Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, thanks for the quick reply! In the meantime I managed to make email work through SendGrid's API - I was probably running into another limitation of PythonAnywhere with my SMTP settings. They also don't seem to support ElasticSearch, so for now I think I will skip this chapter. I imagine I can always come back to it :)</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/a7b450a04fceb24e85d4fe2166966d4f?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#22</span> <span class="badge text-bg-warning">BumblyCodesNowIGuess</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-05-05T23:10:44Z" data-function="fromNow" data-refresh="0" style="display: none">2025-05-05T23:10:44Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, </p>
+<p>Thank you for this great tutorial. I am doing a proof of concept for a project but am using flask, sqlalchemy and wtforms to create the search functionality, and will not have an ES instance. So far I have gotten it to return me results perfectly, but I am struggling to make the results 'clickable', to navigate to the user profile. Can you help me out a little bit?</p>
+<p>I was following along but can't get my head around how Flask recognizes and generates the URL to point to the user profile. I'll post what I have:<br>
+---------<a href="http://routes.py" rel="nofollow">routes.py</a>--------</p>
+<pre><code>...
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    form = SearchForm()
+    results = []
+    if form.validate_on_submit():
+        query = form.search_query.data
+        results = db.session.query(User).filter(User.name.contains(query)).all()   
+    return render_template('search.html', form=form, results=results)
+....
+</code></pre>
+<p>--------<a href="http://forms.py" rel="nofollow">forms.py</a>----------</p>
+<pre><code>...
+class SearchForm(FlaskForm):
+    search_query = StringField('Name', validators=[DataRequired()])
+
+    def __init__(self, *args, **kwargs):
+        if 'formdata' not in kwargs:
+            kwargs['formdata'] = request.args
+        if 'meta' not in kwargs:
+            kwargs['meta'] = {'csrf': False}
+        super(SearchForm, self).__init__(*args, **kwargs)
+...
+</code></pre>
+<p>---------search.html-----------</p>
+<pre><code>{% extends &quot;base.html&quot; %}
+
+{% block content %}
+    &lt;title&gt;Search&lt;/title&gt;
+    &lt;h2&gt;Search for User&lt;/h2&gt;
+    &lt;form method=&quot;POST&quot;&gt;
+        {{ form.hidden_tag()}}
+        {{ form.search_query.label }} {{ form.search_query() }}
+        &lt;button type=&quot;submit&quot;&gt;Search&lt;/button&gt;
+    &lt;/form&gt;
+    &lt;h2&gt; Results &lt;/h2&gt;
+    &lt;ul&gt;
+        {% for result in results %}
+        &lt;li&gt;ID: {{ <a href="http://result.id" rel="nofollow">result.id</a> }}, Name: {{ <a href="http://result.name" rel="nofollow">result.name</a> }}&lt;/li&gt;
+        {% else %}
+        &lt;li&gt; No Results Found.&lt;/li&gt;
+        {% endfor %}
+    &lt;/ul&gt;
+{% endblock %}
+</code></pre>
+<p>TYIA for anything you can provide to help. This is my first time working with Flask and your book has become a literal bible for me to reference on a minute-by-minute basis.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#23</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-05-06T13:32:25Z" data-function="fromNow" data-refresh="0" style="display: none">2025-05-06T13:32:25Z</span>
+  </p>
+  <div>
+    <p>@BumblyCodesNowIGuess: your link should be something like this:</p>
+<pre><code>&lt;li&gt;&lt;a href=&quot;{{ url_for('user', id=<a href="http://result.id" rel="nofollow">result.id</a>) }}&quot;&gt;{{ <a href="http://result.name" rel="nofollow">result.name</a> }}&lt;/a&gt;&lt;/li&gt;
+</code></pre>
+<p>You may need to adjust the endpoint name and the endpoint arguments to match your application.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/c3e6d24c3bfdbcda82968f1e31fc0824?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#24</span> <span class="badge text-bg-warning">Will</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-06-23T19:19:10Z" data-function="fromNow" data-refresh="0" style="display: none">2025-06-23T19:19:10Z</span>
+  </p>
+  <div>
+    <p>Just a heads up that elasticsearch has been updated recently. You will either have to isntall an older version with pip, or with docker(which I used in my case) install a 9.0.0 or later version of elastic search rather than 8.11.1</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#25</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-06-24T18:29:50Z" data-function="fromNow" data-refresh="0" style="display: none">2025-06-24T18:29:50Z</span>
+  </p>
+  <div>
+    <p>@Will: I have updated the Docker command to 9.0.2. Thanks!</p>
+  </div>
+</div>
+    </li>
+    
+  </ul>
+</div>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xvi-full-text-search/page/1#comments">&laquo;&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xvi-full-text-search/page/0#comments">&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xvi-full-text-search/page/0#comments">&raquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xvi-full-text-search/page/0#comments">&raquo;&raquo;</a></li>
+  </ul>
+</nav>
+
+
+
+<div id="comment-form">
+  <h3>Leave a Comment</h3>
+
+  
+  
+  
+
+  
+<form action="#comment-form" method="post">
+  <input id="url" name="url" type="hidden" value="">
+<input id="csrf_token" name="csrf_token" type="hidden" value="ImI1NjZlMTJmNDk3MjJlNTU1ODJhNTdjOTVmNjM2ZDUwNGQ3MTUzYWQi.ajz8hg.LdweUP3zg2gPenAm8q9hkDd186A">
+    
+  <div class="mb-3">
+    <label class="form-label" for="name">Name</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="name" name="name" required type="text" value="">
+    </div>
+  </div>
+
+    
+    
+  <div class="mb-3">
+    <label class="form-label" for="email">Email</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="email" name="email" required type="text" value="">
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="comment">Comment</label>
+    <div class="input-group has-validation">
+      <textarea class="form-control" id="comment" name="comment" required>
+</textarea>
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="captcha">Captcha</label>
+    <div class="input-group has-validation">
+      
+<script src='https://www.google.com/recaptcha/api.js' async defer></script>
+<div class="g-recaptcha" data-sitekey="6Ld5Zs4SAAAAAOY0DOi4r18bgHlEaz41qAoRf__S"></div>
+
+    </div>
+  </div>
+
+    
+  <input class="btn btn-primary mb-3" id="submit" name="submit" type="submit" value="Submit">
+
+      
+</form>
+
+</div>
+
+
+</div>
+
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div id="sidebar">
+        
+          
+  
+
+
+
+<div class="card">
+  
+  
+  
+  
+  <div class="card-header">
+    <div class="row">
+      <div class="col">The Flask Mega-Tutorial</div>
+      <div class="col text-end">
+        <a href="/post/announcing-the-flask-mega-tutorial-2024-edition">
+          <h5 style="margin-bottom: 0px"><span class="badge text-bg-warning">2024 Edition!</span></h5>
+        </a>
+      </div>
+    </div>
+  </div>
+  <a class="card-book-cover" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">
+    <img src="/static/mega-tutorial-2024-small.png" alt="The New Flask Mega-Tutorial">
+  </a>
+  <div class="card-body">
+    <p class="card-text">If you would you like to support my work on my <a href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world">Flask Mega-Tutorial series</a> on this blog and as a reward have access to the complete tutorial in book format, you can now order it directly from my <a href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Courses</a> site or from <a href="https://amzn.to/3MQffrm">Amazon</a>.</p>
+  </div>
+  <div class="card-body">
+    <a class="card-link" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Click here to get this Book!</a><br />
+  </div>
+
+  
+</div>
+        
+        <div class="card">
+  <div class="card-header">About Miguel</div>
+  <div class="card-body">
+    <img style="float: right; margin: 0px 8px 8px 0px; padding: 4px; border: 1px solid #ccc;" src="/static/miguel.jpg" />
+    <p class="card-text">Welcome to my blog!</p>
+    <p class="card-text">I'm a software engineer and technical writer, currently living in Drogheda, Ireland.</p>
+    <p><u>Generative AI notice:</u> I do not use LLMs, agents or any other generative AI tools for help with writing, coding, image creation or any other tasks related to this blog or my open source work.</p>
+    <p class="card-text">You can also find me on
+      <a href="https://github.com/miguelgrinberg">Github</a>,
+      <a href="http://www.linkedin.com/in/miguelgrinberg">LinkedIn</a>,
+      <a href="https://bsky.app/profile/miguelgrinberg.com">Bluesky</a>,
+      <a href="https://mstdn.social/@miguelgrinberg">Mastodon</a>,
+      <a href="https://twitter.com/miguelgrinberg">Twitter</a>,
+      <a href="https://youtube.com/miguelgrinberg">YouTube</a>,
+      <!--<a href="https://www.facebook.com/miguelgrinbergblog">Facebook</a>,-->
+      <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy Me a Coffee</a>,
+      and <a href="https://patreon.com/miguelgrinberg">Patreon</a>.</p>
+    <p class="card-text">Thank you for visiting!</p>
+  </div>
+</div>
+        
+        <div class="card" id="categories">
+  <div class="card-header">Categories</div>
+  <div class="card-body">
+    
+    <div class="category">
+      <a href="/category/AI/feed"><img src="/static/rss-small.png" title="AI RSS Feed" label="AI RSS Feed" alt="AI RSS Feed" /></a>
+      <form action="/category/AI" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="AI" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Arduino/feed"><img src="/static/rss-small.png" title="Arduino RSS Feed" label="Arduino RSS Feed" alt="Arduino RSS Feed" /></a>
+      <form action="/category/Arduino" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Arduino" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Authentication/feed"><img src="/static/rss-small.png" title="Authentication RSS Feed" label="Authentication RSS Feed" alt="Authentication RSS Feed" /></a>
+      <form action="/category/Authentication" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Authentication" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Blog/feed"><img src="/static/rss-small.png" title="Blog RSS Feed" label="Blog RSS Feed" alt="Blog RSS Feed" /></a>
+      <form action="/category/Blog" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Blog" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/C++/feed"><img src="/static/rss-small.png" title="C++ RSS Feed" label="C++ RSS Feed" alt="C++ RSS Feed" /></a>
+      <form action="/category/C++" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="C++" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/CSS/feed"><img src="/static/rss-small.png" title="CSS RSS Feed" label="CSS RSS Feed" alt="CSS RSS Feed" /></a>
+      <form action="/category/CSS" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="CSS" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Cloud/feed"><img src="/static/rss-small.png" title="Cloud RSS Feed" label="Cloud RSS Feed" alt="Cloud RSS Feed" /></a>
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" /> <small><em>12</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Database/feed"><img src="/static/rss-small.png" title="Database RSS Feed" label="Database RSS Feed" alt="Database RSS Feed" /></a>
+      <form action="/category/Database" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Database" /> <small><em>33</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Docker/feed"><img src="/static/rss-small.png" title="Docker RSS Feed" label="Docker RSS Feed" alt="Docker RSS Feed" /></a>
+      <form action="/category/Docker" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Docker" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Filmmaking/feed"><img src="/static/rss-small.png" title="Filmmaking RSS Feed" label="Filmmaking RSS Feed" alt="Filmmaking RSS Feed" /></a>
+      <form action="/category/Filmmaking" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Filmmaking" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Flask/feed"><img src="/static/rss-small.png" title="Flask RSS Feed" label="Flask RSS Feed" alt="Flask RSS Feed" /></a>
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" /> <small><em>130</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Games/feed"><img src="/static/rss-small.png" title="Games RSS Feed" label="Games RSS Feed" alt="Games RSS Feed" /></a>
+      <form action="/category/Games" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Games" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Infra/feed"><img src="/static/rss-small.png" title="Infra RSS Feed" label="Infra RSS Feed" alt="Infra RSS Feed" /></a>
+      <form action="/category/Infra" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Infra" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/IoT/feed"><img src="/static/rss-small.png" title="IoT RSS Feed" label="IoT RSS Feed" alt="IoT RSS Feed" /></a>
+      <form action="/category/IoT" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="IoT" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/JavaScript/feed"><img src="/static/rss-small.png" title="JavaScript RSS Feed" label="JavaScript RSS Feed" alt="JavaScript RSS Feed" /></a>
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" /> <small><em>37</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/MicroPython/feed"><img src="/static/rss-small.png" title="MicroPython RSS Feed" label="MicroPython RSS Feed" alt="MicroPython RSS Feed" /></a>
+      <form action="/category/MicroPython" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="MicroPython" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microdot/feed"><img src="/static/rss-small.png" title="Microdot RSS Feed" label="Microdot RSS Feed" alt="Microdot RSS Feed" /></a>
+      <form action="/category/Microdot" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microdot" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microservices/feed"><img src="/static/rss-small.png" title="Microservices RSS Feed" label="Microservices RSS Feed" alt="Microservices RSS Feed" /></a>
+      <form action="/category/Microservices" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microservices" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Movie Reviews/feed"><img src="/static/rss-small.png" title="Movie Reviews RSS Feed" label="Movie Reviews RSS Feed" alt="Movie Reviews RSS Feed" /></a>
+      <form action="/category/Movie%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Movie Reviews" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Personal/feed"><img src="/static/rss-small.png" title="Personal RSS Feed" label="Personal RSS Feed" alt="Personal RSS Feed" /></a>
+      <form action="/category/Personal" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Personal" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Photography/feed"><img src="/static/rss-small.png" title="Photography RSS Feed" label="Photography RSS Feed" alt="Photography RSS Feed" /></a>
+      <form action="/category/Photography" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Photography" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Product Reviews/feed"><img src="/static/rss-small.png" title="Product Reviews RSS Feed" label="Product Reviews RSS Feed" alt="Product Reviews RSS Feed" /></a>
+      <form action="/category/Product%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Product Reviews" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Programming/feed"><img src="/static/rss-small.png" title="Programming RSS Feed" label="Programming RSS Feed" alt="Programming RSS Feed" /></a>
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" /> <small><em>198</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Project Management/feed"><img src="/static/rss-small.png" title="Project Management RSS Feed" label="Project Management RSS Feed" alt="Project Management RSS Feed" /></a>
+      <form action="/category/Project%20Management" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Project Management" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Python/feed"><img src="/static/rss-small.png" title="Python RSS Feed" label="Python RSS Feed" alt="Python RSS Feed" /></a>
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" /> <small><em>187</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/REST/feed"><img src="/static/rss-small.png" title="REST RSS Feed" label="REST RSS Feed" alt="REST RSS Feed" /></a>
+      <form action="/category/REST" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="REST" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Raspberry Pi/feed"><img src="/static/rss-small.png" title="Raspberry Pi RSS Feed" label="Raspberry Pi RSS Feed" alt="Raspberry Pi RSS Feed" /></a>
+      <form action="/category/Raspberry%20Pi" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Raspberry Pi" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/React/feed"><img src="/static/rss-small.png" title="React RSS Feed" label="React RSS Feed" alt="React RSS Feed" /></a>
+      <form action="/category/React" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="React" /> <small><em>19</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Reviews/feed"><img src="/static/rss-small.png" title="Reviews RSS Feed" label="Reviews RSS Feed" alt="Reviews RSS Feed" /></a>
+      <form action="/category/Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Reviews" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Robotics/feed"><img src="/static/rss-small.png" title="Robotics RSS Feed" label="Robotics RSS Feed" alt="Robotics RSS Feed" /></a>
+      <form action="/category/Robotics" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Robotics" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Security/feed"><img src="/static/rss-small.png" title="Security RSS Feed" label="Security RSS Feed" alt="Security RSS Feed" /></a>
+      <form action="/category/Security" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Security" /> <small><em>14</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Video/feed"><img src="/static/rss-small.png" title="Video RSS Feed" label="Video RSS Feed" alt="Video RSS Feed" /></a>
+      <form action="/category/Video" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Video" /> <small><em>22</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/WebSocket/feed"><img src="/static/rss-small.png" title="WebSocket RSS Feed" label="WebSocket RSS Feed" alt="WebSocket RSS Feed" /></a>
+      <form action="/category/WebSocket" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="WebSocket" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Webcast/feed"><img src="/static/rss-small.png" title="Webcast RSS Feed" label="Webcast RSS Feed" alt="Webcast RSS Feed" /></a>
+      <form action="/category/Webcast" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Webcast" /> <small><em>3</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Windows/feed"><img src="/static/rss-small.png" title="Windows RSS Feed" label="Windows RSS Feed" alt="Windows RSS Feed" /></a>
+      <form action="/category/Windows" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Windows" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+  </div>
+</div>
+        
+      </div>
+    </div>
+    
+  </div>
+  <div id="footer">
+    
+    <p>&copy; 2012-<script type="text/javascript">document.write(new Date().getFullYear());</script> by Miguel Grinberg. All rights reserved. <a href="mailto:webmaster _at_ miguelgrinberg _dot_ com">Questions?</a></p>
+  </div>
+</div>
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="/static/prettify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js" integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg==" crossorigin="anonymous"></script>
+
+<script>
+moment.locale("en");
+function flask_moment_render(elem) {{
+    const timestamp = moment(elem.dataset.timestamp);
+    const func = elem.dataset.function;
+    const format = elem.dataset.format;
+    const timestamp2 = elem.dataset.timestamp2;
+    const no_suffix = elem.dataset.nosuffix;
+    const units = elem.dataset.units;
+    let args = [];
+    if (format)
+        args.push(format);
+    if (timestamp2)
+        args.push(moment(timestamp2));
+    if (no_suffix)
+        args.push(no_suffix);
+    if (units)
+        args.push(units);
+    elem.textContent = timestamp[func].apply(timestamp, args);
+    elem.classList.remove('flask-moment');
+    elem.style.display = "";
+}}
+function flask_moment_render_all() {{
+    const moments = document.querySelectorAll('.flask-moment');
+    moments.forEach(function(moment) {{
+        flask_moment_render(moment);
+        const refresh = moment.dataset.refresh;
+        if (refresh && refresh > 0) {{
+            (function(elem, interval) {{
+                setInterval(function() {{
+                    flask_moment_render(elem);
+                }}, interval);
+            }})(moment, refresh);
+        }}
+    }})
+}}
+document.addEventListener("DOMContentLoaded", flask_moment_render_all);
+</script>
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-20EHZP9GRZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-20EHZP9GRZ');
+  </script>
+  
+  <script type="text/javascript">
+    function setThemeUI() {
+      document.getElementById('select-theme-auto').classList.remove('active');
+      document.getElementById('select-theme-light').classList.remove('active');
+      document.getElementById('select-theme-dark').classList.remove('active');
+      const theme = getPreferredTheme();
+      const actualTheme = document.documentElement.getAttribute('data-bs-theme', 'light');
+      document.getElementById('select-theme-' + theme).classList.add('active');
+      document.getElementById('current-theme').href.baseVal = `#icon-theme-${actualTheme}`;
+    };
+
+    function updateTheme(theme) {
+      if (theme === 'auto') {
+        localStorage.removeItem('theme')
+      }
+      else {
+        localStorage.setItem('theme', theme)
+      }
+      setTheme(getPreferredTheme());
+    }
+
+    setThemeUI();
+
+    const darkModePreference = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModePreference.addEventListener("change", e => {
+      if (getPreferredTheme() === 'auto') {
+        setTheme('auto');
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // add prettyprint class to all <pre><code></code></pre> blocks
+      let prettify = false;
+      document.querySelectorAll('div.post-body pre code').forEach((code) => {
+        code.parentNode.classList.add('prettyprint');
+        prettify = true;
+      });
+      prettyPrint();
+    });
+  </script>
+
+  </body>
+</html>

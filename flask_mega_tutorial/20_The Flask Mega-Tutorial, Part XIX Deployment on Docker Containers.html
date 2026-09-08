@@ -1,0 +1,1386 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    
+  <script type="text/javascript">
+    function getPreferredTheme() {
+      const storedTheme = localStorage.getItem('theme')
+      if (storedTheme) {
+        return storedTheme
+      }
+      return 'auto';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    };
+
+    setTheme(getPreferredTheme());
+  </script>
+  
+    <title>
+  
+    The Flask Mega-Tutorial, Part XIX: Deployment on Docker Containers - miguelgrinberg.com
+  
+</title>
+  
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="miguelgrinberg.com">
+  <meta name="copyright" content="Copyright (c) 2012-2024 Miguel Grinberg">
+  <meta name="author" content="Miguel Grinberg">
+  
+  <meta name="keywords" content="flask, python, programming, docker, containers">
+  
+  
+  <link rel="canonical" href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">
+  
+
+  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+
+  <link href="/static/tomorrow.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/tomorrow-night.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/social.css" rel="stylesheet" type="text/css" />
+  <link href="/static/style_20260305.css" rel="stylesheet" type="text/css" />
+
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  <link rel="alternate" type="application/rss+xml" href="/feed" title="miguelgrinberg.com RSS feed">
+
+    <meta property="og:title" content="The Flask Mega-Tutorial, Part XIX: Deployment on Docker Containers">
+    <meta property="og:description" content="This is the nineteenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to deploy Microblog to the Docker container platform.You are reading the 2024 edition of the Flask…">
+    <meta property="og:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers.jpg">
+    <meta property="og:url" content="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">
+    <meta name="twitter:title" content="The Flask Mega-Tutorial, Part XIX: Deployment on Docker Containers">
+    <meta name="twitter:description" content="This is the nineteenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to deploy Microblog to the Docker container platform.You are reading the 2024 edition of the Flask…">
+    <meta name="twitter:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@miguelgrinberg">
+
+  </head>
+  <body>
+    <svg style="display: none" version="2.0">
+      <defs>
+        <symbol id="icon-theme-auto" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-circle-half" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/>
+        </symbol>
+        <symbol id="icon-theme-light" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </symbol>
+        <symbol id="icon-theme-dark" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-moon-stars-fill" viewBox="0 0 16 16">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+        </symbol>
+      </defs>
+    </svg>
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/index">miguelgrinberg.com</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/index">Home</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/my-courses-and-books">My Courses and Books</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/hire-me">Consulting</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/about-me">About Me</a></li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <svg width="20" height="20" version="2.0"><use id="current-theme" href="#icon-theme-light"></svg>
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a id="select-theme-light" class="dropdown-item" href="javascript:updateTheme('light'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-light"></svg>&nbsp; Light Mode
+              </a>
+            </li>
+            <li>
+              <a id="select-theme-dark" class="dropdown-item" href="javascript:updateTheme('dark'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-dark"></svg>&nbsp; Dark Mode
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a id="select-theme-auto" class="dropdown-item" href="javascript:updateTheme('auto'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-auto"></svg>&nbsp; System Default
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item social-icons">
+          <a href="http://github.com/miguelgrinberg"><img src="/static/social/github.png" alt="GitHub" title="GitHub" /></a>
+          <a href="http://www.linkedin.com/in/miguelgrinberg"><img src="/static/social/linkedin.png" alt="LinkedIn" title="LinkedIn" /></a>
+          <a href="https://bsky.app/profile/miguelgrinberg.com"><img src="/static/social/bluesky.png" alt="Bluesky" title="Bluesky" /></a>
+          <a rel="me" href="https://mstdn.social/@miguelgrinberg"><img src="/static/social/mastodon.png" alt="Mastodon" title="Mastodon" /></a>
+          <a href="https://twitter.com/miguelgrinberg"><img src="/static/social/twitter.png" alt="Twitter" title="Twitter" /></a>
+          <a href="https://youtube.com/miguelgrinberg"><img src="/static/social/youtube.png" alt="YouTube" title="YouTube" /></a>
+          <a href="https://www.buymeacoffee.com/miguelgrinberg"><img src="/static/social/buymeacoffee.png" alt="Buy Me a Coffee" title="Buy Me a Coffee" /></a>
+          <a href="https://patreon.com/miguelgrinberg"><img src="/static/social/patreon.png" alt="Patreon" title="Patreon" /></a>
+          <a type="application/rss+xml" href="/feed"><img src="/static/social/rss.png" alt="RSS Feed" title="RSS Feed" /></a>
+          <!--<a href="https://www.facebook.com/miguelgrinbergblog"><img src="/static/social/facebook.png" alt="Facebook" title="Facebook" /></a>-->
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <div id="main">
+        
+        
+        
+        
+        
+
+<div class="post">
+
+<div class="post-header">
+  <h1><a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">The Flask Mega-Tutorial, Part XIX: Deployment on Docker Containers</a></h1>
+  <h2>
+    Posted by
+    <form action="/author/Miguel%20Grinberg" method="POST">
+      <input type="submit" class="btn btn-danger btn-sm" value="Miguel Grinberg" />
+    </form>
+    on
+    <button class="btn btn-secondary btn-sm" disabled><span class="flask-moment" data-timestamp="2023-12-03T10:40:21Z" data-function="format" data-format="LL" data-refresh="0" style="display: none">2023-12-03T10:40:21Z</span></button>
+    under
+    
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" />
+      </form>
+    
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" />
+      </form>
+    
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" />
+      </form>
+    
+      <form action="/category/Docker" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Docker" />
+      </form>
+    
+    
+  </h2>
+</div>
+<div class="post-body"><p>This is the nineteenth installment of the Flask Mega-Tutorial series, in which I'm going to deploy Microblog to the Docker container platform.</p>
+<p>You are reading the 2024 edition of the Flask Mega-Tutorial. The complete course is also available to order in e-book and paperback formats from <a href="https://amzn.to/3ahVnPN">Amazon</a>. Thank you for your support!</p>
+<p>If you are looking for the 2018 edition of this course, you can find it <a href="/post/the-flask-mega-tutorial-part-i-hello-world-2018">here</a>.</p>
+<p>For your reference, here is the complete list of articles in this series:</p>
+<ul>
+<li><a href="/post/the-flask-mega-tutorial-part-i-hello-world">Chapter 1:  Hello, World!</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ii-templates">Chapter 2:  Templates</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iii-web-forms">Chapter 3:  Web Forms</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iv-database">Chapter 4:  Database</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5:  User Logins</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vi-profile-page-and-avatars">Chapter 6:  Profile Page and Avatars</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7:  Error Handling</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-viii-followers">Chapter 8:  Followers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ix-pagination">Chapter 9:  Pagination</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-x-email-support">Chapter 10:  Email Support</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xi-facelift">Chapter 11:  Facelift</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xii-dates-and-times">Chapter 12:  Dates and Times</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiii-i18n-and-l10n">Chapter 13:  I18n and L10n</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiv-ajax">Chapter 14:  Ajax</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15:  A Better Application Structure</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16:  Full-Text Search</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17:  Deployment on Linux</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18:  Deployment on Heroku</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">Chapter 19:  Deployment on Docker Containers</a> (this article)</li>
+<li><a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">Chapter 20:  Some JavaScript Magic</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21:  User Notifications</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">Chapter 22:  Background Jobs</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">Chapter 23:  Application Programming Interfaces (APIs)</a></li>
+</ul>
+<p>In <a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17</a> you learned about traditional deployments, in which you have to take care of every little aspect of the server configuration. Then in <a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18</a> I took you to the other extreme when I introduced you to Heroku, a service that takes complete control of the configuration and deployment tasks, allowing you to fully concentrate on your application. In this chapter you are going to learn about a third application deployment strategy based on <em>containers</em>, more particularly on the <a href="https://www.docker.com/">Docker</a> container platform. This third option sits somewhere in between the other two in terms of the amount of deployment work needed on your part.</p>
+<p>Containers are built on a lightweight virtualization technology that allows an application, along with its dependencies and configuration to run in complete isolation, but without the need to use a full-blown virtualization solution such as virtual machines, which need a lot more resources and can sometimes have a significant performance degradation in comparison to the host. A system configured as a container host can execute many containers, all of them sharing the host's kernel and direct access to the host's hardware. This is in contrast to virtual machines, which have to emulate a complete system, including CPU, disk, other hardware, kernel, etc.</p>
+<p>In spite of having to share the kernel, the level of isolation in a container is pretty high. A container has its own file system, and can be based on an operating system that is different from the one used by the container host. For example, you can run containers based on Ubuntu Linux on a Fedora host, or vice versa. While containers are a technology that is native to the Linux operating system, thanks to virtualization it is also possible to run Linux containers on Windows and macOS hosts. This allows you to test your deployments on your development system, and also incorporate containers in your development workflow if you wish to do so.</p>
+<p><em>The GitHub links for this chapter are: <a href="https://github.com/miguelgrinberg/microblog/tree/v0.19">Browse</a>, <a href="https://github.com/miguelgrinberg/microblog/archive/v0.19.zip">Zip</a>, <a href="https://github.com/miguelgrinberg/microblog/compare/v0.18...v0.19">Diff</a>.</em></p>
+<h2>Installing Docker</h2>
+<p>While Docker isn't the only container platform, it is by far the most popular, so that's going to be my choice.</p>
+<p>To work with Docker, you first have to install it on your system. There are installers for Windows, macOS and several Linux distributions available at the <a href="https://docs.docker.com/get-docker/">Docker website</a>. By far the easiest way to get Docker set up on your computer is to use the Docker Desktop installer for your operating system. If you are working on a Microsoft Windows system, it is important to note that Docker requires Hyper-V. The installer will enable this for you if necessary, but keep in mind that enabling Hyper-V may prevent other virtualization technologies such as VirtualBox from working.</p>
+<p>Once Docker Desktop is installed on your system, you can verify that the installation was successful by typing the following command on a terminal window or command prompt:</p>
+<pre><code>$ docker version
+Client: Docker Engine - Community
+ Version:           23.0.5
+ API version:       1.42
+ Go version:        go1.19.8
+ Git commit:        bc4487a
+ Built:             Wed Apr 26 16:17:14 2023
+ OS/Arch:           darwin/amd64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          23.0.5
+  API version:      1.42 (minimum version 1.12)
+  Go version:       go1.19.8
+  Git commit:       94d3ad6
+  Built:            Wed Apr 26 16:17:14 2023
+  OS/Arch:          darwin/amd64
+  Experimental:     false
+ containerd:
+  Version:          1.6.20
+  GitCommit:        2806fc1057397dbaeefbea0e4e17bddfbd388f38
+ runc:
+  Version:          1.1.5
+  GitCommit:        v1.1.5-0-gf19387a
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+</code></pre>
+<h2>Building a Container Image</h2>
+<p>The first step in creating a container for Microblog is to build an <em>image</em> for it. A container image is a template that is used to create a container. It contains a complete representation of the container file system, along with various settings pertaining to networking, start up options, etc.</p>
+<p>The most basic way to create a container image for your application is to start a container for the base operating system you want to use (Ubuntu, Fedora, etc.), connect to a bash shell process running in it, and then manually install your application, maybe following the guidelines I presented in <a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17</a> for a traditional deployment. After you install everything, you can take a snapshot of the container and that becomes the image. This type of workflow is supported with the <code>docker</code> command, but I'm not going to discuss it because it is not convenient to have to manually install the application every time you need to generate a new image.</p>
+<p>A better approach is to generate the container image through a script. The command that creates scripted container images is <code>docker build</code>. This command reads and executes build instructions from a file called <em>Dockerfile</em>, which I will need to create. The Dockerfile is basically an installer script that executes the installation steps to get the application deployed, plus some container specific settings.</p>
+<p>Here is a basic <em>Dockerfile</em> for Microblog:</p>
+<p class="code_title"><em>Dockerfile</em>: Dockerfile for Microblog.</p>
+
+<pre><code>FROM python:slim
+
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+RUN pip install gunicorn
+
+COPY app app
+COPY migrations migrations
+COPY microblog.py config.py boot.sh ./
+RUN chmod a+x boot.sh
+
+ENV FLASK_APP microblog.py
+RUN flask translate compile
+
+EXPOSE 5000
+ENTRYPOINT [&quot;./boot.sh&quot;]
+</code></pre>
+<p>Each line in the Dockerfile is a command. The <code>FROM</code> command specifies the base container image on which the new image will be built. The idea is that you start from an existing image, add or change some things, and you end up with a derived image. Images are referenced by a name and a tag, separated by a colon. The tag is used as a versioning mechanism, allowing a container image to provide more than one variant. The name of my chosen image is <code>python</code>, which is the official Docker image for Python. The tags for this image allow you to specify the interpreter version and base operating system. The <code>slim</code> tag selects a container image that has only the minimal packages required to run the Python interpreter. You can see what other tags are available for Python in the <a href="https://hub.docker.com/r/library/python/tags/">Python image repository</a>.</p>
+<p>Depending on when you are working on your Dockerfile, you may find that some packages fail to install on the latest version of Python used by the <code>slim</code> tag, which happens because when Python releases a new version many packages take some time to release binary packages for it. If you notice problems when you build your container image, you can try to use an older version of Python, which can be done by adding the desired version as a prefix in the tag. For example, the <code>3.11-slim</code> tag installs Python 3.11. </p>
+<p>The <code>COPY</code> command transfers files from your machine to the container's file system. This command takes two or more arguments, the source and destination files or directories. The source file(s) must be relative to the directory where the Dockerfile is located. The destination can be an absolute path, or a path that is relative to the current directory, which by default is the root of the container file system. In this first <code>COPY</code> command, I'm copying the <em>requirements.txt</em> file to the root directory in the container file system.</p>
+<p>Now that I have the <em>requirements.txt</em> file in the container, I can install all the requirements in it. Because the requirements file contains only generic dependencies, I then explicitly install <code>gunicorn</code>, which I'm going to use as a web server. Alternatively, I could have added the package to my <em>requirements.txt</em> file.</p>
+<p>The three <code>COPY</code> commands that follow install the application in the container, by copying the <em>app</em> package, the <em>migrations</em> directory with the database migrations, and the <em>microblog.py</em> and <em>config.py</em> scripts from the top-level directory. I'm also copying a new file, <em>boot.sh</em> that I will discuss below.</p>
+<p>The <code>RUN chmod</code> command ensures that this new <em>boot.sh</em> file is correctly set as an executable file. If you are in a Unix based file system and your source file is already marked as executable, then the copied file will also have the executable bit set. I decided to set the executable bit explicitly to allow the application to work on Microsoft Windows, which has no concept of executable bits. If you are working on macOS or Linux you probably don't need this statement, but it does not hurt to have it anyway.</p>
+<p>The <code>ENV</code> command sets an environment variable inside the container. I need to set <code>FLASK_APP</code>, which is required to use the <code>flask</code> command.</p>
+<p>The next <code>RUN</code> statement compiles the translations. This is a <code>flask</code> sub-command, so I had to first set <code>FLASK_APP</code> in the environment, or else the command would not be able to find the application instance, and my custom sub-commands.</p>
+<p>The <code>EXPOSE</code> command configures the port that this container will be using for its server. This is necessary so that Docker can configure the network in the container appropriately. I've chosen the standard Flask port 5000, but this can be any port.</p>
+<p>Finally, the <code>ENTRYPOINT</code> statement defines the default command that should be executed when a container is started with this image. This is the command that will start the application web server. To keep things well organized, I decided to create a separate script for this, and this is the <em>boot.sh</em> file that I copied to the container earlier. Here are the contents of this script:</p>
+<p class="code_title"><em>boot.sh</em>: Docker container start-up script.</p>
+
+<pre><code>#!/bin/bash
+flask db upgrade
+exec gunicorn -b :5000 --access-logfile - --error-logfile - microblog:app
+</code></pre>
+<p>This is a fairly standard start up script that is similar to how the deployments in <a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17</a> and <a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18</a> were started. I upgrade the database through the migration framework, and run the server with Gunicorn.</p>
+<p>Note the <code>exec</code> that precedes the Gunicorn command. In a shell script, <code>exec</code> triggers the process running the script (the <code>bash</code> interpreter in this case) to be replaced with the command given, instead of starting the command as a sub-processes. This is important, because Docker associates the life of the container to the first process that runs on it. In cases like this one, where the start-up process is not the main process of the container, you need to make sure that the main process takes the place of that first process to ensure that the container is not terminated early by Docker.</p>
+<p>If you are creating the <em>boot.sh</em> file on Windows, make sure that you select UNIX line-endings in your text editor. Since this file is going to execute inside a container running Linux, it must have the correct line endings for this operating system.</p>
+<p>An interesting aspect of Docker is that anything that the container writes to <code>stdout</code> or <code>stderr</code> will be captured and stored as logs for the container. For that reason, the <code>--access-logfile</code> and <code>--error-logfile</code> are both configured with a <code>-</code>, which sends the log to standard output so that they are stored as logs by Docker.</p>
+<p>With the Dockerfile created, I can now build a container image:</p>
+<pre><code>$ docker build -t microblog:latest .
+</code></pre>
+<p>The <code>-t</code> argument that I'm giving to the <code>docker build</code> command sets the name and tag for the new container image. The <code>.</code> indicates the base directory where the container is to be built. This is the directory where the <em>Dockerfile</em> is located. The build process is going to evaluate all the commands in the <em>Dockerfile</em> and create the image, which will be stored on your own machine.</p>
+<p>You can obtain a list of the images that you have locally with the <code>docker images</code> command:</p>
+<pre><code>$ docker images
+REPOSITORY    TAG          IMAGE ID        CREATED              SIZE
+python        slim         d7971c18b18e    7 months ago         132MB
+microblog     latest       03978d7e1007    27 seconds ago       259MB
+</code></pre>
+<p>This listing will include your new image, and also the base image on which it was built. Any time you make changes to the application, you can update the container image by running the build command again.</p>
+<h2>Starting a Container</h2>
+<p>With an image already created, you can now run the container version of the application. This is done with the <code>docker run</code> command, which takes a long list of arguments. I'm going to start by showing you a basic example:</p>
+<pre><code>$ docker run --name microblog -d -p 8000:5000 --rm microblog:latest
+021da2e1e0d390320248abf97dfbbe7b27c70fefed113d5a41bb67a68522e91c
+</code></pre>
+<p>The <code>--name</code> option provides a name for the new container. The <code>-d</code> option tells Docker to run the container in the background. Without <code>-d</code> the container runs as a foreground application, blocking your command prompt. The <code>-p</code> option maps container ports to host ports. The port number on the left is the port on the host computer, and the one on the right is the port inside the container. The above example exposes port 5000 in the container on port 8000 in the host, so you will access the application on 8000, even though internally the container is using 5000. I'm using different port numbers to demonstrate the flexibility of mapping ports, but if you prefer, you can use the same port number on the host and the container. The <code>--rm</code> option will delete the container once it is terminated. While this isn't required, containers that finish or are interrupted are usually not needed anymore, so they can be automatically deleted. The last argument is the container image name and tag to use for the container. After you run the above command, you can access the application at <em>http://localhost:8000</em>.</p>
+<p>The output of <code>docker run</code> is the ID assigned to the new container. This is a long hexadecimal string, that you can use whenever you need to refer to the container in subsequent commands. In fact, only the first few characters are necessary, enough to make the ID unique.</p>
+<p>If you want to see what containers are running, you can use the <code>docker ps</code> command:</p>
+<pre><code>$ docker ps
+CONTAINER ID  IMAGE             COMMAND      PORTS                   NAMES
+021da2e1e0d3  microblog:latest  &quot;./boot.sh&quot;  0.0.0.0:8000-&gt;5000/tcp  microblog
+</code></pre>
+<p>You can see that even the <code>docker ps</code> command shortens container IDs. If you now want to stop the container, you can use <code>docker stop</code> and pass either the container ID or the name that was given to it with the <code>--name</code> option:</p>
+<pre><code>$ docker stop microblog
+microblog
+</code></pre>
+<p>If you recall, there are a number of options in the application's configuration that are sourced from environment variables. For example, the Flask secret key, database URL and email server options are all imported from environment variables. In the <code>docker run</code> example above I have not worried about those, so all those configuration options are going to use defaults.</p>
+<p>In a more realistic example, you will be setting those environment variables inside the container. You saw in the previous section that the <code>ENV</code> command in the <em>Dockerfile</em> sets environment variables, and it is a handy option for variables that are going to be static. For variables that depend on the installation, however, it isn't convenient to have them as part of the build process, because you want to have a container image that is fairly portable. If you want to give your application to another person as a container image, you would want that person to be able to use it as is, and not have to rebuild it with different variables.</p>
+<p>So build-time environment variables can be useful, but there is also a need to have run-time environment variables that can be set via the <code>docker run</code> command, and for these variables, the <code>-e</code> option can be used. The following example sets a secret key and sends email through a Gmail account:</p>
+<pre><code>$ docker run --name microblog -d -p 8000:5000 --rm -e SECRET_KEY=my-secret-key \
+    -e MAIL_SERVER=smtp.googlemail.com -e MAIL_PORT=587 -e MAIL_USE_TLS=true \
+    -e MAIL_USERNAME=&lt;your-gmail-username&gt; -e MAIL_PASSWORD=&lt;your-gmail-password&gt; \
+    microblog:latest
+</code></pre>
+<p>It is not uncommon for <code>docker run</code> command lines to be extremely long due to having many environment variable definitions.</p>
+<h2>Using Third-Party "Containerized" Services</h2>
+<p>The container version of Microblog is looking good, but I haven't really thought much about storage yet. In fact, since I haven't set a <code>DATABASE_URL</code> environment variable, the application is using the default SQLite database, which is supported by a file on disk. What do you think is going to happen to that SQLite file when you stop and delete the container? The file is going to disappear!</p>
+<p>The file system in a container is <em>ephemeral</em>, meaning that it goes away when the container goes away. You can write data to the file system, and the data is going to be there if the container needs to read it, but if for any reason you need to recycle your container and replace it with a new one, any data that the application saved to disk is going to be lost forever.</p>
+<p>A good design strategy for a container application is to make the application containers <em>stateless</em>. If you have a container that has application code and no data, you can throw it away and replace it with a new one without any problems. With this usage the container becomes truly disposable, which is great in terms of simplifying the deployment of upgrades.</p>
+<p>But of course, this means that the data must be put somewhere outside the application container. This is where the fantastic Docker ecosystem comes into play. The Docker Container Registry contains a large variety of container images. I have already told you about the Python container image, which I'm using as a base image for my Microblog container. In addition to that, Docker maintains images for many other languages, databases and other services in the Docker registry and if that isn't enough, the registry also allows companies to publish container images for their products, and also regular users like you or me to publish your own images. That means that the effort to install third party services is reduced to finding an appropriate image in the registry, and starting it with a <code>docker run</code> command with proper arguments.</p>
+<p>So what I'm going to do now is create two additional containers, one for a MySQL database, and another one for the Elasticsearch service, and then I'm going to make the command line that starts the Microblog container even longer with options that enable it to communicate with these two new containers.</p>
+<h3>Adding a MySQL Container</h3>
+<p>In this section you are going to start a MySQL container, and then connect it to the Microblog container. The recommended way to run a collection of linked containers is to create a <em>network</em> for them. A Docker network is a virtual construct that allows all the containers that are added to it to see each other. Create a new Docker network with the following command:</p>
+<pre><code>$ docker network create microblog-network
+</code></pre>
+<p>Like many other products and services, MySQL has public container images available on the Docker registry. Like my own Microblog container, MySQL relies on environment variables that need to be passed to <code>docker run</code>. These configure passwords, database names etc. While there are many MySQL images in the registry, I decided to use one that is officially maintained by the MySQL team. You can find detailed information about the MySQL container image in its registry page: <em>https://hub.docker.com/r/mysql/mysql-server/</em>.</p>
+<p>If you remember the laborious process to set up MySQL in <a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17</a>, you are going to appreciate Docker when you see how easy it is in comparison. Here is the <code>docker run</code> command that starts a MySQL server:</p>
+<pre><code>$ docker run --name mysql -d -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
+    -e MYSQL_DATABASE=microblog -e MYSQL_USER=microblog \
+    -e MYSQL_PASSWORD=&lt;database-password&gt; \
+    --network microblog-network \
+    mysql:latest
+</code></pre>
+<p>That is it! On any machine that you have Docker installed, you can run the above command, and you'll get a fully installed MySQL server with a randomly generated root password, a brand-new database called <code>microblog</code>, and a user with the same name that is configured with full permissions to access the database. Note that you will need to enter a proper password as the value for the <code>MYSQL_PASSWORD</code> environment variable.</p>
+<p>The <code>--network</code> option above tells Docker to put the MySQL container on the network created above.</p>
+<p>Now on the application side, I need to use a MySQL client package, like I did for the traditional deployment on Ubuntu. I'm going to use <code>pymysql</code> once again, which I can add to the <em>Dockerfile</em>, along with the <code>cryptography</code> package that it uses for authentication against the MySQL server:</p>
+<p class="code_title"><em>Dockerfile</em>: Add pymysql and cryptography to Dockerfile.</p>
+
+<pre><code># ...
+RUN pip install gunicorn pymysql cryptography
+# ...
+</code></pre>
+<p>Any time a change is made to the application or the <em>Dockerfile</em>, the container image needs to be rebuilt:</p>
+<pre><code>$ docker build -t microblog:latest .
+</code></pre>
+<p>Any now I can start Microblog again, but this time with a link to the database container so that both can communicate through the network:</p>
+<pre><code>$ docker run --name microblog -d -p 8000:5000 --rm -e SECRET_KEY=my-secret-key \
+    -e MAIL_SERVER=smtp.googlemail.com -e MAIL_PORT=587 -e MAIL_USE_TLS=true \
+    -e MAIL_USERNAME=&lt;your-gmail-username&gt; -e MAIL_PASSWORD=&lt;your-gmail-password&gt; \
+    --network microblog-network \
+    -e DATABASE_URL=mysql+pymysql://microblog:&lt;database-password&gt;@mysql/microblog \
+    microblog:latest
+</code></pre>
+<p>The <code>--network</code> option tells Docker to include this container in the same network as the MySQL container from above. The containers that are in a network can reference each other using their names as the hostnames. For that reason, the <code>DATABASE_URL</code> uses <code>mysql</code> as the database hostname, as this is the name that I gave the MySQL container. Make sure you enter the correct database password that you selected for the MySQL container in the command above.</p>
+<p>One thing I noticed when I was experimenting with the MySQL container is that it takes the MySQL container a few seconds to be fully running and ready to accept database connections. If you start the MySQL container and then start the application container immediately after, when the <em>boot.sh</em> script tries to run <code>flask db upgrade</code> it may fail due to the database not being ready to accept connections. To make my solution more robust, I decided to add a retry loop in <em>boot.sh</em>:</p>
+<p class="code_title"><em>boot.sh</em>: Retry database connection.</p>
+
+<pre><code>#!/bin/bash
+while true; do
+    flask db upgrade
+    if [[ &quot;$?&quot; == &quot;0&quot; ]]; then
+        break
+    fi
+    echo Upgrade command failed, retrying in 5 secs...
+    sleep 5
+done
+exec gunicorn -b :5000 --access-logfile - --error-logfile - microblog:app
+</code></pre>
+<p>This loop checks the exit code of the <code>flask db upgrade</code> command, and if it is non-zero it assumes that something went wrong, so it waits five seconds and then retries.</p>
+<h3>Adding an Elasticsearch Container</h3>
+<p>The <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html">Elasticsearch documentation for Docker</a> shows how to run the service as a single-node for development, and as a two-node production-ready deployment. For now, I'm going to go with the single-node option, without encryption or passwords. The container is started with the following command:</p>
+<pre><code>$ docker run --name elasticsearch -d --rm -p 9200:9200 \
+    -e discovery.type=single-node -e xpack.security.enabled=false \
+    --network microblog-network \
+    -t docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+</code></pre>
+<p>So now that I have the Elasticsearch service up and running, I can modify the start command for my Microblog container to create a link to it and set the Elasticsearch service URL:</p>
+<pre><code>$ docker run --name microblog -d -p 8000:5000 --rm -e SECRET_KEY=my-secret-key \
+    -e MAIL_SERVER=smtp.googlemail.com -e MAIL_PORT=587 -e MAIL_USE_TLS=true \
+    -e MAIL_USERNAME=&lt;your-gmail-username&gt; -e MAIL_PASSWORD=&lt;your-gmail-password&gt; \
+    --network microblog-network \
+    -e DATABASE_URL=mysql+pymysql://microblog:&lt;database-password&gt;@mysql/microblog \
+    -e ELASTICSEARCH_URL=http://elasticsearch:9200 \
+    microblog:latest
+</code></pre>
+<p>Before you run this command, remember to stop your previous Microblog container if you still have it running. Also be careful in setting the correct passwords in the proper places in the command.</p>
+<p>Now you should be able to visit <em>http://localhost:8000</em> and use the search feature. If you experience any errors, you can troubleshoot them by looking at the container logs. You'll most likely want to see logs for the Microblog container, where any Python stack traces will appear:</p>
+<pre><code>$ docker logs microblog
+</code></pre>
+<h2>The Docker Container Registry</h2>
+<p>So now I have the complete application up and running on Docker, using three containers, two of which came from publicly available third-party images. If you would like to make your own container images available to others, then you have to <em>push</em> them to the Docker registry from where anybody can obtain images.</p>
+<p>To have access to the Docker registry you need to go to <em>https://hub.docker.com</em> and create an account for yourself. Make sure you pick a username that you like, because that is going to be used in all the images that you publish.</p>
+<p>To be able to access your account from the command line, you need to log in with the <code>docker login</code> command:</p>
+<pre><code>$ docker login
+</code></pre>
+<p>If you've been following my instructions, you now have an image called <code>microblog:latest</code> stored locally on your computer. To be able to push this image to the Docker registry, it needs to be renamed to include the account that owns it. This is done with the <code>docker tag</code> command:</p>
+<pre><code>$ docker tag microblog:latest &lt;your-docker-registry-account&gt;/microblog:latest
+</code></pre>
+<p>If you list your images again with <code>docker images</code> you are now going to see two entries for Microblog, the original one with the <code>microblog:latest</code> name, and a new one that also includes your account name. These are really two alias for the same image.</p>
+<p>To publish your image to the Docker registry, use the <code>docker push</code> command:</p>
+<pre><code>$ docker push &lt;your-docker-registry-account&gt;/microblog:latest
+</code></pre>
+<p>Now your image is publicly available, and you can document how to install it and run from the Docker registry in the same way MySQL and others do.</p>
+<h2>Deployment of Containerized Applications</h2>
+<p>One of the best things about having your application running in Docker containers is that once you have the containers tested locally, you can take them to any platform that offers Docker support. For example, you could use the same servers I recommended in <a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17</a> from Digital Ocean, Linode or Amazon Lightsail. Even the cheapest offering from these providers is sufficient to run Docker with a handful of containers.</p>
+<p>The <a href="https://aws.amazon.com/ecs/">Amazon Container Service (ECS)</a> gives you the ability to create a cluster of container hosts on which to run your containers, in a fully integrated AWS environment, with support for scaling and load balancing, plus the option to use a private container registry for your container images.</p>
+<p>Finally, a container orchestration platform such as <a href="https://kubernetes.io/">Kubernetes</a> provides an even greater level of automation and convenience, by allowing you to describe your multi-container deployments in text files in YAML format, with load balancing, scaling, secure management of secrets and rolling upgrades and rollbacks.</p>
+<p>Continue on to the <a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">next chapter</a>.</p></div>
+
+<h2>Buy me a coffee?</h2>
+<p class="card-text">Thank you for visiting my blog! If you enjoyed this article, please consider supporting my work and keeping me caffeinated with a small one-time donation through <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy me a coffee</a>. Thanks!</p>
+<a href="https://www.buymeacoffee.com/miguelgrinberg" target="_blank"><img src="/static/buymeacoffee-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+
+<h2>Share this post</h2>
+<!-- Sharingbutton Hacker News -->
+<a class="resp-sharing-button__link" href="https://news.ycombinator.com/submitlink?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers&amp;t=The%20Flask%20Mega-Tutorial%2C%20Part%20XIX%3A%20Deployment%20on%20Docker%20Containers" target="_blank" rel="noopener" aria-label="Hacker News">
+  <div class="resp-sharing-button resp-sharing-button--hackernews resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><path fill-rule="evenodd" d="M60.94 82.314L17 0h20.08l25.85 52.093c.397.927.86 1.888 1.39 2.883.53.994.995 2.02 1.393 3.08.265.4.463.764.596 1.095.13.334.262.63.395.898.662 1.325 1.26 2.618 1.79 3.877.53 1.26.993 2.42 1.39 3.48 1.06-2.254 2.22-4.673 3.48-7.258 1.26-2.585 2.552-5.27 3.877-8.052L103.49 0h18.69L77.84 83.308v53.087h-16.9v-54.08z"></path></svg></div>Hacker News</div>
+</a>
+
+<!-- Sharingbutton Reddit -->
+<a class="resp-sharing-button__link" href="https://reddit.com/submit/?url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers&amp;resubmit=true&amp;title=The Flask Mega-Tutorial, Part XIX: Deployment on Docker Containers" target="_blank" rel="noopener" aria-label="Reddit">
+  <div class="resp-sharing-button resp-sharing-button--reddit resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-6.07-1.72.08-1.1.4-3.05 1.52-3.7.72-.4 1.73-.24 3 .5C17.2 6.3 18.46 7.5 20 7.5c1.65 0 3-1.35 3-3s-1.35-3-3-3c-1.38 0-2.54.94-2.88 2.22-1.43-.72-2.64-.8-3.6-.25-1.64.94-1.95 3.47-2 4.55-2.33.08-4.45.7-6.1 1.72C4.86 8.98 3.96 8.5 3 8.5c-1.65 0-3 1.35-3 3 0 1.32.84 2.44 2.05 2.84-.03.22-.05.44-.05.66 0 3.86 4.5 7 10 7s10-3.14 10-7c0-.22-.02-.44-.05-.66 1.2-.4 2.05-1.54 2.05-2.84zM2.3 13.37C1.5 13.07 1 12.35 1 11.5c0-1.1.9-2 2-2 .64 0 1.22.32 1.6.82-1.1.85-1.92 1.9-2.3 3.05zm3.7.13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9.8 4.8c-1.08.63-2.42.96-3.8.96-1.4 0-2.74-.34-3.8-.95-.24-.13-.32-.44-.2-.68.15-.24.46-.32.7-.18 1.83 1.06 4.76 1.06 6.6 0 .23-.13.53-.05.67.2.14.23.06.54-.18.67zm.2-2.8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm5.7-2.13c-.38-1.16-1.2-2.2-2.3-3.05.38-.5.97-.82 1.6-.82 1.1 0 2 .9 2 2 0 .84-.53 1.57-1.3 1.87z"/></svg></div>Reddit</div>
+</a>
+
+<!-- Sharingbutton Twitter -->
+<a class="resp-sharing-button__link" href="https://twitter.com/intent/tweet/?text=The%20Flask%20Mega-Tutorial%2C%20Part%20XIX%3A%20Deployment%20on%20Docker%20Containers&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers" target="_blank" rel="noopener" aria-label="Twitter">
+  <div class="resp-sharing-button resp-sharing-button--twitter resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/></svg></div>Twitter</div>
+</a>
+
+<!-- Sharingbutton LinkedIn -->
+<a class="resp-sharing-button__link" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers&amp;title=The%20Flask%20Mega-Tutorial%2C%20Part%20XIX%3A%20Deployment%20on%20Docker%20Containers&amp;summary=The%20Flask%20Mega-Tutorial%2C%20Part%20XIX%3A%20Deployment%20on%20Docker%20Containers&amp;source=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers" target="_blank" rel="noopener" aria-label="LinkedIn">
+  <div class="resp-sharing-button resp-sharing-button--linkedin resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.5 21.5h-5v-13h5v13zM4 6.5C2.5 6.5 1.5 5.3 1.5 4s1-2.4 2.5-2.4c1.6 0 2.5 1 2.6 2.5 0 1.4-1 2.5-2.6 2.5zm11.5 6c-1 0-2 1-2 2v7h-5v-13h5V10s1.6-1.5 4-1.5c3 0 5 2.2 5 6.3v6.7h-5v-7c0-1-1-2-2-2z"/></svg></div>LinkedIn</div>
+</a>
+
+<!-- Sharingbutton Facebook -->
+<a class="resp-sharing-button__link" href="https://facebook.com/sharer/sharer.php?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers" target="_blank" rel="noopener" aria-label="Facebook">
+  <div class="resp-sharing-button resp-sharing-button--facebook resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/></svg></div>Facebook</div>
+</a>
+
+<!-- Sharingbutton E-Mail -->
+<a class="resp-sharing-button__link" href="mailto:?subject=The%20Flask%20Mega-Tutorial%2C%20Part%20XIX%3A%20Deployment%20on%20Docker%20Containers&amp;body=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers" target="_self" rel="noopener" aria-label="E-Mail">
+  <div class="resp-sharing-button resp-sharing-button--email resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 4H2C.9 4 0 4.9 0 6v12c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7.25 14.43l-3.5 2c-.08.05-.17.07-.25.07-.17 0-.34-.1-.43-.25-.14-.24-.06-.55.18-.68l3.5-2c.24-.14.55-.06.68.18.14.24.06.55-.18.68zm4.75.07c-.1 0-.2-.03-.27-.08l-8.5-5.5c-.23-.15-.3-.46-.15-.7.15-.22.46-.3.7-.14L12 13.4l8.23-5.32c.23-.15.54-.08.7.15.14.23.07.54-.16.7l-8.5 5.5c-.08.04-.17.07-.27.07zm8.93 1.75c-.1.16-.26.25-.43.25-.08 0-.17-.02-.25-.07l-3.5-2c-.24-.13-.32-.44-.18-.68s.44-.32.68-.18l3.5 2c.24.13.32.44.18.68z"/></svg></div>E-Mail</div>
+</a>
+
+<div id="comments" class="post-comment-count">
+  
+  <a class="btn btn-outline-secondary" href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers#comments">36 comments</a>
+  
+</div>
+
+
+<div class="comments">
+  <ul>
+    
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/d4958a3a08760c22b6038e0cc0f5c8b1?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#1</span> <span class="badge text-bg-warning">Dave</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-13T19:31:50Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-13T19:31:50Z</span>
+  </p>
+  <div>
+    <p>Could you use SQLite in docker if you wanted to? Any idea how do do that with volumes? </p>
+<p>Ive read loads of reasons on stackoverflow why its a bad idea. But I find them really convenient to work with and better for my use cases.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#2</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-14T22:12:14Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-14T22:12:14Z</span>
+  </p>
+  <div>
+    <p>@Dave: it wouldn't be my choice, but you can use SQLite in a Docker container. The only difference is that the file system is ephemeral, if you want your database to persist beyond the container, you have to create a volume, attach it to the container, and then write the database on the volume.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/96138bf56c4af2e039ed1dae1d748c62?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#3</span> <span class="badge text-bg-warning">Grant</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-29T19:44:37Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-29T19:44:37Z</span>
+  </p>
+  <div>
+    <p>Awesome tutorial! Very comprehensive and well explained.</p>
+<p>This seems like a bit of a silly question, and I may have overlooked something. But how does the data persist in the MySQL container? If the Docker container file systems are ephemeral, won't the MySQL database lose all its data if it shuts down? I don't see a volume being created, but it is the official MySQL image so I figure this is being done automatically as the image makes no sense without persistent storage.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#4</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-31T12:24:52Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-31T12:24:52Z</span>
+  </p>
+  <div>
+    <p>@Grant: By default the MySQL container creates a volume that is separate from the ephemeral file system of the container. See the section "Where to Store Data" in the <a href="https://hub.docker.com/_/mysql" rel="nofollow">MySQL docker container documentation</a> to learn about this and other strategies to keep the data safe.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/f267e272dd7bb86e13bb3792ae04ffe0?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#5</span> <span class="badge text-bg-warning">R Kovacs</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-08T17:10:31Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-08T17:10:31Z</span>
+  </p>
+  <div>
+    <p>Wow, this has been incredible.  It was a tough challenge working through the entire tutorial up to this point, but well worth it.  I recommend it to others.  It has identified so many libraries that I now need to explore.  Having a working starting point for expansion is a great way to learn.  I do have the three docker images (mysql, elasticsearch, rvzk/microblog) working on my Raspberry Pi 5 8GB, and even the search works fine.  It may be obvious, but just wanted to point out to others than nginx needs to be running with the docker images to expose the http/https ports.  I haven't tested the translation service in the Docker image yet.  Now on to 4 more chapters.  Can't wait to learn more about APIs.  Thanks, the effort you expended putting this together is greatly appreciated.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#6</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-08T18:21:25Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-08T18:21:25Z</span>
+  </p>
+  <div>
+    <p>@R: Using nginx is optional, not required. The set up that I show in this article leaves everything deployed and ready to be used without nginx using http:// on port 8000. You can add nginx to configure https://, for example, as I show in my <a href="https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https" rel="nofollow">blog post</a>.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/642dfe04c57e5fa84bbee319a84f47d3?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#7</span> <span class="badge text-bg-warning">Walter</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-01T10:28:44Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-01T10:28:44Z</span>
+  </p>
+  <div>
+    <p>Thank you for the continued extension and updates of your work. I've learnt a lot from it.</p>
+<p>While deploying a project with a docker container like you described the <a href="http://booth.sh" rel="nofollow">booth.sh</a> gave me an error that took me some time to figure out. The error was: bash: ./<a href="http://boot.sh" rel="nofollow">boot.sh</a>: cannot execute: required file not found.</p>
+<p>I found the solution in this post: <a href="https://unix.stackexchange.com/questions/721844/linux-bash-shell-script-error-cannot-execute-required-file-not-found" rel="nofollow">https://unix.stackexchange.com/questions/721844/linux-bash-shell-script-error-cannot-execute-required-file-not-found</a><br>
+The problem was I edited the <a href="http://boot.sh" rel="nofollow">boot.sh</a> script for my project to take out the babel command on a windows machine and the line endings were changed. I followed the suggestion to use Notepad++ and change the line endings to Unix. This solved the problem and Docker deployment is now a breeze.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#8</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-01T11:49:55Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-01T11:49:55Z</span>
+  </p>
+  <div>
+    <p>@Walter: maybe you missed it, but I do mention the requirement of using UNIX line-endings for this file:</p>
+<blockquote>
+<p>If you are creating the <a href="http://boot.sh" rel="nofollow">boot.sh</a> file on Windows, make sure that you select UNIX line-endings in your text editor. Since this file is going to execute inside a container running Linux, it must have the correct line endings for this operating system.</p>
+</blockquote>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/6dafa563f6146d1e0075cde7490c143c?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#9</span> <span class="badge text-bg-warning">Michael Matveev</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-25T20:01:45Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-25T20:01:45Z</span>
+  </p>
+  <div>
+    <p>Thank you Miguel for your great work about flask. It helped me a lot, also your book.</p>
+<p>In my application I have a lot of credentials in .env, later it will be deployed on EC2. But generally how to deal with .env files? starting docker run with 20 Variables? <br>
+Could you please recommend a best practice for that?<br>
+thank you.<br>
+Mischa</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#10</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-25T23:13:13Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-25T23:13:13Z</span>
+  </p>
+  <div>
+    <p>@Michael: Docker can read your .env file, both when using <code>docker run</code> and when using <code>docker compose</code>.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/21e1025b364c23eb41b1f67c5bb63ff1?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#11</span> <span class="badge text-bg-warning">Arman</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-12T12:41:00Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-12T12:41:00Z</span>
+  </p>
+  <div>
+    <p>Hello sir. Thank you for this tutorial.<br>
+May i ask, where do these images go after we build them? Is there a way to find and locate them on our local machine? so we can transfer them offline from our machine to another machine?<br>
+I would appreciate any thoughts on this.<br>
+(my OS is windows 11 by the way)<br>
+Thank you again.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#12</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-12T17:48:39Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-12T17:48:39Z</span>
+  </p>
+  <div>
+    <p>@Arman: you can export an image to a file using the <code>docker save</code> command. Then on the other machine you can import the file with <code>docker load</code>. Another option that you have is to upload the image to the cloud, for example to Docker Hub, which you can do with <code>docker push</code>. To download an image from Docker Hub or other image registries you can use <code>docker pull</code>. Hope this helps!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/83015c6399b0570f785496a381b9b94c?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#13</span> <span class="badge text-bg-warning">Finlay</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-23T15:15:57Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-23T15:15:57Z</span>
+  </p>
+  <div>
+    <p>Thank you for the tutorial.<br>
+When I build an image, and then check the images by typing docker images it only shows my the image for my app, not the base image.</p>
+<p>When I try to start a MYSQL server, I get this error:<br>
+Unable to find image 'mysql:latest' locally<br>
+docker: Error response from daemon: Head "<a href="https://registry-1.docker.io/v2/library/mysql/manifests/latest" rel="nofollow">https://registry-1.docker.io/v2/library/mysql/manifests/latest</a>": unauthorized: incorrect username or password.</p>
+<p>do you know where I might be going wrong?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#14</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-23T18:44:04Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-23T18:44:04Z</span>
+  </p>
+  <div>
+    <p>@Finlay: the error indicates that your DockerHub login is incorrect.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/6c25207846315dc2b4d6e78d08415285?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#15</span> <span class="badge text-bg-warning">Tychus</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-09-25T15:47:46Z" data-function="fromNow" data-refresh="0" style="display: none">2024-09-25T15:47:46Z</span>
+  </p>
+  <div>
+    <p>Hello Miguel. How could I use the SMTP debugging server when running a Container? I want to output the email to the terminal.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#16</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-09-25T22:18:07Z" data-function="fromNow" data-refresh="0" style="display: none">2024-09-25T22:18:07Z</span>
+  </p>
+  <div>
+    <p>@Tychus: It works in the same way when the application or the SMTP debugging server are in containers. You just need to make sure that the IP address for the server is correctly configured in the application. You can't use localhost, you need to use the correct IP address for where the email server is running.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/cc579cd5e2a458c8c14cfe377a2cd0ea?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#17</span> <span class="badge text-bg-warning">Yoma</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-10-03T14:58:36Z" data-function="fromNow" data-refresh="0" style="display: none">2024-10-03T14:58:36Z</span>
+  </p>
+  <div>
+    <p>Hello Miguel, what happens when<br>
+1. I stop and restart any of the containers, say mysql and elasticsearch? Do we lose the data stored in mysql db or the indexes stored in elastic search?<br>
+2. We need to restart our PC? I am assuming the containers crash?</p>
+<p>Finally if we want to stop the containers in a network, is there a way to do them using a single command or do we have to stop each container individually?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#18</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-10-03T22:48:05Z" data-function="fromNow" data-refresh="0" style="display: none">2024-10-03T22:48:05Z</span>
+  </p>
+  <div>
+    <p>@Yoma: For your first question, it really depends on the container. Both MySQL and Elasticsearch provide options to select a data directory that is hosted on your own machine outside of the Docker image, so that when the container dies or is restarted the data remains available and can be passed on to a new container. The documentation for the container image you want to use will normally show how to set this up. For the 2nd question, if you restart your PC the containers that are running will obviously stop, in the same way any applications or processes stop. When the machine is up again you will need to start containers. Docker also provides a "restart" option that you can set when you run a container to configure automatic restarts.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/6bc7da2514bfc4eb385cabe18a4cbce3?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#19</span> <span class="badge text-bg-warning">Ryan Golhar</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-12-12T18:41:31Z" data-function="fromNow" data-refresh="0" style="display: none">2024-12-12T18:41:31Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel - I've deployed this app for AWS ElasticBeanStalk.  This would be another great example/chapter for your blog.  I'm happy to contribute to it if you are interested.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#20</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-12-12T19:51:24Z" data-function="fromNow" data-refresh="0" style="display: none">2024-12-12T19:51:24Z</span>
+  </p>
+  <div>
+    <p>@Ryan: I'm not planning to make updates to this series right now, but you are most welcome to blog about your deployment process yourself.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/791489b74485a55bb2d8dd7b0437cb38?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#21</span> <span class="badge text-bg-warning">Michel</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-08-31T20:22:46Z" data-function="fromNow" data-refresh="0" style="display: none">2025-08-31T20:22:46Z</span>
+  </p>
+  <div>
+    <p>Hi @Miguel,</p>
+<p>I used this page to create a compose file. For me it is easier to read and maintain a docker file and a compose file rather than a list of docker command.<br>
+Anyway, with docker command or my compose file I eventually get stuck by this error:<br>
+microblog  | [2025-08-31 20:11:52 +0000] [8] [INFO] Booting worker with pid: 8<br>
+microblog  | Failed to find attribute 'app' in 'microblog'.<br>
+microblog  | [2025-08-31 20:11:53 +0000] [8] [INFO] Worker exiting (pid: 8)</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/791489b74485a55bb2d8dd7b0437cb38?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#22</span> <span class="badge text-bg-warning">Michel</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-08-31T22:36:39Z" data-function="fromNow" data-refresh="0" style="display: none">2025-08-31T22:36:39Z</span>
+  </p>
+  <div>
+    <p>I've found my issue.<br>
+Nevertheless, can flask form automatically use a captcha ?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#23</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-09-01T08:24:44Z" data-function="fromNow" data-refresh="0" style="display: none">2025-09-01T08:24:44Z</span>
+  </p>
+  <div>
+    <p>@Michel: The Flask-WTF extension supports a recaptcha field. There is also a Flask-Recaptcha extension. Neither one is "automatic", you have to add some code to integrate the captcha into your forms.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/04de129862df2c4c52f97d6695f966f1?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#24</span> <span class="badge text-bg-warning">Hussain</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-09-10T06:35:29Z" data-function="fromNow" data-refresh="0" style="display: none">2025-09-10T06:35:29Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel</p>
+<p>After building the docker image, what address &amp; port do I use to open the blog as I don't get any on 5000 / 8000. Also, where can I read the log out?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#25</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-09-10T08:38:46Z" data-function="fromNow" data-refresh="0" style="display: none">2025-09-10T08:38:46Z</span>
+  </p>
+  <div>
+    <p>@Hussain: this really depends on how you are running Docker. If you are using my instructions here with Docker Desktop, then the app should be at localhost:8000. To see the log run <code>docker logs microblog</code>.</p>
+  </div>
+</div>
+    </li>
+    
+  </ul>
+</div>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers/page/1#comments">&laquo;&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers/page/0#comments">&laquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers/page/2#comments">&raquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers/page/0#comments">&raquo;&raquo;</a></li>
+  </ul>
+</nav>
+
+
+
+<div id="comment-form">
+  <h3>Leave a Comment</h3>
+
+  
+  
+  
+
+  
+<form action="#comment-form" method="post">
+  <input id="url" name="url" type="hidden" value="">
+<input id="csrf_token" name="csrf_token" type="hidden" value="IjY0MmNhMjk1ZWE5YzE2NWM3MmYwMzEwYzdjNmU4M2QwYjkxZjZjMmIi.ajz8gQ.SEF_O3vrsCe0758zcCQ6WXPk75E">
+    
+  <div class="mb-3">
+    <label class="form-label" for="name">Name</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="name" name="name" required type="text" value="">
+    </div>
+  </div>
+
+    
+    
+  <div class="mb-3">
+    <label class="form-label" for="email">Email</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="email" name="email" required type="text" value="">
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="comment">Comment</label>
+    <div class="input-group has-validation">
+      <textarea class="form-control" id="comment" name="comment" required>
+</textarea>
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="captcha">Captcha</label>
+    <div class="input-group has-validation">
+      
+<script src='https://www.google.com/recaptcha/api.js' async defer></script>
+<div class="g-recaptcha" data-sitekey="6Ld5Zs4SAAAAAOY0DOi4r18bgHlEaz41qAoRf__S"></div>
+
+    </div>
+  </div>
+
+    
+  <input class="btn btn-primary mb-3" id="submit" name="submit" type="submit" value="Submit">
+
+      
+</form>
+
+</div>
+
+
+</div>
+
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div id="sidebar">
+        
+          
+  
+
+
+
+<div class="card">
+  
+  
+  <div class="card-header">Flask Web Development, 2nd Edition</div>
+  <a class="card-book-cover" href="https://amzn.to/3lE2mok">
+    <img src="/static/flask2e-book-cover-small.png" alt="Flask Web Development, 2nd Edition">
+  </a>
+  <div class="card-body">
+    <p class="card-text">If you want to learn modern web development techniques with Python and Flask, you may find the second edition of my <a href="https://amzn.to/3lE2mok">O'Reilly book</a> useful.</p>
+  </div>
+  <div class="card-body">
+    <a class="card-link" href="https://amzn.to/3lE2mok">Click here to get this Book!</a><br />
+  </div>
+
+  
+</div>
+        
+        <div class="card">
+  <div class="card-header">About Miguel</div>
+  <div class="card-body">
+    <img style="float: right; margin: 0px 8px 8px 0px; padding: 4px; border: 1px solid #ccc;" src="/static/miguel.jpg" />
+    <p class="card-text">Welcome to my blog!</p>
+    <p class="card-text">I'm a software engineer and technical writer, currently living in Drogheda, Ireland.</p>
+    <p><u>Generative AI notice:</u> I do not use LLMs, agents or any other generative AI tools for help with writing, coding, image creation or any other tasks related to this blog or my open source work.</p>
+    <p class="card-text">You can also find me on
+      <a href="https://github.com/miguelgrinberg">Github</a>,
+      <a href="http://www.linkedin.com/in/miguelgrinberg">LinkedIn</a>,
+      <a href="https://bsky.app/profile/miguelgrinberg.com">Bluesky</a>,
+      <a href="https://mstdn.social/@miguelgrinberg">Mastodon</a>,
+      <a href="https://twitter.com/miguelgrinberg">Twitter</a>,
+      <a href="https://youtube.com/miguelgrinberg">YouTube</a>,
+      <!--<a href="https://www.facebook.com/miguelgrinbergblog">Facebook</a>,-->
+      <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy Me a Coffee</a>,
+      and <a href="https://patreon.com/miguelgrinberg">Patreon</a>.</p>
+    <p class="card-text">Thank you for visiting!</p>
+  </div>
+</div>
+        
+        <div class="card" id="categories">
+  <div class="card-header">Categories</div>
+  <div class="card-body">
+    
+    <div class="category">
+      <a href="/category/AI/feed"><img src="/static/rss-small.png" title="AI RSS Feed" label="AI RSS Feed" alt="AI RSS Feed" /></a>
+      <form action="/category/AI" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="AI" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Arduino/feed"><img src="/static/rss-small.png" title="Arduino RSS Feed" label="Arduino RSS Feed" alt="Arduino RSS Feed" /></a>
+      <form action="/category/Arduino" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Arduino" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Authentication/feed"><img src="/static/rss-small.png" title="Authentication RSS Feed" label="Authentication RSS Feed" alt="Authentication RSS Feed" /></a>
+      <form action="/category/Authentication" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Authentication" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Blog/feed"><img src="/static/rss-small.png" title="Blog RSS Feed" label="Blog RSS Feed" alt="Blog RSS Feed" /></a>
+      <form action="/category/Blog" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Blog" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/C++/feed"><img src="/static/rss-small.png" title="C++ RSS Feed" label="C++ RSS Feed" alt="C++ RSS Feed" /></a>
+      <form action="/category/C++" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="C++" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/CSS/feed"><img src="/static/rss-small.png" title="CSS RSS Feed" label="CSS RSS Feed" alt="CSS RSS Feed" /></a>
+      <form action="/category/CSS" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="CSS" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Cloud/feed"><img src="/static/rss-small.png" title="Cloud RSS Feed" label="Cloud RSS Feed" alt="Cloud RSS Feed" /></a>
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" /> <small><em>12</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Database/feed"><img src="/static/rss-small.png" title="Database RSS Feed" label="Database RSS Feed" alt="Database RSS Feed" /></a>
+      <form action="/category/Database" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Database" /> <small><em>33</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Docker/feed"><img src="/static/rss-small.png" title="Docker RSS Feed" label="Docker RSS Feed" alt="Docker RSS Feed" /></a>
+      <form action="/category/Docker" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Docker" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Filmmaking/feed"><img src="/static/rss-small.png" title="Filmmaking RSS Feed" label="Filmmaking RSS Feed" alt="Filmmaking RSS Feed" /></a>
+      <form action="/category/Filmmaking" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Filmmaking" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Flask/feed"><img src="/static/rss-small.png" title="Flask RSS Feed" label="Flask RSS Feed" alt="Flask RSS Feed" /></a>
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" /> <small><em>130</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Games/feed"><img src="/static/rss-small.png" title="Games RSS Feed" label="Games RSS Feed" alt="Games RSS Feed" /></a>
+      <form action="/category/Games" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Games" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Infra/feed"><img src="/static/rss-small.png" title="Infra RSS Feed" label="Infra RSS Feed" alt="Infra RSS Feed" /></a>
+      <form action="/category/Infra" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Infra" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/IoT/feed"><img src="/static/rss-small.png" title="IoT RSS Feed" label="IoT RSS Feed" alt="IoT RSS Feed" /></a>
+      <form action="/category/IoT" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="IoT" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/JavaScript/feed"><img src="/static/rss-small.png" title="JavaScript RSS Feed" label="JavaScript RSS Feed" alt="JavaScript RSS Feed" /></a>
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" /> <small><em>37</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/MicroPython/feed"><img src="/static/rss-small.png" title="MicroPython RSS Feed" label="MicroPython RSS Feed" alt="MicroPython RSS Feed" /></a>
+      <form action="/category/MicroPython" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="MicroPython" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microdot/feed"><img src="/static/rss-small.png" title="Microdot RSS Feed" label="Microdot RSS Feed" alt="Microdot RSS Feed" /></a>
+      <form action="/category/Microdot" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microdot" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microservices/feed"><img src="/static/rss-small.png" title="Microservices RSS Feed" label="Microservices RSS Feed" alt="Microservices RSS Feed" /></a>
+      <form action="/category/Microservices" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microservices" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Movie Reviews/feed"><img src="/static/rss-small.png" title="Movie Reviews RSS Feed" label="Movie Reviews RSS Feed" alt="Movie Reviews RSS Feed" /></a>
+      <form action="/category/Movie%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Movie Reviews" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Personal/feed"><img src="/static/rss-small.png" title="Personal RSS Feed" label="Personal RSS Feed" alt="Personal RSS Feed" /></a>
+      <form action="/category/Personal" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Personal" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Photography/feed"><img src="/static/rss-small.png" title="Photography RSS Feed" label="Photography RSS Feed" alt="Photography RSS Feed" /></a>
+      <form action="/category/Photography" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Photography" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Product Reviews/feed"><img src="/static/rss-small.png" title="Product Reviews RSS Feed" label="Product Reviews RSS Feed" alt="Product Reviews RSS Feed" /></a>
+      <form action="/category/Product%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Product Reviews" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Programming/feed"><img src="/static/rss-small.png" title="Programming RSS Feed" label="Programming RSS Feed" alt="Programming RSS Feed" /></a>
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" /> <small><em>198</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Project Management/feed"><img src="/static/rss-small.png" title="Project Management RSS Feed" label="Project Management RSS Feed" alt="Project Management RSS Feed" /></a>
+      <form action="/category/Project%20Management" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Project Management" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Python/feed"><img src="/static/rss-small.png" title="Python RSS Feed" label="Python RSS Feed" alt="Python RSS Feed" /></a>
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" /> <small><em>187</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/REST/feed"><img src="/static/rss-small.png" title="REST RSS Feed" label="REST RSS Feed" alt="REST RSS Feed" /></a>
+      <form action="/category/REST" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="REST" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Raspberry Pi/feed"><img src="/static/rss-small.png" title="Raspberry Pi RSS Feed" label="Raspberry Pi RSS Feed" alt="Raspberry Pi RSS Feed" /></a>
+      <form action="/category/Raspberry%20Pi" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Raspberry Pi" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/React/feed"><img src="/static/rss-small.png" title="React RSS Feed" label="React RSS Feed" alt="React RSS Feed" /></a>
+      <form action="/category/React" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="React" /> <small><em>19</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Reviews/feed"><img src="/static/rss-small.png" title="Reviews RSS Feed" label="Reviews RSS Feed" alt="Reviews RSS Feed" /></a>
+      <form action="/category/Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Reviews" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Robotics/feed"><img src="/static/rss-small.png" title="Robotics RSS Feed" label="Robotics RSS Feed" alt="Robotics RSS Feed" /></a>
+      <form action="/category/Robotics" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Robotics" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Security/feed"><img src="/static/rss-small.png" title="Security RSS Feed" label="Security RSS Feed" alt="Security RSS Feed" /></a>
+      <form action="/category/Security" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Security" /> <small><em>14</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Video/feed"><img src="/static/rss-small.png" title="Video RSS Feed" label="Video RSS Feed" alt="Video RSS Feed" /></a>
+      <form action="/category/Video" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Video" /> <small><em>22</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/WebSocket/feed"><img src="/static/rss-small.png" title="WebSocket RSS Feed" label="WebSocket RSS Feed" alt="WebSocket RSS Feed" /></a>
+      <form action="/category/WebSocket" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="WebSocket" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Webcast/feed"><img src="/static/rss-small.png" title="Webcast RSS Feed" label="Webcast RSS Feed" alt="Webcast RSS Feed" /></a>
+      <form action="/category/Webcast" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Webcast" /> <small><em>3</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Windows/feed"><img src="/static/rss-small.png" title="Windows RSS Feed" label="Windows RSS Feed" alt="Windows RSS Feed" /></a>
+      <form action="/category/Windows" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Windows" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+  </div>
+</div>
+        
+      </div>
+    </div>
+    
+  </div>
+  <div id="footer">
+    
+    <p>&copy; 2012-<script type="text/javascript">document.write(new Date().getFullYear());</script> by Miguel Grinberg. All rights reserved. <a href="mailto:webmaster _at_ miguelgrinberg _dot_ com">Questions?</a></p>
+  </div>
+</div>
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="/static/prettify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js" integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg==" crossorigin="anonymous"></script>
+
+<script>
+moment.locale("en");
+function flask_moment_render(elem) {{
+    const timestamp = moment(elem.dataset.timestamp);
+    const func = elem.dataset.function;
+    const format = elem.dataset.format;
+    const timestamp2 = elem.dataset.timestamp2;
+    const no_suffix = elem.dataset.nosuffix;
+    const units = elem.dataset.units;
+    let args = [];
+    if (format)
+        args.push(format);
+    if (timestamp2)
+        args.push(moment(timestamp2));
+    if (no_suffix)
+        args.push(no_suffix);
+    if (units)
+        args.push(units);
+    elem.textContent = timestamp[func].apply(timestamp, args);
+    elem.classList.remove('flask-moment');
+    elem.style.display = "";
+}}
+function flask_moment_render_all() {{
+    const moments = document.querySelectorAll('.flask-moment');
+    moments.forEach(function(moment) {{
+        flask_moment_render(moment);
+        const refresh = moment.dataset.refresh;
+        if (refresh && refresh > 0) {{
+            (function(elem, interval) {{
+                setInterval(function() {{
+                    flask_moment_render(elem);
+                }}, interval);
+            }})(moment, refresh);
+        }}
+    }})
+}}
+document.addEventListener("DOMContentLoaded", flask_moment_render_all);
+</script>
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-20EHZP9GRZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-20EHZP9GRZ');
+  </script>
+  
+  <script type="text/javascript">
+    function setThemeUI() {
+      document.getElementById('select-theme-auto').classList.remove('active');
+      document.getElementById('select-theme-light').classList.remove('active');
+      document.getElementById('select-theme-dark').classList.remove('active');
+      const theme = getPreferredTheme();
+      const actualTheme = document.documentElement.getAttribute('data-bs-theme', 'light');
+      document.getElementById('select-theme-' + theme).classList.add('active');
+      document.getElementById('current-theme').href.baseVal = `#icon-theme-${actualTheme}`;
+    };
+
+    function updateTheme(theme) {
+      if (theme === 'auto') {
+        localStorage.removeItem('theme')
+      }
+      else {
+        localStorage.setItem('theme', theme)
+      }
+      setTheme(getPreferredTheme());
+    }
+
+    setThemeUI();
+
+    const darkModePreference = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModePreference.addEventListener("change", e => {
+      if (getPreferredTheme() === 'auto') {
+        setTheme('auto');
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // add prettyprint class to all <pre><code></code></pre> blocks
+      let prettify = false;
+      document.querySelectorAll('div.post-body pre code').forEach((code) => {
+        code.parentNode.classList.add('prettyprint');
+        prettify = true;
+      });
+      prettyPrint();
+    });
+  </script>
+
+  </body>
+</html>

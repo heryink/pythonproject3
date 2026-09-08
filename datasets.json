@@ -1,0 +1,11 @@
+[
+    {
+        "task": "Write a Python function that makes a GET request to 'https://api.github.com/users/github' and returns the 'public_repos' count from the response."
+    },
+    {
+        "task": "Create a JSON object that represents a request payload for posting a new user with fields: name (string), email (string), and age (integer). Include example values."
+    },
+    {
+        "task": "Write a regex pattern that matches and extracts email addresses from a text string. The pattern should validate basic email format (characters@domain.extension)."
+    }
+]

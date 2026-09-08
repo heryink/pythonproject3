@@ -1,0 +1,1872 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    
+  <script type="text/javascript">
+    function getPreferredTheme() {
+      const storedTheme = localStorage.getItem('theme')
+      if (storedTheme) {
+        return storedTheme
+      }
+      return 'auto';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    };
+
+    setTheme(getPreferredTheme());
+  </script>
+  
+    <title>
+  
+    The Flask Mega-Tutorial, Part XXIII: Application Programming Interfaces (APIs) - miguelgrinberg.com
+  
+</title>
+  
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="miguelgrinberg.com">
+  <meta name="copyright" content="Copyright (c) 2012-2024 Miguel Grinberg">
+  <meta name="author" content="Miguel Grinberg">
+  
+  <meta name="keywords" content="flask, python, programming, rest, apis, rest api, http">
+  
+  
+  <link rel="canonical" href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">
+  
+
+  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+
+  <link href="/static/tomorrow.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/tomorrow-night.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/social.css" rel="stylesheet" type="text/css" />
+  <link href="/static/style_20260305.css" rel="stylesheet" type="text/css" />
+
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  <link rel="alternate" type="application/rss+xml" href="/feed" title="miguelgrinberg.com RSS feed">
+
+    <meta property="og:title" content="The Flask Mega-Tutorial, Part XXIII: Application Programming Interfaces (APIs)">
+    <meta property="og:description" content="This is the twenty third and last installment of the Flask Mega-Tutorial series, in which I&#39;m going to tell you how to extend microblog with an application programming interface (or API) that clients…">
+    <meta property="og:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis.jpg">
+    <meta property="og:url" content="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">
+    <meta name="twitter:title" content="The Flask Mega-Tutorial, Part XXIII: Application Programming Interfaces (APIs)">
+    <meta name="twitter:description" content="This is the twenty third and last installment of the Flask Mega-Tutorial series, in which I&#39;m going to tell you how to extend microblog with an application programming interface (or API) that clients…">
+    <meta name="twitter:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@miguelgrinberg">
+
+  </head>
+  <body>
+    <svg style="display: none" version="2.0">
+      <defs>
+        <symbol id="icon-theme-auto" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-circle-half" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/>
+        </symbol>
+        <symbol id="icon-theme-light" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </symbol>
+        <symbol id="icon-theme-dark" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-moon-stars-fill" viewBox="0 0 16 16">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+        </symbol>
+      </defs>
+    </svg>
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/index">miguelgrinberg.com</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/index">Home</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/my-courses-and-books">My Courses and Books</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/hire-me">Consulting</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/about-me">About Me</a></li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <svg width="20" height="20" version="2.0"><use id="current-theme" href="#icon-theme-light"></svg>
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a id="select-theme-light" class="dropdown-item" href="javascript:updateTheme('light'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-light"></svg>&nbsp; Light Mode
+              </a>
+            </li>
+            <li>
+              <a id="select-theme-dark" class="dropdown-item" href="javascript:updateTheme('dark'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-dark"></svg>&nbsp; Dark Mode
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a id="select-theme-auto" class="dropdown-item" href="javascript:updateTheme('auto'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-auto"></svg>&nbsp; System Default
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item social-icons">
+          <a href="http://github.com/miguelgrinberg"><img src="/static/social/github.png" alt="GitHub" title="GitHub" /></a>
+          <a href="http://www.linkedin.com/in/miguelgrinberg"><img src="/static/social/linkedin.png" alt="LinkedIn" title="LinkedIn" /></a>
+          <a href="https://bsky.app/profile/miguelgrinberg.com"><img src="/static/social/bluesky.png" alt="Bluesky" title="Bluesky" /></a>
+          <a rel="me" href="https://mstdn.social/@miguelgrinberg"><img src="/static/social/mastodon.png" alt="Mastodon" title="Mastodon" /></a>
+          <a href="https://twitter.com/miguelgrinberg"><img src="/static/social/twitter.png" alt="Twitter" title="Twitter" /></a>
+          <a href="https://youtube.com/miguelgrinberg"><img src="/static/social/youtube.png" alt="YouTube" title="YouTube" /></a>
+          <a href="https://www.buymeacoffee.com/miguelgrinberg"><img src="/static/social/buymeacoffee.png" alt="Buy Me a Coffee" title="Buy Me a Coffee" /></a>
+          <a href="https://patreon.com/miguelgrinberg"><img src="/static/social/patreon.png" alt="Patreon" title="Patreon" /></a>
+          <a type="application/rss+xml" href="/feed"><img src="/static/social/rss.png" alt="RSS Feed" title="RSS Feed" /></a>
+          <!--<a href="https://www.facebook.com/miguelgrinbergblog"><img src="/static/social/facebook.png" alt="Facebook" title="Facebook" /></a>-->
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <div id="main">
+        
+        
+        
+        
+        
+
+<div class="post">
+
+<div class="post-header">
+  <h1><a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">The Flask Mega-Tutorial, Part XXIII: Application Programming Interfaces (APIs)</a></h1>
+  <h2>
+    Posted by
+    <form action="/author/Miguel%20Grinberg" method="POST">
+      <input type="submit" class="btn btn-danger btn-sm" value="Miguel Grinberg" />
+    </form>
+    on
+    <button class="btn btn-secondary btn-sm" disabled><span class="flask-moment" data-timestamp="2023-12-03T10:40:21Z" data-function="format" data-format="LL" data-refresh="0" style="display: none">2023-12-03T10:40:21Z</span></button>
+    under
+    
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" />
+      </form>
+    
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" />
+      </form>
+    
+      <form action="/category/REST" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="REST" />
+      </form>
+    
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" />
+      </form>
+    
+      <form action="/category/Authentication" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Authentication" />
+      </form>
+    
+    
+  </h2>
+</div>
+<div class="post-body"><p>This is the twenty third and last installment of the Flask Mega-Tutorial series, in which I'm going to tell you how to extend microblog with an application programming interface (or API) that clients can use to work with the application in a more direct way than the traditional web browser workflow.</p>
+<p>You are reading the 2024 edition of the Flask Mega-Tutorial. The complete course is also available to order in e-book and paperback formats from <a href="https://amzn.to/3ahVnPN">Amazon</a>. Thank you for your support!</p>
+<p>If you are looking for the 2018 edition of this course, you can find it <a href="/post/the-flask-mega-tutorial-part-i-hello-world-2018">here</a>.</p>
+<p>For your reference, here is the complete list of articles in this series:</p>
+<ul>
+<li><a href="/post/the-flask-mega-tutorial-part-i-hello-world">Chapter 1:  Hello, World!</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ii-templates">Chapter 2:  Templates</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iii-web-forms">Chapter 3:  Web Forms</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iv-database">Chapter 4:  Database</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5:  User Logins</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vi-profile-page-and-avatars">Chapter 6:  Profile Page and Avatars</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7:  Error Handling</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-viii-followers">Chapter 8:  Followers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ix-pagination">Chapter 9:  Pagination</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-x-email-support">Chapter 10:  Email Support</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xi-facelift">Chapter 11:  Facelift</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xii-dates-and-times">Chapter 12:  Dates and Times</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiii-i18n-and-l10n">Chapter 13:  I18n and L10n</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiv-ajax">Chapter 14:  Ajax</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15:  A Better Application Structure</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16:  Full-Text Search</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17:  Deployment on Linux</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18:  Deployment on Heroku</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">Chapter 19:  Deployment on Docker Containers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">Chapter 20:  Some JavaScript Magic</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21:  User Notifications</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">Chapter 22:  Background Jobs</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">Chapter 23:  Application Programming Interfaces (APIs)</a> (this article)</li>
+</ul>
+<p>All the functionality that I built so far for this application is meant for one specific type of client: the web browser. But what about other types of clients? If I wanted to build an Android or iOS app, for example, I have two main ways to go about it. The easiest solution would be to build a simple app with just a web view component that fills the entire screen, where the Microblog website is loaded, but this would offer little benefit over opening the application in the device's web browser. A better solution (though much more laborious) would be to build a native app, but how can this app interact with a server that only returns HTML pages?</p>
+<p>This is the problem area where Application Programming Interfaces (or APIs) can help. An API is a collection of HTTP routes that are designed as low-level entry points into the application. Instead of defining routes and view functions that return HTML to be consumed by web browsers, APIs allow the client to work directly with the application's <em>resources</em>, leaving the decision of how to present the information to the user entirely to the client. For example, an API in Microblog could provide user and blog post information to the client, and it could also allow the user to edit an existing blog post, but only at the data level, without mixing this logic with HTML.</p>
+<p>If you study all the routes currently defined in the application, you will notice that there are a few that could fit the definition of API I used above. Did you find them? I'm talking about the few routes that return JSON, such as the <em>/translate</em> route defined in <a href="/post/the-flask-mega-tutorial-part-xiv-ajax">Chapter 14</a>. This is a route that takes a text, source and destination languages, all given in JSON format in a <code>POST</code> request. The response to this request is the translation of that text, also in JSON format. The server only returns the requested information, leaving the client with the responsibility to present this information to the user.</p>
+<p>While the JSON routes in the application have an API "feel" to them, they were designed to support the web application running in the browser. Consider that if a smartphone app wanted to use these routes, it would not be able to because they require a logged in user, and the log in can only happen through an HTML form. In this chapter I'm going to show how to build APIs that do not rely on the web browser and make no assumptions about what kind of client connects to them.</p>
+<p><em>The GitHub links for this chapter are: <a href="https://github.com/miguelgrinberg/microblog/tree/v0.23">Browse</a>, <a href="https://github.com/miguelgrinberg/microblog/archive/v0.23.zip">Zip</a>, <a href="https://github.com/miguelgrinberg/microblog/compare/v0.22...v0.23">Diff</a>.</em></p>
+<h2>REST as a Foundation of API Design</h2>
+<p>Some people may strongly disagree with my statement above that <em>/translate</em> and the other JSON routes are API routes. Others may agree, with the disclaimer that they consider them a badly designed API. So what are the characteristics of a well designed API, and why aren't the JSON routes in that category?</p>
+<p>You may have heard the term <a href="https://en.wikipedia.org/wiki/Representational_state_transfer">REST API</a>. REST, which stands for Representational State Transfer, is an architecture proposed by Dr. Roy Fielding in his <a href="http://www.ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm">doctoral dissertation</a>. In his work, Dr. Fielding presents the six defining characteristics of REST in a fairly abstract and generic way.</p>
+<p>There is no authoritative specification for REST besides Dr. Fielding's dissertation, and this leaves a lot of details to be interpreted by the reader. The topic of whether a given API complies with REST or not is often the source of heated debates between REST "purists", who believe that a REST API must observe all six characteristics and do so in a very specific way, versus the REST "pragmatists", who take the ideas presented by Dr. Fielding in his dissertation as guidelines or recommendations. Dr. Fielding himself sides with the purist camp, and has provided some additional insight into his vision in blog posts and online comments.</p>
+<p>The vast majority of APIs currently implemented adhere to a "pragmatic" REST implementation. This includes most of the APIs from the "big players", such as Facebook, GitHub, Twitter, etc. There are very few public APIs that are unanimously considered to be pure REST, because most APIs miss certain implementation details that purists consider must-haves. In spite of the strict views Dr. Fielding and other REST purists have on what is or isn't a REST API, it is common in the software industry to refer to REST in the pragmatic sense.</p>
+<p>To give you an idea of what's in the REST dissertation, the following sections describe the six principles enumerated by Dr. Fielding.</p>
+<h3>Client-Server</h3>
+<p>The client-server principle is fairly straightforward, as it simply states that in a REST API the roles of the client and the server should be clearly differentiated. In practice, this means that the client and the server are in separate processes that communicate over a transport, which in the majority of the cases is the HTTP protocol over a TCP network.</p>
+<h3>Layered System</h3>
+<p>The layered system principle says that when a client needs to communicate with a server, it may end up connected to an intermediary and not the actual server. The idea is that for the client, there should be absolutely no difference in the way it sends requests if not connected directly to the server, in fact, it may not even know if it is connected to the target server or not. Likewise, this principle states that a server may receive client requests from an intermediary and not the client directly, so it must never assume that the other side of the connection is the client.</p>
+<p>This is an important feature of REST, because being able to add intermediary nodes allows application architects to design large and complex networks that are able to satisfy a large volume of requests through the use of load balancers, caches, proxy servers, etc.</p>
+<h3>Cache</h3>
+<p>This principle extends the layered system, by indicating explicitly that it is allowed for the server or an intermediary to cache responses to requests that are received often to improve system performance. There is an  implementation of a cache that you are likely familiar with: the one in all web browsers. The web browser cache layer is often used to avoid having to request the same files, such as images, over and over again.</p>
+<p>For the purposes of an API, the target server needs to indicate through the use of <em>cache controls</em> if a response can be cached by intermediaries as it travels back to the client. Note that because for security reasons APIs deployed to production must use encryption, caching is usually not done in an intermediate node unless this node <em>terminates</em> the SSL connection, or performs decryption and re-encryption.</p>
+<h3>Code On Demand</h3>
+<p>This is an optional requirement that states that the server can provide executable code in responses to the client. Because this principle requires an agreement between the server and the client on what kind of executable code the client is able to run, this is rarely used in APIs. You would think that the server could return JavaScript code for web browser clients to execute, but REST is not specifically targeted to web browser clients. Executing JavaScript, for example, could introduce a complication if the client is an iOS or Android device.</p>
+<h3>Stateless</h3>
+<p>The stateless principle is one of the two at the center of most debates between REST purists and pragmatists. It states that a REST API should not save any client state to be recalled every time a given client sends a request. What this means is that none of the mechanisms that are common in web development to "remember" users as they navigate through the pages of the application can be used. In a stateless API, every request needs to include the information that the server needs to identify and authenticate the client and to carry out the request. It also means that the server cannot store any data related to the client connection in a database or other form of storage.</p>
+<p>If you are wondering why REST requires stateless servers, the main reason is that stateless servers are very easy to scale, all you need to do is run multiple instances of the server behind a load balancer. If the server stores client state things get more complicated, as you have to figure out how multiple servers can access and update that state, or alternatively ensure that a given client is always handled by the same server, something commonly referred to as <em>sticky sessions</em>.</p>
+<p>If you consider again the <em>/translate</em> route discussed in the chapter's introduction, you'll realize that it cannot be considered <em>RESTful</em>, because the view function associated with that route relies on the <code>@login_required</code> decorator from Flask-Login, which in turn stores the logged in state of the user in the Flask user session.</p>
+<h3>Uniform Interface</h3>
+<p>The final, most important, most debated and most vaguely documented REST principle is the uniform interface. Dr. Fielding enumerates four distinguishing aspects of the REST uniform interface: unique resource identifiers, resource representations, self-descriptive messages, and hypermedia.</p>
+<p>Unique resource identifiers are achieved by assigning a unique URL to each resource. For example, the URL associated with a given user can be <em>/api/users/&lt;user-id&gt;</em>, where <em>&lt;user-id&gt;</em> is the identifier assigned to the user in the database table's primary key. This is reasonably well implemented by most APIs.</p>
+<p>The use of resource representations means that when the server and the client exchange information about a resource, they must use an agreed upon format. For most modern APIs, the JSON format is used to build resource representations. An API can choose to support multiple resource representation formats, and in that case the <em>content negotiation</em> options in the HTTP protocol are the mechanism by which the client and the server can agree on a format that both like.</p>
+<p>Self-descriptive messages means that requests and responses exchanged between the clients and the server must include all the information that the other party needs. As a typical example, the HTTP request method is used to indicate what operation the client wants the server to execute. A <code>GET</code> request indicates that the client wants to retrieve information about a resource, a <code>POST</code> request indicates the client wants to create a new resource, <code>PUT</code> or <code>PATCH</code> requests define modifications to existing resources, and <code>DELETE</code> indicates a request to remove a resource. The target resource is indicated as the request URL, with additional information provided in HTTP headers, the query string portion of the URL or the request body.</p>
+<p>The hypermedia requirement is the most polemic of the set, and one that few APIs implement, and those APIs that do implement it rarely do so in a way that satisfies REST purists. Since the resources in an application are all inter-related, this requirement asks that those relationships are included in the resource representations, so that clients can discover new resources by traversing relationships, pretty much in the same way you discover new pages in a web application by clicking on links that take you from one page to the next. The idea is that a client could enter an API without any previous knowledge about the resources in it, and learn about them simply by following hypermedia links. One of the aspects that complicate the implementation of this requirement is that unlike HTML and XML, the JSON format that is commonly used for resource representations in APIs does not define a standard way to include links, so you are forced to use a custom structure, or one of the proposed JSON extensions that try to address this gap, such as <a href="http://jsonapi.org/">JSON-API</a>, <a href="http://stateless.co/hal_specification.html">HAL</a>, <a href="https://json-ld.org/">JSON-LD</a> or similar.</p>
+<h2>Implementing an API Blueprint</h2>
+<p>To give you a taste of what is involved in developing an API, I'm going to add one to Microblog. This is not going to be a complete API, I'm going to implement all the functions related to users, leaving the implementation of other resources such as blog posts to the reader as an exercise.</p>
+<p>To keep things organized, and following the structure I described in <a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15</a>, I'm going to create a new blueprint that will contain all the API routes. So let's begin by creating the directory where this blueprint will live:</p>
+<pre><code>(venv) $ mkdir app/api
+</code></pre>
+<p>The blueprint's <em>__init__.py</em> file creates the blueprint object, similar to the other blueprints in the application:</p>
+<p class="code_title"><em>app/api/__init__.py</em>: API blueprint constructor.</p>
+
+<pre><code class="language-python">from flask import Blueprint
+
+bp = Blueprint('api', __name__)
+
+from app.api import users, errors, tokens
+</code></pre>
+<p>You probably remember that it is sometimes necessary to move imports to the bottom to avoid circular dependency errors. That is the reason why the <em>app/api/users.py</em>, <em>app/api/errors.py</em> and <em>app/api/tokens.py</em> modules (that I'm yet to write) are imported after the blueprint is created.</p>
+<p>The meat of the API is going to be stored in the <em>app/api/users.py</em> module. The following table summarizes the routes that I'm going to implement:</p>
+<table>
+<thead>
+<tr>
+<th>HTTP Method</th>
+<th>Resource URL</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code></td>
+<td><em>/api/users/&lt;id&gt;</em></td>
+<td>Return a user.</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><em>/api/users</em></td>
+<td>Return the collection of all users.</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><em>/api/users/&lt;id&gt;/followers</em></td>
+<td>Return the followers of this user.</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><em>/api/users/&lt;id&gt;/following</em></td>
+<td>Return the users this user is following.</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><em>/api/users</em></td>
+<td>Register a new user account.</td>
+</tr>
+<tr>
+<td><code>PUT</code></td>
+<td><em>/api/users/&lt;id&gt;</em></td>
+<td>Modify a user.</td>
+</tr>
+</tbody>
+</table>
+<p>For now I'm going to create a skeleton module with placeholders for all these routes:</p>
+<p class="code_title"><em>app/api/users.py</em>: User API resource placeholders.</p>
+
+<pre><code class="language-python">from app.api import bp
+
+@bp.route('/users/&lt;int:id&gt;', methods=['GET'])
+def get_user(id):
+    pass
+
+@bp.route('/users', methods=['GET'])
+def get_users():
+    pass
+
+@bp.route('/users/&lt;int:id&gt;/followers', methods=['GET'])
+def get_followers(id):
+    pass
+
+@bp.route('/users/&lt;int:id&gt;/following', methods=['GET'])
+def get_following(id):
+    pass
+
+@bp.route('/users', methods=['POST'])
+def create_user():
+    pass
+
+@bp.route('/users/&lt;int:id&gt;', methods=['PUT'])
+def update_user(id):
+    pass
+</code></pre>
+<p>The <em>app/api/errors.py</em> module is going to define a few helper functions that deal with error responses. But for now, I'm also going to use a placeholder that I will fill out later:</p>
+<p class="code_title"><em>app/api/errors.py</em>: Error handling placeholder.</p>
+
+<pre><code class="language-python">def bad_request():
+    pass
+</code></pre>
+<p>The <em>app/api/tokens.py</em> is the module where the authentication subsystem is going to be defined. This is going to provide an alternative way for clients that are not web browsers to log in. For now, I'm going to write a placeholder for this module as well:</p>
+<p class="code_title"><em>app/api/tokens.py</em>: Token handling placeholder.</p>
+
+<pre><code class="language-python">def get_token():
+    pass
+
+def revoke_token():
+    pass
+</code></pre>
+<p>The new API blueprint needs to be registered in the application factory function:</p>
+<p class="code_title"><em>app/__init__.py</em>: Register API blueprint with the application.</p>
+
+<pre><code class="language-python"># ...
+
+def create_app(config_class=Config):
+    app = Flask(__name__)
+
+    # ...
+
+    from app.api import bp as api_bp
+    app.register_blueprint(api_bp, url_prefix='/api')
+
+    # ...
+</code></pre>
+<h2>Representing Users as JSON Objects</h2>
+<p>The first aspect to consider when implementing an API is to decide what the representation of its resources is going to be. I'm going to implement an API that works with users, so a representation for my user resources is what I need to decide on. After some brainstorming, I came up with the following JSON representation:</p>
+<pre><code class="language-javascript">{
+    &quot;id&quot;: 123,
+    &quot;username&quot;: &quot;susan&quot;,
+    &quot;password&quot;: &quot;my-password&quot;,
+    &quot;email&quot;: &quot;susan@example.com&quot;,
+    &quot;last_seen&quot;: &quot;2021-06-20T15:04:27+00:00&quot;,
+    &quot;about_me&quot;: &quot;Hello, my name is Susan!&quot;,
+    &quot;post_count&quot;: 7,
+    &quot;follower_count&quot;: 35,
+    &quot;following_count&quot;: 21,
+    &quot;_links&quot;: {
+        &quot;self&quot;: &quot;/api/users/123&quot;,
+        &quot;followers&quot;: &quot;/api/users/123/followers&quot;,
+        &quot;following&quot;: &quot;/api/users/123/following&quot;,
+        &quot;avatar&quot;: &quot;https://www.gravatar.com/avatar/...&quot;
+    }
+}
+</code></pre>
+<p>Many of the fields are directly coming from the user database model. The <code>password</code> field is special in that it is only going to be used when a new user is registered. As you remember from <a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5</a>, user passwords are not stored in the database, only a hash is, so password are never returned. The <code>email</code> field is also treated specially, because I don't want to expose the email addresses of users. The <code>email</code> field is only going to be returned when users request their own entry, but not when they retrieve entries from other users. The <code>post_count</code>, <code>follower_count</code> and <code>following_count</code> fields are "virtual" fields that do not exist as fields in the database, but are provided to the client as a convenience. This is a great example that demonstrates that a resource representation does not need to match how the actual resource is defined in the server.</p>
+<p>Note the <code>_links</code> section, which implements the hypermedia requirements. The links that are defined include links to the current resource, the list of users that follow this user, the list of users followed by the user, and finally a link to the user's avatar image. In the future, if I decide to add posts to this API, a link to the list of posts by the user should be included here as well.</p>
+<p>One nice thing about the JSON format is that it always translates to a representation as a Python dictionary or list. The <code>json</code> package from the Python standard library takes care of converting the Python data structures to and from JSON. So to generate these representations, I'm going to add a method to the <code>User</code> model called <code>to_dict()</code>, which returns a Python dictionary:</p>
+<p class="code_title"><em>app/models.py</em>: User model to representation.</p>
+
+<pre><code class="language-python">from flask import url_for
+# ...
+
+class User(UserMixin, db.Model):
+    # ...
+
+    def posts_count(self):
+        query = sa.select(sa.func.count()).select_from(
+            self.posts.select().subquery())
+        return db.session.scalar(query)
+
+    def to_dict(self, include_email=False):
+        data = {
+            'id': self.id,
+            'username': self.username,
+            'last_seen': self.last_seen.replace(
+                tzinfo=timezone.utc).isoformat() if self.last_seen else None,
+            'about_me': self.about_me,
+            'post_count': self.posts_count(),
+            'follower_count': self.followers_count(),
+            'following_count': self.following_count(),
+            '_links': {
+                'self': url_for('api.get_user', id=self.id),
+                'followers': url_for('api.get_followers', id=self.id),
+                'following': url_for('api.get_following', id=self.id),
+                'avatar': self.avatar(128)
+            }
+        }
+        if include_email:
+            data['email'] = self.email
+        return data
+</code></pre>
+<p>This method should be mostly self-explanatory. The dictionary with the user representation I settled on is simply generated and returned. To calculate the counts of posts, followers and following I use helper methods, adding one for the count of posts, which I never needed to use before. As I mentioned above, the <code>email</code> field needs special treatment, because I want to include the email only when users request their own data. So I'm using the <code>include_email</code> flag to determine if that field gets included in the representation or not.</p>
+<p>Note how the <code>last_seen</code> field is generated. For date and time fields, I'm going to use the <a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a> format, which Python's <code>datetime</code> can generate through the <code>isoformat()</code> method. But because SQLAlchemy uses naive <code>datetime</code> objects that are UTC but do not have the timezone recorded in their state, I need to set the timezone first, to make sure that it is included in the ISO 8601 string.</p>
+<p>Finally, see how I implemented the hypermedia links. For the three links that point to other application routes I use <code>url_for()</code> to generate the URLs (which currently point to the placeholder view functions I defined in <em>app/api/users.py</em>). The avatar link is special because it is a Gravatar URL, external to the application. For this link I use the same <code>avatar()</code> method that I've used to render the avatars in web pages.</p>
+<p>The <code>to_dict()</code> method converts a user object to a Python representation, which will then be converted to JSON. I also need look at the reverse direction, where the client passes a user representation in a request and the server needs to parse it and convert it to a <code>User</code> object. Here is the <code>from_dict()</code> method that achieves the conversion from a Python dictionary to a model:</p>
+<p class="code_title"><em>app/models.py</em>: Representation to User model.</p>
+
+<pre><code class="language-python">class User(UserMixin, db.Model):
+    # ...
+
+    def from_dict(self, data, new_user=False):
+        for field in ['username', 'email', 'about_me']:
+            if field in data:
+                setattr(self, field, data[field])
+        if new_user and 'password' in data:
+            self.set_password(data['password'])
+</code></pre>
+<p>In this case I decided to use a loop to import any of the fields that the client can set, which are <code>username</code>, <code>email</code> and <code>about_me</code>. For each field I check if I there is a value provided in the <code>data</code> argument, and if there is I use Python's <code>setattr()</code> to set the new value in the corresponding attribute for the object.</p>
+<p>The <code>password</code> field is treated as a special case, because it isn't a field in the object. The <code>new_user</code> argument determines if this is a new user registration, which means that a <code>password</code> is included. To set the password in the user model, I call the <code>set_password()</code> method, which creates the password hash.</p>
+<h2>Representing Collections of Users</h2>
+<p>In addition to working with single resource representations, this API is going to need a representation for collections. This is going to be the format used when the client requests the list of users or followers, for example. Here is the representation for a collection of users:</p>
+<pre><code class="language-javascript">{
+    &quot;items&quot;: [
+        { ... user resource ... },
+        { ... user resource ... },
+        ...
+    ],
+    &quot;_meta&quot;: {
+        &quot;page&quot;: 1,
+        &quot;per_page&quot;: 10,
+        &quot;total_pages&quot;: 20,
+        &quot;total_items&quot;: 195
+    },
+    &quot;_links&quot;: {
+        &quot;self&quot;: &quot;http://localhost:5000/api/users?page=1&quot;,
+        &quot;next&quot;: &quot;http://localhost:5000/api/users?page=2&quot;,
+        &quot;prev&quot;: null
+    }
+}
+</code></pre>
+<p>In this representation, <code>items</code> is the list of user resources, each defined as described in the previous section. The <code>_meta</code> section includes metadata for the collection that the client might find useful in presenting pagination controls to the user. The <code>_links</code> section defines relevant links, including a link to the collection itself, and the previous and next page links, also to help the client paginate the listing.</p>
+<p>Generating the representation of a collection of users is tricky because of the pagination logic, but the logic is going to be common to other resources I may want to add to this API in the future, so I'm going to implement this representation in a generic way that I can then apply to other models. Back in <a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16</a> I was in a similar situation with full-text search indexes, another feature that I wanted to implement generically so that it can be applied to any models. The solution that I used was to implement a <code>SearchableMixin</code> class that any models that need a full-text index can inherit from. I'm going to use the same idea for this, so here is a new mixin class that I named <code>PaginatedAPIMixin</code>:</p>
+<p class="code_title"><em>app/models.py</em>: Paginated representation mixin class.</p>
+
+<pre><code class="language-python">class PaginatedAPIMixin(object):
+    @staticmethod
+    def to_collection_dict(query, page, per_page, endpoint, **kwargs):
+        resources = db.paginate(query, page=page, per_page=per_page,
+                                error_out=False)
+        data = {
+            'items': [item.to_dict() for item in resources.items],
+            '_meta': {
+                'page': page,
+                'per_page': per_page,
+                'total_pages': resources.pages,
+                'total_items': resources.total
+            },
+            '_links': {
+                'self': url_for(endpoint, page=page, per_page=per_page,
+                                **kwargs),
+                'next': url_for(endpoint, page=page + 1, per_page=per_page,
+                                **kwargs) if resources.has_next else None,
+                'prev': url_for(endpoint, page=page - 1, per_page=per_page,
+                                **kwargs) if resources.has_prev else None
+            }
+        }
+        return data
+</code></pre>
+<p>The <code>to_collection_dict()</code> method produces a dictionary with the user collection representation, including the <code>items</code>, <code>_meta</code> and <code>_links</code> sections. You may need to review the method carefully to understand how it works. The first three arguments are a SQLAlchemy query, a page number and a page size. These are the arguments that determine what are the items that are going to be returned. The implementation uses the <code>db.paginate()</code> method of Flask-SQLAlchemy to obtain a page worth of items, like I did with posts in the index, explore and profile pages of the web application.</p>
+<p>The complicated part is in generating the links, which include a self-reference and the links to the next and previous pages. I wanted to make this function generic, so I could not, for example, use <code>url_for('api.get_users', id=id, page=page)</code> to generate the self link. The arguments to <code>url_for()</code> are going to be dependent on the particular collection of resources, so I'm going to rely on the caller passing in the <code>endpoint</code> argument for the view function that needs to be used in the <code>url_for()</code> calls. Since many routes in the application require arguments, I also need to capture any additional route arguments in <code>kwargs</code>, and pass those to <code>url_for()</code> as well. The <code>page</code> and <code>per_page</code> query string argument are given explicitly because these control pagination for all API routes.</p>
+<p>This mixin class needs to be added to the <code>User</code> model as a parent class:</p>
+<p class="code_title"><em>app/models.py</em>: Add PaginatedAPIMixin to User model.</p>
+
+<pre><code class="language-python">class User(PaginatedAPIMixin, UserMixin, db.Model):
+    # ...
+</code></pre>
+<p>In the case of collections I'm not going to need the reverse direction because I'm not going to have any routes that require the client to send lists of users. If the project required the client to send a collection of users, I would need to implement a <code>from_collection_dict()</code> method as well.</p>
+<h2>Error Handling</h2>
+<p>The error pages that I defined in <a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7</a> are only appropriate for a user that is interacting with the application using a web browser. When an API needs to return an error, it needs to be a "machine friendly" type of error, something that the client application can easily interpret. So in the same way I defined representations for my API resources in JSON, now I'm going to decide on a representation for API error messages. Here is the basic structure that I'm going to use:</p>
+<pre><code class="language-javascript">{
+    &quot;error&quot;: &quot;short error description&quot;,
+    &quot;message&quot;: &quot;error message (optional)&quot;
+}
+</code></pre>
+<p>In addition to the payload of the error, I will use the status codes from the HTTP protocol to indicate the general class of the error. To help me generate these error responses, I'm going to write the <code>error_response()</code> function in <em>app/api/errors.py</em>:</p>
+<p class="code_title"><em>app/api/errors.py</em>: Error responses.</p>
+
+<pre><code class="language-python">from werkzeug.http import HTTP_STATUS_CODES
+
+
+def error_response(status_code, message=None):
+    payload = {'error': HTTP_STATUS_CODES.get(status_code, 'Unknown error')}
+    if message:
+        payload['message'] = message
+    return payload, status_code
+</code></pre>
+<p>This function uses the handy <code>HTTP_STATUS_CODES</code> dictionary from Werkzeug (a core dependency of Flask) that provides a short descriptive name for each HTTP status code. I'm using these names for the <code>error</code> field in my error representations, so that I only need to worry about the numeric status code and the optional long description. The representation is returned to Flask, which will convert it to JSON and send it to the client. A second return value with the status code of the error is added, to override the default status code of 200 (the HTTP status code for "OK") that Flask sends with responses.</p>
+<p>The most common error that the API is going to return is going to be the code 400, which is the error for "bad request". This is the error that is used when the client sends a request that has invalid data in it. To make it even easier to generate this error, I'm going to add a dedicated function for it that only requires the long descriptive message as an argument. This is the <code>bad_request()</code> placeholder that I added earlier:</p>
+<p class="code_title"><em>app/api/errors.py</em>: Bad request responses.</p>
+
+<pre><code class="language-python"># ...
+
+def bad_request(message):
+    return error_response(400, message)
+</code></pre>
+<p>The API blueprint may generate a variety of errors, which Flask will render as HTML error pages by default. To ensure that all errors from the API blueprint return JSON formatted responses I can install a catch-all error handler:</p>
+<p class="code_title"><em>app/api/errors.py</em>: Catch-all for API errors.</p>
+
+<pre><code class="language-python">from werkzeug.exceptions import HTTPException
+from app.api import bp
+
+# ...
+
+@bp.errorhandler(HTTPException)
+def handle_exception(e):
+    return error_response(e.code)
+</code></pre>
+<p>The <code>errorhandler()</code> decorator for the API blueprint will now be invoked to handle all errors based on the <code>HTTPException</code> class, which Flask uses for all HTTP errors.</p>
+<h2>User Resource Endpoints</h2>
+<p>The support that I need to work with JSON representations of users is now complete, so I'm ready to start coding the API endpoints.</p>
+<h3>Retrieving a User</h3>
+<p>Let's start with the request to retrieve a single user, given by <code>id</code>:</p>
+<p class="code_title"><em>app/api/users.py</em>: Return a user.</p>
+
+<pre><code class="language-python">from app.models import User
+
+@bp.route('/users/&lt;int:id&gt;', methods=['GET'])
+def get_user(id):
+    return db.get_or_404(User, id).to_dict()
+</code></pre>
+<p>The view function receives the <code>id</code> for the requested user as a dynamic argument in the URL. The <code>db.get_or_404()</code> helper function of Flask-SQLAlchemy returns the model with the given <code>id</code> if it exists, but instead of returning <code>None</code> when the <code>id</code> does not exist, it aborts the request and returns a 404 error to the client. This is convenient, because it removes the need to check the result of the query, simplifying the logic in view functions.</p>
+<p>Finally, the <code>to_dict()</code> method I added to <code>User</code> is used to generate the dictionary with the resource representation for the selected user, which Flask will automatically convert to JSON when returning it to the client.</p>
+<p>If you want to see how this first API route works, start the server and then type the following URL in your browser's address bar:</p>
+<pre><code>http://localhost:5000/api/users/1
+</code></pre>
+<p>This should show you the first user, rendered in JSON format. Also try to use a large <code>id</code> value, to see how the <code>get_or_404()</code> method of the SQLAlchemy query object triggers a 404 error (I will later show you how to extend the error handling so that these errors are also returned in JSON format).</p>
+<p>To test this new route in a more appropriate way, I'm going to install <a href="https://httpie.org/">HTTPie</a>, a command-line HTTP client written in Python that makes it easy to send API requests:</p>
+<pre><code>(venv) $ pip install httpie
+</code></pre>
+<p>I can now request information about the user with a <code>id</code> of <code>1</code> (which is probably yourself) from the terminal, with the following command:</p>
+<pre><code>(venv) $ http GET http://localhost:5000/api/users/1
+HTTP/1.0 200 OK
+Content-Length: 457
+Content-Type: application/json
+Date: Mon, 27 Jun 2021 20:19:01 GMT
+Server: Werkzeug/2.0.1 Python/3.9.6
+
+{
+    &quot;_links&quot;: {
+        &quot;avatar&quot;: &quot;https://www.gravatar.com/avatar/993c...2724?d=identicon&amp;s=128&quot;,
+        &quot;following&quot;: &quot;/api/users/1/following&quot;,
+        &quot;followers&quot;: &quot;/api/users/1/followers&quot;,
+        &quot;self&quot;: &quot;/api/users/1&quot;
+    },
+    &quot;about_me&quot;: &quot;Hello! I'm the author of the Flask Mega-Tutorial.&quot;,
+    &quot;following_count&quot;: 0,
+    &quot;following_count&quot;: 1,
+    &quot;id&quot;: 1,
+    &quot;last_seen&quot;: &quot;2021-06-26T07:40:52.942865+00:00&quot;,
+    &quot;post_count&quot;: 10,
+    &quot;username&quot;: &quot;miguel&quot;
+}
+</code></pre>
+<h3>Retrieving Collections of Users</h3>
+<p>To return the collection of all users, I can now rely on the <code>to_collection_dict()</code> method of <code>PaginatedAPIMixin</code>:</p>
+<p class="code_title"><em>app/api/users.py</em>: Return the collection of all users.</p>
+
+<pre><code class="language-python">import sqlalchemy as sa
+from flask import request
+
+# ...
+
+@bp.route('/users', methods=['GET'])
+def get_users():
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 10, type=int), 100)
+    return User.to_collection_dict(sa.select(User), page, per_page,
+                                   'api.get_users')
+</code></pre>
+<p>For this implementation I first extract <code>page</code> and <code>per_page</code> from the query string of the request, using the defaults of 1 and 10 respectively if they are not defined. The <code>per_page</code> argument has additional logic that caps it at 100. Giving the client control to request really large pages is not a good idea, as that can cause performance problems for the server. The <code>page</code> and <code>per_page</code> arguments are then passed to the <code>to_collection_dict()</code> method, along with a query that returns all users. The last argument is <code>api.get_users</code>, which is the endpoint name that I need for the three links that are used in the representation.</p>
+<p>To test this endpoint with HTTPie, use the following command:</p>
+<pre><code>(venv) $ http GET http://localhost:5000/api/users
+</code></pre>
+<p>The next two endpoints are the ones that return the follower and following users. These are fairly similar to the one above:</p>
+<p class="code_title"><em>app/api/users.py</em>: Return followers and followed users.</p>
+
+<pre><code class="language-python">@bp.route('/users/&lt;int:id&gt;/followers', methods=['GET'])
+def get_followers(id):
+    user = db.get_or_404(User, id)
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 10, type=int), 100)
+    return User.to_collection_dict(user.followers.select(), page, per_page,
+                                   'api.get_followers', id=id)
+
+
+@bp.route('/users/&lt;int:id&gt;/following', methods=['GET'])
+def get_following(id):
+    user = db.get_or_404(User, id)
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 10, type=int), 100)
+    return User.to_collection_dict(user.following.select(), page, per_page,
+                                   'api.get_following', id=id)
+</code></pre>
+<p>Since these two routes are specific to a user, they have the <code>id</code> dynamic argument in the URL. The <code>id</code> is used to get the user from the database, and then to provide the <code>user.followers</code> and <code>user.following</code> relationship queries to the <code>to_collection_dict()</code> method. Hopefully now you can see why spending a little bit of extra time and designing this method in a generic way really pays off. The last two arguments to <code>to_collection_dict()</code> are the endpoint name, and the <code>id</code>, which the method is going to take as an extra keyword argument in <code>kwargs</code>, and then pass it to <code>url_for()</code> when generating the links section of the representation.</p>
+<p>Similar to the previous example, you can exercise these two routes with HTTPie as follows:</p>
+<pre><code>(venv) $ http GET http://localhost:5000/api/users/1/followers
+(venv) $ http GET http://localhost:5000/api/users/1/following
+</code></pre>
+<p>I should note that thanks to hypermedia, you do not need to remember these URLs, as they are included in the <code>_links</code> section of the user representation.</p>
+<h3>Registering New Users</h3>
+<p>The <code>POST</code> request to the <em>/users</em> route is going to be used to register new user accounts. You can see the implementation of this route below:</p>
+<p class="code_title"><em>app/api/users.py</em>: Register a new user.</p>
+
+<pre><code class="language-python">from flask import url_for
+from app import db
+from app.api.errors import bad_request
+
+@bp.route('/users', methods=['POST'])
+def create_user():
+    data = request.get_json()
+    if 'username' not in data or 'email' not in data or 'password' not in data:
+        return bad_request('must include username, email and password fields')
+    if db.session.scalar(sa.select(User).where(
+            User.username == data['username'])):
+        return bad_request('please use a different username')
+    if db.session.scalar(sa.select(User).where(
+            User.email == data['email'])):
+        return bad_request('please use a different email address')
+    user = User()
+    user.from_dict(data, new_user=True)
+    db.session.add(user)
+    db.session.commit()
+    return user.to_dict(), 201, {'Location': url_for('api.get_user',
+                                                     id=user.id)}
+</code></pre>
+<p>This request is going to accept a user representation in JSON format from the client, provided in the request body. Flask provides the <code>request.get_json()</code> method to extract the JSON body from the request and return it as a Python structure. This method may cause the request to fail with a 415 status code (unsupported media type) if the client sends content that is not in JSON format, or with a 400 status code (bad request) if the JSON content is malformed, both of which will be handled by the <code>handle_http_exception()</code> handler in <em>app/api/errors.py</em>.</p>
+<p>Before I can use the data I need to ensure that I've got all the information, so I start by checking that the three mandatory fields are included. These are <code>username</code>, <code>email</code> and <code>password</code>. If any of those are missing, then I use the <code>bad_request()</code> helper function from the <em>app/api/errors.py</em> module to return an error to the client. In addition to that check, I need to make sure that the <code>username</code> and <code>email</code> fields are not already used by another user, so for that I try to load a user from the database by the username and emails provided, and if any of those return a valid user, I also return an error back to the client.</p>
+<p>Once I've passed the data validation, I can easily create a user object and add it to the database. To create the user I rely on the <code>from_dict()</code> method in the <code>User</code> model. The <code>new_user</code> argument is set to <code>True</code>, so that it also accepts the <code>password</code> field which is normally not part of the user representation.</p>
+<p>The response that I return for this request is going to be the representation of the new user, so <code>to_dict()</code> generates that payload. The status code for a <code>POST</code> request that creates a resource should be 201, the code that is used when a new entity has been created. Also, the HTTP protocol requires that a 201 response includes a <code>Location</code> header that is set to the URL of the new resource, which I can generate using <code>url_for()</code>.</p>
+<p>Below you can see how to register a new user from the command line through HTTPie:</p>
+<pre><code>(venv) $ http POST http://localhost:5000/api/users username=alice password=dog \
+    email=alice@example.com &quot;about_me=Hello, my name is Alice.&quot;
+</code></pre>
+<h3>Editing Users</h3>
+<p>The last endpoint that I'm going to use in my API is the one that modifies an existing user:</p>
+<p class="code_title"><em>app/api/users.py</em>: Modify a user.</p>
+
+<pre><code class="language-python">@bp.route('/users/&lt;int:id&gt;', methods=['PUT'])
+def update_user(id):
+    user = db.get_or_404(User, id)
+    data = request.get_json()
+    if 'username' in data and data['username'] != user.username and \
+        db.session.scalar(sa.select(User).where(
+            User.username == data['username'])):
+        return bad_request('please use a different username')
+    if 'email' in data and data['email'] != user.email and \
+        db.session.scalar(sa.select(User).where(
+            User.email == data['email'])):
+        return bad_request('please use a different email address')
+    user.from_dict(data, new_user=False)
+    db.session.commit()
+    return user.to_dict()
+</code></pre>
+<p>For this request I receive a user <code>id</code> as a dynamic part of the URL, so I can load the designated user and return a 404 error if it is not found. Note that there is no authentication yet, so for now the API is going to allow users to make changes to the accounts of any other users. This is obviously a security issue, but I will address it in the following section.</p>
+<p>Like in the case of a new user, I need to validate that the <code>username</code> and <code>email</code> fields provided by the client do not collide with other users before I can use them, but in this case the validation is more tricky. First of all, these fields are optional in this request, so I need to check that a field is present. The second complication is that the client may be providing the same value for them, so before I check if the username or email are taken I need to make sure they are different than the current ones. If any of these validation checks fail, then I return a 400 error back to the client, as before.</p>
+<p>Once the data has been validated, I can use the <code>from_dict()</code> method of the <code>User</code> model to import all the data provided by the client, and then commit the change to the database. The response from this request returns the updated user representation to the user, with a default 200 status code.</p>
+<p>Here is an example request that edits the <code>about_me</code> field with HTTPie:</p>
+<pre><code>(venv) $ http PUT http://localhost:5000/api/users/2 &quot;about_me=Hi, I am Miguel&quot;
+</code></pre>
+<h2>API Authentication</h2>
+<p>The API endpoints I added in the previous section are currently open to any clients. Obviously they need to be available to registered users only, and to do that I need to add <em>authentication</em> and <em>authorization</em>, or "AuthN" and "AuthZ" for short. The idea is that requests sent by clients provide some sort of identification, so that the server knows what user the client is representing, and can verify if the requested action is allowed or not for that user.</p>
+<p>The most obvious way to protect these API endpoints is to use the <code>@login_required</code> decorator from Flask-Login, but that approach has some problems for API endpoints. When the decorator detects a non-authenticated user, it redirects the user to a HTML login page. In an API there is no concept of HTML or login pages, if a client sends a request with invalid or missing credentials, the server has to refuse the request returning a 401 status code. The server can't assume that the API client is a web browser, or that it can handle redirects, or that it can render and process HTML login forms. When the API client receives the 401 status code, it knows that it needs to ask the user for credentials, but how it does that is really not the business of the server.</p>
+<h3>Tokens In the User Model</h3>
+<p>For the API authentication needs, I'm going to use a <em>token</em> authentication scheme. When a client wants to start interacting with the API, it needs to request a temporary token, authenticating with a username and password. The client can then send API requests passing the token as authentication, for as long as the token is valid. Once the token expires, a new token needs to be requested. To support user tokens, I'm going to expand the <code>User</code> model:</p>
+<p class="code_title"><em>app/models.py</em>: Support for user tokens.</p>
+
+<pre><code class="language-python">from datetime import timedelta
+import secrets
+
+class User(PaginatedAPIMixin, UserMixin, db.Model):
+    # ...
+    token: so.Mapped[Optional[str]] = so.mapped_column(
+        sa.String(32), index=True, unique=True)
+    token_expiration: so.Mapped[Optional[datetime]]
+
+    # ...
+
+    def get_token(self, expires_in=3600):
+        now = datetime.now(timezone.utc)
+        if self.token and self.token_expiration.replace(
+                tzinfo=timezone.utc) &gt; now + timedelta(seconds=60):
+            return self.token
+        self.token = secrets.token_hex(16)
+        self.token_expiration = now + timedelta(seconds=expires_in)
+        db.session.add(self)
+        return self.token
+
+    def revoke_token(self):
+        self.token_expiration = datetime.now(timezone.utc) - timedelta(
+            seconds=1)
+
+    @staticmethod
+    def check_token(token):
+        user = db.session.scalar(sa.select(User).where(User.token == token))
+        if user is None or user.token_expiration.replace(
+                tzinfo=timezone.utc) &lt; datetime.now(timezone.utc):
+            return None
+        return user
+</code></pre>
+<p>With this change I'm adding a <code>token</code> attribute to the user model, and because I'm going to need to search the database by it I make it unique and indexed. I'm also adding the <code>token_expiration</code> field, which has the date and time at which the token expires. This is so that a token does not remain valid for a long period of time, which can become a security risk.</p>
+<p>I created three methods to work with these tokens. The <code>get_token()</code> method returns a token for the user. The token is generated using the <code>secrets.token_hex()</code> function from the Python standard library. The <code>token</code> field has a length of 32 characters, so I have to pass 16 to <code>token_hex()</code> so that the resulting token has 16 bytes, which would use 32 characters when rendered in hexadecimal. Before a new token is created, this method checks if a currently assigned token has at least a minute left before expiration, and in that case the existing token is returned.</p>
+<p>When working with tokens it is always good to have a strategy to revoke a token immediately, instead of only relying on the expiration date. This is a security best practice that is often overlooked. The <code>revoke_token()</code> method makes the token currently assigned to the user invalid, simply by setting the expiration date to one second before the current time.</p>
+<p>The <code>check_token()</code> method is a static method that takes a token as input and returns the user this token belongs to as a response. If the token is invalid or expired, the method returns <code>None</code>.</p>
+<p>Because I have made changes to the database, I need to generate a new database migration and then upgrade the database with it:</p>
+<pre><code>(venv) $ flask db migrate -m &quot;user tokens&quot;
+(venv) $ flask db upgrade
+</code></pre>
+<h3>Token Requests</h3>
+<p>When you write an API you have to consider that your clients are not always going to be web browsers connected to the web application. The real power of APIs comes when standalone clients such as smartphone apps, or even browser-based single page applications can have access to backend services. When these specialized clients need to access API services, they begin by requesting a token, which is the counterpart to the login form in the traditional web application.</p>
+<p>To simplify the interactions between client and server when token authentication is used, I'm going to use a Flask extension called <a href="https://flask-httpauth.readthedocs.io/">Flask-HTTPAuth</a>. Flask-HTTPAuth is installed with pip:</p>
+<pre><code>(venv) $ pip install flask-httpauth
+</code></pre>
+<p>Flask-HTTPAuth supports a few different authentication mechanisms, all API friendly. To begin, I'm going to use <a href="https://en.wikipedia.org/wiki/Basic_access_authentication">HTTP Basic Authentication</a>, in which the client sends the user credentials in a standard <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization">Authorization</a> HTTP Header. To integrate with Flask-HTTPAuth, the application needs to provide two functions: one that defines the logic to check the username and password provided by the user, and another that returns the error response in the case of an authentication failure. These functions are registered with Flask-HTTPAuth through decorators, and then are automatically called by the extension as needed during the authentication flow. You can see the implementation below:</p>
+<p class="code_title"><em>app/api/auth.py</em>: Basic authentication support.</p>
+
+<pre><code class="language-python">import sqlalchemy as sa
+from flask_httpauth import HTTPBasicAuth
+from app import db
+from app.models import User
+from app.api.errors import error_response
+
+basic_auth = HTTPBasicAuth()
+
+@basic_auth.verify_password
+def verify_password(username, password):
+    user = db.session.scalar(sa.select(User).where(User.username == username))
+    if user and user.check_password(password):
+        return user
+
+@basic_auth.error_handler
+def basic_auth_error(status):
+    return error_response(status)
+</code></pre>
+<p>The <code>HTTPBasicAuth</code> class from Flask-HTTPAuth is the one that implements the basic authentication flow. The two required functions are configured through the <code>verify_password</code> and <code>error_handler</code> decorators respectively.</p>
+<p>The verification function receives the username and password that the client provided and returns the authenticated user if the credentials are valid or <code>None</code> if not. To check the password I rely on the <code>check_password()</code> method of the <code>User</code> class, which is also used by Flask-Login during authentication for the web application. The authenticated user will then be available as <code>basic_auth.current_user()</code>, so that it can be used in the API view functions.</p>
+<p>The error handler function returns a standard error response, which is generated by the <code>error_response()</code> function in <em>app/api/errors.py</em>. The <code>status</code> argument is the HTTP status code, which in the case of invalid authentication is going to be 401. The 401 error is defined in the HTTP standard as the "Unauthorized" error. HTTP clients know that when they receive this error the request that they sent needs to be resent with valid credentials.</p>
+<p>Now I have basic authentication support implemented, so I can add the token retrieval route that clients will invoke when they need a token:</p>
+<p class="code_title"><em>app/api/tokens.py</em>: Generate user tokens.</p>
+
+<pre><code class="language-python">from app import db
+from app.api import bp
+from app.api.auth import basic_auth
+
+@bp.route('/tokens', methods=['POST'])
+@basic_auth.login_required
+def get_token():
+    token = basic_auth.current_user().get_token()
+    db.session.commit()
+    return {'token': token}
+</code></pre>
+<p>This view function is decorated with the <code>@basic_auth.login_required</code> decorator from the <code>HTTPBasicAuth</code> instance, which will instruct Flask-HTTPAuth to verify authentication (through the verification function I defined above) and only allow the function to run when the provided credentials are valid. The implementation of this view function relies on the <code>get_token()</code> method of the user model to produce the token. A database commit is issued after the token is generated to ensure that the token and its expiration are written back to the database.</p>
+<p>If you try to send a POST request to the tokens API route, this is what happens:</p>
+<pre><code>(venv) $ http POST http://localhost:5000/api/tokens
+HTTP/1.0 401 UNAUTHORIZED
+Content-Length: 30
+Content-Type: application/json
+Date: Mon, 27 Jun 2021 20:01:00 GMT
+Server: Werkzeug/2.0.1 Python/3.9.6
+WWW-Authenticate: Basic realm=&quot;Authentication Required&quot;
+
+{
+    &quot;error&quot;: &quot;Unauthorized&quot;
+}
+</code></pre>
+<p>The HTTP response includes the 401 status code, and the error payload that I defined in my <code>basic_auth_error()</code> function. Here is the same request, this time including basic authentication credentials:</p>
+<pre><code>(venv) $ http --auth &lt;username&gt;:&lt;password&gt; POST http://localhost:5000/api/tokens
+HTTP/1.0 200 OK
+Content-Length: 50
+Content-Type: application/json
+Date: Mon, 27 Jun 2021 20:01:22 GMT
+Server: Werkzeug/2.0.1 Python/3.9.6
+
+{
+    &quot;token&quot;: &quot;a3b67df3547a49e6cd338a05c442d666&quot;
+}
+</code></pre>
+<p>Now the status code is 200, which is the code for a successful request, and the payload includes a newly generated token for the user. Note that when you send this request you will need to replace <code>&lt;username&gt;:&lt;password&gt;</code> with your own credentials, the same ones you use with the login form. The username and password need to be provided with a colon as separator.</p>
+<h3>Protecting API Routes with Tokens</h3>
+<p>The clients can now request a token to use with the API endpoints, so what's left is to add token verification to those endpoints. This is something that Flask-HTTPAuth can also handle for me. I need to create a second authentication instance based on the <code>HTTPTokenAuth</code> class, and provide a token verification callback:</p>
+<p class="code_title"><em>app/api/auth.py</em>: Token authentication support.</p>
+
+<pre><code class="language-python"># ...
+from flask_httpauth import HTTPTokenAuth
+
+# ...
+token_auth = HTTPTokenAuth()
+
+# ...
+
+@token_auth.verify_token
+def verify_token(token):
+    return User.check_token(token) if token else None
+
+@token_auth.error_handler
+def token_auth_error(status):
+    return error_response(status)
+</code></pre>
+<p>When using token authentication, Flask-HTTPAuth uses a <code>verify_token</code> decorated function, but other than that, token authentication works in the same way as basic authentication. My token verification function uses <code>User.check_token()</code> to locate the user that owns the provided token and return it. As before, a <code>None</code> return causes the client to be rejected with an authentication error.</p>
+<p>To protect API routes with tokens, the <code>@token_auth.login_required</code> decorator needs to be added:</p>
+<p class="code_title"><em>app/api/users.py</em>: Protect user routes with token authentication.</p>
+
+<pre><code class="language-python">from flask import abort
+from app.api.auth import token_auth
+
+@bp.route('/users/&lt;int:id&gt;', methods=['GET'])
+@token_auth.login_required
+def get_user(id):
+    # ...
+
+@bp.route('/users', methods=['GET'])
+@token_auth.login_required
+def get_users():
+    # ...
+
+@bp.route('/users/&lt;int:id&gt;/followers', methods=['GET'])
+@token_auth.login_required
+def get_followers(id):
+    # ...
+
+@bp.route('/users/&lt;int:id&gt;/following', methods=['GET'])
+@token_auth.login_required
+def get_following(id):
+    # ...
+
+@bp.route('/users', methods=['POST'])
+def create_user():
+    # ...
+
+@bp.route('/users/&lt;int:id&gt;', methods=['PUT'])
+@token_auth.login_required
+def update_user(id):
+    if token_auth.current_user().id != id:
+        abort(403)
+    # ...
+</code></pre>
+<p>Note that the decorator is added to all the API view functions except <code>create_user()</code>, which obviously cannot accept authentication since the user that will request the token needs to be created first. Also note how the PUT request that modifies users has an additional check that prevents a user from trying to modify another user's account. If I find that the requested user id does not match the id of the authenticated user, then I return a 403 error response, which indicates that the client does not have permission to carry out the requested operation.</p>
+<p>If you send a request to any of these endpoints as shown previously, you will get back a 401 error response. To gain access, you need to add the <code>Authorization</code> header, with a token that you received from a request to <em>/api/tokens</em>. Flask-HTTPAuth expects the token to be sent as a "bearer" token, which can be sent with HTTPie as follows:</p>
+<pre><code>(venv) $ http -A bearer --auth &lt;token&gt; GET http://localhost:5000/api/users/1
+</code></pre>
+<h3>Revoking Tokens</h3>
+<p>The last token related feature that I'm going to implement is the token revocation, which you can see below:</p>
+<p class="code_title"><em>app/api/tokens.py</em>: Revoke tokens.</p>
+
+<pre><code class="language-python">from app.api.auth import token_auth
+
+@bp.route('/tokens', methods=['DELETE'])
+@token_auth.login_required
+def revoke_token():
+    token_auth.current_user().revoke_token()
+    db.session.commit()
+    return '', 204
+</code></pre>
+<p>Clients can send a <code>DELETE</code> request to the <em>/tokens</em> URL to invalidate the token. The authentication for this route is token based, in fact the token sent in the <code>Authorization</code> header is the one being revoked. The revocation itself uses the helper method in the <code>User</code> class, which resets the expiration date on the token. The database session is committed so that this change is written to the database. The response from this request does not have a body, so I can return an empty string. A second value in the return statement sets the status code of the response to 204, which is the code to use for successful requests that have no response body.</p>
+<p>Here is an example token revocation request sent from HTTPie:</p>
+<pre><code>(venv) $ http -A bearer --auth &lt;token&gt; DELETE http://localhost:5000/api/tokens
+</code></pre>
+<h2>API Friendly Error Messages</h2>
+<p>Do you recall what happened early in this chapter when I asked you to send an API request from the browser with an invalid user URL? The server returned a 404 error, but this error was formatted as the standard 404 HTML error page. Many of the errors the API might need to return can be overriden with JSON versions in the API blueprint, but there are some errors handled by Flask that still go through the error handlers that are globally registered for the application, and these continue to return HTML.</p>
+<p>The HTTP protocol supports a mechanism by which the client and the server can agree on the best format for a response, called <em>content negotiation</em>. The client needs to send an <code>Accept</code> header with the request, indicating the format preferences. The server then looks at the list and responds using the best format it supports from the list offered by the client.</p>
+<p>What I want to do is modify the global application error handlers so that they use content negotiation to reply in HTML or JSON according to the client preferences. This can be done using the <code>request.accept_mimetypes</code> object from Flask:</p>
+<p class="code_title"><em>app/errors/handlers.py</em>: Content negotiation for error responses.</p>
+
+<pre><code class="language-python">from flask import render_template, request
+from app import db
+from app.errors import bp
+from app.api.errors import error_response as api_error_response
+
+def wants_json_response():
+    return request.accept_mimetypes['application/json'] &gt;= \
+        request.accept_mimetypes['text/html']
+
+@bp.app_errorhandler(404)
+def not_found_error(error):
+    if wants_json_response():
+        return api_error_response(404)
+    return render_template('errors/404.html'), 404
+
+@bp.app_errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    if wants_json_response():
+        return api_error_response(500)
+    return render_template('errors/500.html'), 500
+</code></pre>
+<p>The <code>wants_json_response()</code> helper function compares the preference for JSON or HTML selected by the client in their list of preferred formats. If JSON rates higher than HTML, then I return a JSON response. Otherwise I'll return the original HTML responses based on templates. For the JSON responses I'm going to import the <code>error_response</code> helper function from the API blueprint, but here I'm going to rename it to <code>api_error_response()</code> so that it is clear what it does and where it comes from.</p>
+<h2>A Last Word</h2>
+<p>Congratulations on reaching the end of the Flask Mega-Tutorial! My hope is that you are now well prepared to build your own web applications and to continue your learning journey using what you have learned as a foundation. Good luck!</p></div>
+
+<h2>Buy me a coffee?</h2>
+<p class="card-text">Thank you for visiting my blog! If you enjoyed this article, please consider supporting my work and keeping me caffeinated with a small one-time donation through <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy me a coffee</a>. Thanks!</p>
+<a href="https://www.buymeacoffee.com/miguelgrinberg" target="_blank"><img src="/static/buymeacoffee-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+
+<h2>Share this post</h2>
+<!-- Sharingbutton Hacker News -->
+<a class="resp-sharing-button__link" href="https://news.ycombinator.com/submitlink?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis&amp;t=The%20Flask%20Mega-Tutorial%2C%20Part%20XXIII%3A%20Application%20Programming%20Interfaces%20%28APIs%29" target="_blank" rel="noopener" aria-label="Hacker News">
+  <div class="resp-sharing-button resp-sharing-button--hackernews resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><path fill-rule="evenodd" d="M60.94 82.314L17 0h20.08l25.85 52.093c.397.927.86 1.888 1.39 2.883.53.994.995 2.02 1.393 3.08.265.4.463.764.596 1.095.13.334.262.63.395.898.662 1.325 1.26 2.618 1.79 3.877.53 1.26.993 2.42 1.39 3.48 1.06-2.254 2.22-4.673 3.48-7.258 1.26-2.585 2.552-5.27 3.877-8.052L103.49 0h18.69L77.84 83.308v53.087h-16.9v-54.08z"></path></svg></div>Hacker News</div>
+</a>
+
+<!-- Sharingbutton Reddit -->
+<a class="resp-sharing-button__link" href="https://reddit.com/submit/?url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis&amp;resubmit=true&amp;title=The Flask Mega-Tutorial, Part XXIII: Application Programming Interfaces (APIs)" target="_blank" rel="noopener" aria-label="Reddit">
+  <div class="resp-sharing-button resp-sharing-button--reddit resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-6.07-1.72.08-1.1.4-3.05 1.52-3.7.72-.4 1.73-.24 3 .5C17.2 6.3 18.46 7.5 20 7.5c1.65 0 3-1.35 3-3s-1.35-3-3-3c-1.38 0-2.54.94-2.88 2.22-1.43-.72-2.64-.8-3.6-.25-1.64.94-1.95 3.47-2 4.55-2.33.08-4.45.7-6.1 1.72C4.86 8.98 3.96 8.5 3 8.5c-1.65 0-3 1.35-3 3 0 1.32.84 2.44 2.05 2.84-.03.22-.05.44-.05.66 0 3.86 4.5 7 10 7s10-3.14 10-7c0-.22-.02-.44-.05-.66 1.2-.4 2.05-1.54 2.05-2.84zM2.3 13.37C1.5 13.07 1 12.35 1 11.5c0-1.1.9-2 2-2 .64 0 1.22.32 1.6.82-1.1.85-1.92 1.9-2.3 3.05zm3.7.13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9.8 4.8c-1.08.63-2.42.96-3.8.96-1.4 0-2.74-.34-3.8-.95-.24-.13-.32-.44-.2-.68.15-.24.46-.32.7-.18 1.83 1.06 4.76 1.06 6.6 0 .23-.13.53-.05.67.2.14.23.06.54-.18.67zm.2-2.8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm5.7-2.13c-.38-1.16-1.2-2.2-2.3-3.05.38-.5.97-.82 1.6-.82 1.1 0 2 .9 2 2 0 .84-.53 1.57-1.3 1.87z"/></svg></div>Reddit</div>
+</a>
+
+<!-- Sharingbutton Twitter -->
+<a class="resp-sharing-button__link" href="https://twitter.com/intent/tweet/?text=The%20Flask%20Mega-Tutorial%2C%20Part%20XXIII%3A%20Application%20Programming%20Interfaces%20%28APIs%29&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis" target="_blank" rel="noopener" aria-label="Twitter">
+  <div class="resp-sharing-button resp-sharing-button--twitter resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/></svg></div>Twitter</div>
+</a>
+
+<!-- Sharingbutton LinkedIn -->
+<a class="resp-sharing-button__link" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis&amp;title=The%20Flask%20Mega-Tutorial%2C%20Part%20XXIII%3A%20Application%20Programming%20Interfaces%20%28APIs%29&amp;summary=The%20Flask%20Mega-Tutorial%2C%20Part%20XXIII%3A%20Application%20Programming%20Interfaces%20%28APIs%29&amp;source=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis" target="_blank" rel="noopener" aria-label="LinkedIn">
+  <div class="resp-sharing-button resp-sharing-button--linkedin resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.5 21.5h-5v-13h5v13zM4 6.5C2.5 6.5 1.5 5.3 1.5 4s1-2.4 2.5-2.4c1.6 0 2.5 1 2.6 2.5 0 1.4-1 2.5-2.6 2.5zm11.5 6c-1 0-2 1-2 2v7h-5v-13h5V10s1.6-1.5 4-1.5c3 0 5 2.2 5 6.3v6.7h-5v-7c0-1-1-2-2-2z"/></svg></div>LinkedIn</div>
+</a>
+
+<!-- Sharingbutton Facebook -->
+<a class="resp-sharing-button__link" href="https://facebook.com/sharer/sharer.php?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis" target="_blank" rel="noopener" aria-label="Facebook">
+  <div class="resp-sharing-button resp-sharing-button--facebook resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/></svg></div>Facebook</div>
+</a>
+
+<!-- Sharingbutton E-Mail -->
+<a class="resp-sharing-button__link" href="mailto:?subject=The%20Flask%20Mega-Tutorial%2C%20Part%20XXIII%3A%20Application%20Programming%20Interfaces%20%28APIs%29&amp;body=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis" target="_self" rel="noopener" aria-label="E-Mail">
+  <div class="resp-sharing-button resp-sharing-button--email resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 4H2C.9 4 0 4.9 0 6v12c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7.25 14.43l-3.5 2c-.08.05-.17.07-.25.07-.17 0-.34-.1-.43-.25-.14-.24-.06-.55.18-.68l3.5-2c.24-.14.55-.06.68.18.14.24.06.55-.18.68zm4.75.07c-.1 0-.2-.03-.27-.08l-8.5-5.5c-.23-.15-.3-.46-.15-.7.15-.22.46-.3.7-.14L12 13.4l8.23-5.32c.23-.15.54-.08.7.15.14.23.07.54-.16.7l-8.5 5.5c-.08.04-.17.07-.27.07zm8.93 1.75c-.1.16-.26.25-.43.25-.08 0-.17-.02-.25-.07l-3.5-2c-.24-.13-.32-.44-.18-.68s.44-.32.68-.18l3.5 2c.24.13.32.44.18.68z"/></svg></div>E-Mail</div>
+</a>
+
+<div id="comments" class="post-comment-count">
+  
+  <a class="btn btn-outline-secondary" href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis#comments">28 comments</a>
+  
+</div>
+
+
+<div class="comments">
+  <ul>
+    
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/e9c9935a9f5cd13ffd3e336866abad12?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#1</span> <span class="badge text-bg-warning">Alex Goulielmos</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-09T12:39:50Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-09T12:39:50Z</span>
+  </p>
+  <div>
+    <p>Thank you for the quality content. How come you didn't use APIFairy for this chapter?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#2</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-09T15:07:46Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-09T15:07:46Z</span>
+  </p>
+  <div>
+    <p>@Alex: this chapter is an introduction to building APIs with Flask. It is not possible to build a complete API project in a single chapter, it is actually a topic that could fill an entire book (and I may actually write it someday!).</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/b58781ee41fe5878b254c66b107f41e7?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#3</span> <span class="badge text-bg-warning">Sergey  Pak</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-13T20:28:25Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-13T20:28:25Z</span>
+  </p>
+  <div>
+    <p>@miguel For some reason the API token authentication does not work for me. I tried it for my flask app, and I also tried it with your microblog app. I tried it with the old code from 2018-21 and the new code as well. Same result - I can generate a token but always get 401unauthorized when I pass it in http client. Any tips? Thank you!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#4</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-14T22:13:22Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-14T22:13:22Z</span>
+  </p>
+  <div>
+    <p>@Sergey: the only tip I have is that you need to debug this to determine why is the token declared as invalid. With the information you provided I have not enough context to tell you the answer.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/d4958a3a08760c22b6038e0cc0f5c8b1?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#5</span> <span class="badge text-bg-warning">Dave</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-08T21:48:30Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-08T21:48:30Z</span>
+  </p>
+  <div>
+    <p>Thats me finished! Was great timing to have this update as I recently came back and did all the chapters I skimmed over way back when i did it originally.</p>
+<p>Thank you!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/861395f4dba03dde3508f1c87c3c224d?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#6</span> <span class="badge text-bg-warning">Martin</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-09T05:04:27Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-09T05:04:27Z</span>
+  </p>
+  <div>
+    <p>Thanks Miguel! Would you update functions in your <a href="http://routes.py" rel="nofollow">routes.py</a> files to use the API? At the moment there is some repetition when (for example) creating users in app/api/<a href="http://users.py" rel="nofollow">users.py</a> and app/auth/<a href="http://routes.py" rel="nofollow">routes.py</a></p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#7</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-09T10:18:02Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-09T10:18:02Z</span>
+  </p>
+  <div>
+    <p>@Martin: The API routes are for use by external clients. If you have common behavior that you want to invoke from API and web app routes, then create a separate function with this and call it from the two routes.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/2bb2fdcff0aea9a77bb32de30cbbe453?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#8</span> <span class="badge text-bg-warning">Lennart</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-09T13:02:16Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-09T13:02:16Z</span>
+  </p>
+  <div>
+    <p>Hey Miguel, I thank you very much for the extensive tutorial and the work you provide to the flask community.<br>
+Can you recommend a good tool/toolchain to monitor a flask application (number of requests, errors, etc).</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#9</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-09T23:44:11Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-09T23:44:11Z</span>
+  </p>
+  <div>
+    <p>@Lennart: Sentry and Datadog come to mind.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/32934ff2b357d6a470030798054801e3?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#10</span> <span class="badge text-bg-warning">David A</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-10T18:03:49Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-10T18:03:49Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, I am new to both Flask and databases. I'm designing a system to store test results in a database and to present them to engineers via a web server, so Flask looks ideal for this.  The results will come from a separate system. My question is whether to interface to that external system using an API to the Flask app, or whether to let the external system connect directly to the database using some kind of connector. The latter sounds easier, but I'm not sure. I'm expecting to use MySQL. Do you have any advice please?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#11</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-11T10:10:01Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-11T10:10:01Z</span>
+  </p>
+  <div>
+    <p>@David: I don't really know, as there are many factors that can influence this decision. Both approaches are valid in principle, so you should consider the pros and cons in your particular case to help you make a decision.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/163fe58a3e20f5a0970a9379b06d30c6?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#12</span> <span class="badge text-bg-warning">James M.</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-08T22:29:50Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-08T22:29:50Z</span>
+  </p>
+  <div>
+    <p>Miguel! Thanks for the knowledge and wisdom. Truly. I'm going to purchase the SQLAlchemy 2 in practice book now - I'm looking forward to it.</p>
+<p>In the interim, for fun, I'm seeking to build a feature for creating long-form blog posts with imagery, code snippets, etc. - very similar to <a href="http://blog.miguelgrinberg.com" rel="nofollow">blog.miguelgrinberg.com</a>. Any recommendations for resources on scalable approaches to implementation?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#13</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-09T09:19:07Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-09T09:19:07Z</span>
+  </p>
+  <div>
+    <p>@James: I recommend you look into Markdown as a writing format. This allows you to create rich text using simple text input. For images you can investigate file upload solutions. There is an article on this blog about file uploads that may help.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/fec1f2ab0f74bbe953d13e96ef1d9a9d?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#14</span> <span class="badge text-bg-warning">Minh</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-10T13:56:29Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-10T13:56:29Z</span>
+  </p>
+  <div>
+    <p>Hi , I've finished the Flask Mega Tutorial and am currently learning the React Mega Tutorial; they're both awesome courses. I'm also really impressed with the Microblog API application. Do you have any plan to develop a course for building a backend API application like that?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#15</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-11T14:41:26Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-11T14:41:26Z</span>
+  </p>
+  <div>
+    <p>@Minh: Yes, maybe I will. But the source code is fairly readable so you can learn from it too.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/1956c253e8af79d3406187ddbf2752a1?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#16</span> <span class="badge text-bg-warning">John Ortiz</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-03T11:47:40Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-03T11:47:40Z</span>
+  </p>
+  <div>
+    <p>Hi!</p>
+<p>This content was great. I'm applying this knowledge in an app I'm building in my YouTube channel. It's a web-based app to manage a parking. I use various concepts you illustrated us with examples and concrete usage for building the microblog app.</p>
+<p>Thanks a lot for your effort!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/3d8287316d0283c5cda26424ac38ed90?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#17</span> <span class="badge text-bg-warning">dmitry</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-11-24T22:54:15Z" data-function="fromNow" data-refresh="0" style="display: none">2024-11-24T22:54:15Z</span>
+  </p>
+  <div>
+    <p>Miguel, this was a tremendous course. I thoroughly enjoyed it, learned a lot, and purchased the corresponding book for reference and also as a means of support. Thank you so much for creating this and keeping it current. Please do the API course as that also would be tremendously interesting, very professional ( as this course was ), and truly informative. I will be glad to buy that book after completing that course. Again, thank you so much for your time and your efforts to share knowledge.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/8388e7d62b7b6e3253435cb798457ceb?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#18</span> <span class="badge text-bg-warning">Lorenzo</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-12-12T11:37:10Z" data-function="fromNow" data-refresh="0" style="display: none">2024-12-12T11:37:10Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel thank you so much for your precious guide!<br>
+I was consulting your Flask Course reading the chapter about the development of the Api with Flask.<br>
+I recently developed a REST Api on Flask but I uses the library Flask-RESTful.<br>
+Therefore, the routing is not traditional, but through the use of a Resource class.</p>
+<p>Now I have a doubt about the use of Flask-RESTful library: it might be deprecate or or its use is not recommended?</p>
+<p>Thanks</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#19</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-12-12T12:39:06Z" data-function="fromNow" data-refresh="0" style="display: none">2024-12-12T12:39:06Z</span>
+  </p>
+  <div>
+    <p>Flask-RESTful hasn't been updated in the last 10 years. I wouldn't recommend using it due to having been unmantained for so long.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/8388e7d62b7b6e3253435cb798457ceb?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#20</span> <span class="badge text-bg-warning">Lorenzo</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-12-13T09:11:46Z" data-function="fromNow" data-refresh="0" style="display: none">2024-12-13T09:11:46Z</span>
+  </p>
+  <div>
+    <p>Miguel,thank you so much for your reply!<br>
+Then I thinking to convert my Resources class in the BP routes.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/dd5c77c4e3ed4a413c3be619e0653394?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#21</span> <span class="badge text-bg-warning">Shahrukh</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-02-17T11:47:51Z" data-function="fromNow" data-refresh="0" style="display: none">2025-02-17T11:47:51Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel,<br>
+Thanks for this awesome article. Would you consider writing a blog post about APIs for <a href="https://github.com/miguelgrinberg/microblog-api/blob/main/api/schemas.py" rel="nofollow">https://github.com/miguelgrinberg/microblog-api/blob/main/api/schemas.py</a>. I read the APIFairy blog post and that helped me understand the documentation side of things but the Marshmallow part is still not that well understood.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#22</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-02-17T19:18:36Z" data-function="fromNow" data-refresh="0" style="display: none">2025-02-17T19:18:36Z</span>
+  </p>
+  <div>
+    <p>@Shahrukh: maybe I will at some point, but note that there are lots of marshmallow tutorials available.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/dd5c77c4e3ed4a413c3be619e0653394?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#23</span> <span class="badge text-bg-warning">Shahrukh</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-02-17T23:29:32Z" data-function="fromNow" data-refresh="0" style="display: none">2025-02-17T23:29:32Z</span>
+  </p>
+  <div>
+    <p>@Miguel, yes but your blog posts and tutorials are the gold standard. They just click.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/c435d6b5a99e4ca2e2ce7a371f42948b?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#24</span> <span class="badge text-bg-warning">Jimmy</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-02-23T10:21:29Z" data-function="fromNow" data-refresh="0" style="display: none">2025-02-23T10:21:29Z</span>
+  </p>
+  <div>
+    <p>Why wouldn't you rework the app such that the main blueprint (that serves templates) uses the new API. Because in the current situation you have two places with duplicated logic.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#25</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-02-23T12:05:14Z" data-function="fromNow" data-refresh="0" style="display: none">2025-02-23T12:05:14Z</span>
+  </p>
+  <div>
+    <p>@Jimmy: where do you see duplication? The application logic is mostly handled by models or auxiliary layers (<a href="http://email.py" rel="nofollow">email.py</a>, etc.). The web and API routes use these common application blocks.</p>
+  </div>
+</div>
+    </li>
+    
+  </ul>
+</div>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis/page/1#comments">&laquo;&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis/page/0#comments">&laquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis/page/2#comments">&raquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis/page/0#comments">&raquo;&raquo;</a></li>
+  </ul>
+</nav>
+
+
+
+<div id="comment-form">
+  <h3>Leave a Comment</h3>
+
+  
+  
+  
+
+  
+<form action="#comment-form" method="post">
+  <input id="url" name="url" type="hidden" value="">
+<input id="csrf_token" name="csrf_token" type="hidden" value="ImE5NjVhYjYzNzcxNmFkZTBiZTMxNzhlMDJkYTVhY2NmZTM4YzA4ODIi.ajz8lw.hOVtJevXkz_j2F5gwP6e8iwIUck">
+    
+  <div class="mb-3">
+    <label class="form-label" for="name">Name</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="name" name="name" required type="text" value="">
+    </div>
+  </div>
+
+    
+    
+  <div class="mb-3">
+    <label class="form-label" for="email">Email</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="email" name="email" required type="text" value="">
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="comment">Comment</label>
+    <div class="input-group has-validation">
+      <textarea class="form-control" id="comment" name="comment" required>
+</textarea>
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="captcha">Captcha</label>
+    <div class="input-group has-validation">
+      
+<script src='https://www.google.com/recaptcha/api.js' async defer></script>
+<div class="g-recaptcha" data-sitekey="6Ld5Zs4SAAAAAOY0DOi4r18bgHlEaz41qAoRf__S"></div>
+
+    </div>
+  </div>
+
+    
+  <input class="btn btn-primary mb-3" id="submit" name="submit" type="submit" value="Submit">
+
+      
+</form>
+
+</div>
+
+
+</div>
+
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div id="sidebar">
+        
+          
+  
+
+
+
+<div class="card">
+  
+  
+  
+  
+  <div class="card-header">
+    <div class="row">
+      <div class="col">The Flask Mega-Tutorial</div>
+      <div class="col text-end">
+        <a href="/post/announcing-the-flask-mega-tutorial-2024-edition">
+          <h5 style="margin-bottom: 0px"><span class="badge text-bg-warning">2024 Edition!</span></h5>
+        </a>
+      </div>
+    </div>
+  </div>
+  <a class="card-book-cover" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">
+    <img src="/static/mega-tutorial-2024-small.png" alt="The New Flask Mega-Tutorial">
+  </a>
+  <div class="card-body">
+    <p class="card-text">If you would you like to support my work on my <a href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world">Flask Mega-Tutorial series</a> on this blog and as a reward have access to the complete tutorial in book format, you can now order it directly from my <a href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Courses</a> site or from <a href="https://amzn.to/3MQffrm">Amazon</a>.</p>
+  </div>
+  <div class="card-body">
+    <a class="card-link" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Click here to get this Book!</a><br />
+  </div>
+
+  
+</div>
+        
+        <div class="card">
+  <div class="card-header">About Miguel</div>
+  <div class="card-body">
+    <img style="float: right; margin: 0px 8px 8px 0px; padding: 4px; border: 1px solid #ccc;" src="/static/miguel.jpg" />
+    <p class="card-text">Welcome to my blog!</p>
+    <p class="card-text">I'm a software engineer and technical writer, currently living in Drogheda, Ireland.</p>
+    <p><u>Generative AI notice:</u> I do not use LLMs, agents or any other generative AI tools for help with writing, coding, image creation or any other tasks related to this blog or my open source work.</p>
+    <p class="card-text">You can also find me on
+      <a href="https://github.com/miguelgrinberg">Github</a>,
+      <a href="http://www.linkedin.com/in/miguelgrinberg">LinkedIn</a>,
+      <a href="https://bsky.app/profile/miguelgrinberg.com">Bluesky</a>,
+      <a href="https://mstdn.social/@miguelgrinberg">Mastodon</a>,
+      <a href="https://twitter.com/miguelgrinberg">Twitter</a>,
+      <a href="https://youtube.com/miguelgrinberg">YouTube</a>,
+      <!--<a href="https://www.facebook.com/miguelgrinbergblog">Facebook</a>,-->
+      <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy Me a Coffee</a>,
+      and <a href="https://patreon.com/miguelgrinberg">Patreon</a>.</p>
+    <p class="card-text">Thank you for visiting!</p>
+  </div>
+</div>
+        
+        <div class="card" id="categories">
+  <div class="card-header">Categories</div>
+  <div class="card-body">
+    
+    <div class="category">
+      <a href="/category/AI/feed"><img src="/static/rss-small.png" title="AI RSS Feed" label="AI RSS Feed" alt="AI RSS Feed" /></a>
+      <form action="/category/AI" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="AI" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Arduino/feed"><img src="/static/rss-small.png" title="Arduino RSS Feed" label="Arduino RSS Feed" alt="Arduino RSS Feed" /></a>
+      <form action="/category/Arduino" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Arduino" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Authentication/feed"><img src="/static/rss-small.png" title="Authentication RSS Feed" label="Authentication RSS Feed" alt="Authentication RSS Feed" /></a>
+      <form action="/category/Authentication" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Authentication" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Blog/feed"><img src="/static/rss-small.png" title="Blog RSS Feed" label="Blog RSS Feed" alt="Blog RSS Feed" /></a>
+      <form action="/category/Blog" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Blog" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/C++/feed"><img src="/static/rss-small.png" title="C++ RSS Feed" label="C++ RSS Feed" alt="C++ RSS Feed" /></a>
+      <form action="/category/C++" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="C++" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/CSS/feed"><img src="/static/rss-small.png" title="CSS RSS Feed" label="CSS RSS Feed" alt="CSS RSS Feed" /></a>
+      <form action="/category/CSS" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="CSS" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Cloud/feed"><img src="/static/rss-small.png" title="Cloud RSS Feed" label="Cloud RSS Feed" alt="Cloud RSS Feed" /></a>
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" /> <small><em>12</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Database/feed"><img src="/static/rss-small.png" title="Database RSS Feed" label="Database RSS Feed" alt="Database RSS Feed" /></a>
+      <form action="/category/Database" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Database" /> <small><em>33</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Docker/feed"><img src="/static/rss-small.png" title="Docker RSS Feed" label="Docker RSS Feed" alt="Docker RSS Feed" /></a>
+      <form action="/category/Docker" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Docker" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Filmmaking/feed"><img src="/static/rss-small.png" title="Filmmaking RSS Feed" label="Filmmaking RSS Feed" alt="Filmmaking RSS Feed" /></a>
+      <form action="/category/Filmmaking" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Filmmaking" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Flask/feed"><img src="/static/rss-small.png" title="Flask RSS Feed" label="Flask RSS Feed" alt="Flask RSS Feed" /></a>
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" /> <small><em>130</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Games/feed"><img src="/static/rss-small.png" title="Games RSS Feed" label="Games RSS Feed" alt="Games RSS Feed" /></a>
+      <form action="/category/Games" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Games" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Infra/feed"><img src="/static/rss-small.png" title="Infra RSS Feed" label="Infra RSS Feed" alt="Infra RSS Feed" /></a>
+      <form action="/category/Infra" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Infra" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/IoT/feed"><img src="/static/rss-small.png" title="IoT RSS Feed" label="IoT RSS Feed" alt="IoT RSS Feed" /></a>
+      <form action="/category/IoT" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="IoT" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/JavaScript/feed"><img src="/static/rss-small.png" title="JavaScript RSS Feed" label="JavaScript RSS Feed" alt="JavaScript RSS Feed" /></a>
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" /> <small><em>37</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/MicroPython/feed"><img src="/static/rss-small.png" title="MicroPython RSS Feed" label="MicroPython RSS Feed" alt="MicroPython RSS Feed" /></a>
+      <form action="/category/MicroPython" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="MicroPython" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microdot/feed"><img src="/static/rss-small.png" title="Microdot RSS Feed" label="Microdot RSS Feed" alt="Microdot RSS Feed" /></a>
+      <form action="/category/Microdot" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microdot" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microservices/feed"><img src="/static/rss-small.png" title="Microservices RSS Feed" label="Microservices RSS Feed" alt="Microservices RSS Feed" /></a>
+      <form action="/category/Microservices" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microservices" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Movie Reviews/feed"><img src="/static/rss-small.png" title="Movie Reviews RSS Feed" label="Movie Reviews RSS Feed" alt="Movie Reviews RSS Feed" /></a>
+      <form action="/category/Movie%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Movie Reviews" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Personal/feed"><img src="/static/rss-small.png" title="Personal RSS Feed" label="Personal RSS Feed" alt="Personal RSS Feed" /></a>
+      <form action="/category/Personal" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Personal" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Photography/feed"><img src="/static/rss-small.png" title="Photography RSS Feed" label="Photography RSS Feed" alt="Photography RSS Feed" /></a>
+      <form action="/category/Photography" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Photography" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Product Reviews/feed"><img src="/static/rss-small.png" title="Product Reviews RSS Feed" label="Product Reviews RSS Feed" alt="Product Reviews RSS Feed" /></a>
+      <form action="/category/Product%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Product Reviews" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Programming/feed"><img src="/static/rss-small.png" title="Programming RSS Feed" label="Programming RSS Feed" alt="Programming RSS Feed" /></a>
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" /> <small><em>198</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Project Management/feed"><img src="/static/rss-small.png" title="Project Management RSS Feed" label="Project Management RSS Feed" alt="Project Management RSS Feed" /></a>
+      <form action="/category/Project%20Management" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Project Management" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Python/feed"><img src="/static/rss-small.png" title="Python RSS Feed" label="Python RSS Feed" alt="Python RSS Feed" /></a>
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" /> <small><em>187</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/REST/feed"><img src="/static/rss-small.png" title="REST RSS Feed" label="REST RSS Feed" alt="REST RSS Feed" /></a>
+      <form action="/category/REST" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="REST" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Raspberry Pi/feed"><img src="/static/rss-small.png" title="Raspberry Pi RSS Feed" label="Raspberry Pi RSS Feed" alt="Raspberry Pi RSS Feed" /></a>
+      <form action="/category/Raspberry%20Pi" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Raspberry Pi" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/React/feed"><img src="/static/rss-small.png" title="React RSS Feed" label="React RSS Feed" alt="React RSS Feed" /></a>
+      <form action="/category/React" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="React" /> <small><em>19</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Reviews/feed"><img src="/static/rss-small.png" title="Reviews RSS Feed" label="Reviews RSS Feed" alt="Reviews RSS Feed" /></a>
+      <form action="/category/Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Reviews" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Robotics/feed"><img src="/static/rss-small.png" title="Robotics RSS Feed" label="Robotics RSS Feed" alt="Robotics RSS Feed" /></a>
+      <form action="/category/Robotics" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Robotics" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Security/feed"><img src="/static/rss-small.png" title="Security RSS Feed" label="Security RSS Feed" alt="Security RSS Feed" /></a>
+      <form action="/category/Security" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Security" /> <small><em>14</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Video/feed"><img src="/static/rss-small.png" title="Video RSS Feed" label="Video RSS Feed" alt="Video RSS Feed" /></a>
+      <form action="/category/Video" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Video" /> <small><em>22</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/WebSocket/feed"><img src="/static/rss-small.png" title="WebSocket RSS Feed" label="WebSocket RSS Feed" alt="WebSocket RSS Feed" /></a>
+      <form action="/category/WebSocket" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="WebSocket" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Webcast/feed"><img src="/static/rss-small.png" title="Webcast RSS Feed" label="Webcast RSS Feed" alt="Webcast RSS Feed" /></a>
+      <form action="/category/Webcast" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Webcast" /> <small><em>3</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Windows/feed"><img src="/static/rss-small.png" title="Windows RSS Feed" label="Windows RSS Feed" alt="Windows RSS Feed" /></a>
+      <form action="/category/Windows" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Windows" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+  </div>
+</div>
+        
+      </div>
+    </div>
+    
+  </div>
+  <div id="footer">
+    
+    <p>&copy; 2012-<script type="text/javascript">document.write(new Date().getFullYear());</script> by Miguel Grinberg. All rights reserved. <a href="mailto:webmaster _at_ miguelgrinberg _dot_ com">Questions?</a></p>
+  </div>
+</div>
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="/static/prettify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js" integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg==" crossorigin="anonymous"></script>
+
+<script>
+moment.locale("en");
+function flask_moment_render(elem) {{
+    const timestamp = moment(elem.dataset.timestamp);
+    const func = elem.dataset.function;
+    const format = elem.dataset.format;
+    const timestamp2 = elem.dataset.timestamp2;
+    const no_suffix = elem.dataset.nosuffix;
+    const units = elem.dataset.units;
+    let args = [];
+    if (format)
+        args.push(format);
+    if (timestamp2)
+        args.push(moment(timestamp2));
+    if (no_suffix)
+        args.push(no_suffix);
+    if (units)
+        args.push(units);
+    elem.textContent = timestamp[func].apply(timestamp, args);
+    elem.classList.remove('flask-moment');
+    elem.style.display = "";
+}}
+function flask_moment_render_all() {{
+    const moments = document.querySelectorAll('.flask-moment');
+    moments.forEach(function(moment) {{
+        flask_moment_render(moment);
+        const refresh = moment.dataset.refresh;
+        if (refresh && refresh > 0) {{
+            (function(elem, interval) {{
+                setInterval(function() {{
+                    flask_moment_render(elem);
+                }}, interval);
+            }})(moment, refresh);
+        }}
+    }})
+}}
+document.addEventListener("DOMContentLoaded", flask_moment_render_all);
+</script>
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-20EHZP9GRZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-20EHZP9GRZ');
+  </script>
+  
+  <script type="text/javascript">
+    function setThemeUI() {
+      document.getElementById('select-theme-auto').classList.remove('active');
+      document.getElementById('select-theme-light').classList.remove('active');
+      document.getElementById('select-theme-dark').classList.remove('active');
+      const theme = getPreferredTheme();
+      const actualTheme = document.documentElement.getAttribute('data-bs-theme', 'light');
+      document.getElementById('select-theme-' + theme).classList.add('active');
+      document.getElementById('current-theme').href.baseVal = `#icon-theme-${actualTheme}`;
+    };
+
+    function updateTheme(theme) {
+      if (theme === 'auto') {
+        localStorage.removeItem('theme')
+      }
+      else {
+        localStorage.setItem('theme', theme)
+      }
+      setTheme(getPreferredTheme());
+    }
+
+    setThemeUI();
+
+    const darkModePreference = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModePreference.addEventListener("change", e => {
+      if (getPreferredTheme() === 'auto') {
+        setTheme('auto');
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // add prettyprint class to all <pre><code></code></pre> blocks
+      let prettify = false;
+      document.querySelectorAll('div.post-body pre code').forEach((code) => {
+        code.parentNode.classList.add('prettyprint');
+        prettify = true;
+      });
+      prettyPrint();
+    });
+  </script>
+
+  </body>
+</html>

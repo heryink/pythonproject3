@@ -1,0 +1,1522 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    
+  <script type="text/javascript">
+    function getPreferredTheme() {
+      const storedTheme = localStorage.getItem('theme')
+      if (storedTheme) {
+        return storedTheme
+      }
+      return 'auto';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    };
+
+    setTheme(getPreferredTheme());
+  </script>
+  
+    <title>
+  
+    The Flask Mega-Tutorial, Part XIV: Ajax - miguelgrinberg.com
+  
+</title>
+  
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="miguelgrinberg.com">
+  <meta name="copyright" content="Copyright (c) 2012-2024 Miguel Grinberg">
+  <meta name="author" content="Miguel Grinberg">
+  
+  <meta name="keywords" content="python, programming, flask, javascript, ajax, xhr, requests">
+  
+  
+  <link rel="canonical" href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xiv-ajax">
+  
+
+  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+
+  <link href="/static/tomorrow.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/tomorrow-night.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/social.css" rel="stylesheet" type="text/css" />
+  <link href="/static/style_20260305.css" rel="stylesheet" type="text/css" />
+
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  <link rel="alternate" type="application/rss+xml" href="/feed" title="miguelgrinberg.com RSS feed">
+
+    <meta property="og:title" content="The Flask Mega-Tutorial, Part XIV: Ajax">
+    <meta property="og:description" content="This is the fourteenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to add a live language translation feature, using the Microsoft translation service and a little bit of…">
+    <meta property="og:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xiv-ajax.jpg">
+    <meta property="og:url" content="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xiv-ajax">
+    <meta name="twitter:title" content="The Flask Mega-Tutorial, Part XIV: Ajax">
+    <meta name="twitter:description" content="This is the fourteenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to add a live language translation feature, using the Microsoft translation service and a little bit of…">
+    <meta name="twitter:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xiv-ajax.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@miguelgrinberg">
+
+  </head>
+  <body>
+    <svg style="display: none" version="2.0">
+      <defs>
+        <symbol id="icon-theme-auto" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-circle-half" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/>
+        </symbol>
+        <symbol id="icon-theme-light" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </symbol>
+        <symbol id="icon-theme-dark" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-moon-stars-fill" viewBox="0 0 16 16">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+        </symbol>
+      </defs>
+    </svg>
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/index">miguelgrinberg.com</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/index">Home</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/my-courses-and-books">My Courses and Books</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/hire-me">Consulting</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/about-me">About Me</a></li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <svg width="20" height="20" version="2.0"><use id="current-theme" href="#icon-theme-light"></svg>
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a id="select-theme-light" class="dropdown-item" href="javascript:updateTheme('light'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-light"></svg>&nbsp; Light Mode
+              </a>
+            </li>
+            <li>
+              <a id="select-theme-dark" class="dropdown-item" href="javascript:updateTheme('dark'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-dark"></svg>&nbsp; Dark Mode
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a id="select-theme-auto" class="dropdown-item" href="javascript:updateTheme('auto'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-auto"></svg>&nbsp; System Default
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item social-icons">
+          <a href="http://github.com/miguelgrinberg"><img src="/static/social/github.png" alt="GitHub" title="GitHub" /></a>
+          <a href="http://www.linkedin.com/in/miguelgrinberg"><img src="/static/social/linkedin.png" alt="LinkedIn" title="LinkedIn" /></a>
+          <a href="https://bsky.app/profile/miguelgrinberg.com"><img src="/static/social/bluesky.png" alt="Bluesky" title="Bluesky" /></a>
+          <a rel="me" href="https://mstdn.social/@miguelgrinberg"><img src="/static/social/mastodon.png" alt="Mastodon" title="Mastodon" /></a>
+          <a href="https://twitter.com/miguelgrinberg"><img src="/static/social/twitter.png" alt="Twitter" title="Twitter" /></a>
+          <a href="https://youtube.com/miguelgrinberg"><img src="/static/social/youtube.png" alt="YouTube" title="YouTube" /></a>
+          <a href="https://www.buymeacoffee.com/miguelgrinberg"><img src="/static/social/buymeacoffee.png" alt="Buy Me a Coffee" title="Buy Me a Coffee" /></a>
+          <a href="https://patreon.com/miguelgrinberg"><img src="/static/social/patreon.png" alt="Patreon" title="Patreon" /></a>
+          <a type="application/rss+xml" href="/feed"><img src="/static/social/rss.png" alt="RSS Feed" title="RSS Feed" /></a>
+          <!--<a href="https://www.facebook.com/miguelgrinbergblog"><img src="/static/social/facebook.png" alt="Facebook" title="Facebook" /></a>-->
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <div id="main">
+        
+        
+        
+        
+        
+
+<div class="post">
+
+<div class="post-header">
+  <h1><a href="/post/the-flask-mega-tutorial-part-xiv-ajax">The Flask Mega-Tutorial, Part XIV: Ajax</a></h1>
+  <h2>
+    Posted by
+    <form action="/author/Miguel%20Grinberg" method="POST">
+      <input type="submit" class="btn btn-danger btn-sm" value="Miguel Grinberg" />
+    </form>
+    on
+    <button class="btn btn-secondary btn-sm" disabled><span class="flask-moment" data-timestamp="2023-12-03T10:40:20Z" data-function="format" data-format="LL" data-refresh="0" style="display: none">2023-12-03T10:40:20Z</span></button>
+    under
+    
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" />
+      </form>
+    
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" />
+      </form>
+    
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" />
+      </form>
+    
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" />
+      </form>
+    
+    
+  </h2>
+</div>
+<div class="post-body"><p>This is the fourteenth installment of the Flask Mega-Tutorial series, in which I'm going to add a live language translation feature, using the Microsoft translation service and a little bit of JavaScript.</p>
+<p>You are reading the 2024 edition of the Flask Mega-Tutorial. The complete course is also available to order in e-book and paperback formats from <a href="https://amzn.to/3ahVnPN">Amazon</a>. Thank you for your support!</p>
+<p>If you are looking for the 2018 edition of this course, you can find it <a href="/post/the-flask-mega-tutorial-part-i-hello-world-2018">here</a>.</p>
+<p>For your reference, here is the complete list of articles in this series:</p>
+<ul>
+<li><a href="/post/the-flask-mega-tutorial-part-i-hello-world">Chapter 1:  Hello, World!</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ii-templates">Chapter 2:  Templates</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iii-web-forms">Chapter 3:  Web Forms</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iv-database">Chapter 4:  Database</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5:  User Logins</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vi-profile-page-and-avatars">Chapter 6:  Profile Page and Avatars</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7:  Error Handling</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-viii-followers">Chapter 8:  Followers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ix-pagination">Chapter 9:  Pagination</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-x-email-support">Chapter 10:  Email Support</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xi-facelift">Chapter 11:  Facelift</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xii-dates-and-times">Chapter 12:  Dates and Times</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiii-i18n-and-l10n">Chapter 13:  I18n and L10n</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiv-ajax">Chapter 14:  Ajax</a> (this article)</li>
+<li><a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15:  A Better Application Structure</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16:  Full-Text Search</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17:  Deployment on Linux</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18:  Deployment on Heroku</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">Chapter 19:  Deployment on Docker Containers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">Chapter 20:  Some JavaScript Magic</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21:  User Notifications</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">Chapter 22:  Background Jobs</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">Chapter 23:  Application Programming Interfaces (APIs)</a></li>
+</ul>
+<p>In this article I'm going to take a departure from the "safe zone" of server-side development to work on a feature that has equally important server and client-side components. Have you seen the "Translate" links that some sites show next to user generated content? These are links that trigger a real time automated translation of content that is not in the user's native language. The translated content is typically inserted below the original version. Google shows it for search results in foreign languages. Facebook does it for posts. Twitter does it for tweets. Today I'm going to show you how to add the very same feature to Microblog!</p>
+<p><em>The GitHub links for this chapter are: <a href="https://github.com/miguelgrinberg/microblog/tree/v0.14">Browse</a>, <a href="https://github.com/miguelgrinberg/microblog/archive/v0.14.zip">Zip</a>, <a href="https://github.com/miguelgrinberg/microblog/compare/v0.13...v0.14">Diff</a>.</em></p>
+<h2>Server-side vs. Client-side</h2>
+<p>In the traditional server-side model that I've followed so far there is a client (a web browser commanded by a user) making HTTP requests to the application server. A request can simply ask for an HTML page, like when you click the "Profile" link, or it can trigger an action, like when you click the Submit button after editing your profile information. In both types of requests the server completes the request by sending a new web page to the client, either directly or by issuing a redirect. The client then replaces the current page with the new one. This cycle repeats for as long as the user stays on the application's website. In this model the server does all the work, while the client just displays the web pages and accepts user input.</p>
+<p>There is a different model in which the client takes a more active role. In this model, the client issues a request to the server and the server responds with a web page, but unlike the previous case, not all the page data is HTML, there is also sections of the page with code, typically written in JavaScript. Once the client receives the page it displays the HTML portions, and executes the code, which often doesn't run immediately, but just sets event handlers to run in the browser as a response to actions triggered by the user. From then on you have an active client that can do work on its own without little or no contact with the server. In a strict client-side application the entire application is downloaded to the client with the initial page request, and then the application runs entirely on the client, only contacting the server to retrieve or store data and making dynamic changes to the appearance of that first and only web page. This type of applications are called <a href="http://en.wikipedia.org/wiki/Single-page_application">Single Page Applications</a> or SPAs.</p>
+<p>Most applications are a hybrid between the two models and combine techniques of both. My Microblog application is mostly a server-side application, but today I will be adding a bit of client-side action to it. To do real time translations of user posts, the client browser will send <em>asynchronous requests</em> to the server, to which the server will respond without causing a page refresh. The client will then insert the translations into the current page dynamically. This technique is known as <a href="http://en.wikipedia.org/wiki/Ajax_(programming)">Ajax</a>, which is short for Asynchronous JavaScript and XML (even though these days XML is often replaced with JSON).</p>
+<h2>Live Translation Workflow</h2>
+<p>The application has good support for foreign languages thanks to Flask-Babel, which makes it possible to support as many languages as I can find translators for. But of course, there is one element missing. Users are going to write blog posts in their own languages, so it is quite possible that a user will come across posts from other users that are written in unknown languages. The quality of automated translations isn't always great, but in most cases it is good enough if all you want is to have a basic idea of what a text in another language means.</p>
+<p>This is an ideal feature to implement as an Ajax service. Consider that the index or explore pages could be showing several posts, some of which might be in foreign languages. If I implement the translation using traditional server-side techniques, a request for a translation would cause the original page to get replaced with a new page. The fact is that requesting a translation for one out of many displayed blogs posts isn't a big enough action to require a full page update, this feature works much better if the translated text is dynamically inserted below the original text while leaving the rest of the page untouched.</p>
+<p>Implementing live automated translations requires a few steps. First, I need a way to identify the source language of the text to translate. I also need to know the preferred language for each user, because I want to show a "Translate" link only for posts written in other languages. When a translation link is offered and the user clicks on it, I will need to send the Ajax request to the server, and the server will contact a third-party translation API. Once the server sends back a response with the translated text, the client-side JavaScript code will dynamically insert this text into the page. As you can surely notice, there are a few non-trivial problems here. I'm going to look at these one by one.</p>
+<h2>Language Identification</h2>
+<p>The first problem is identifying what language a post was written in. This isn't an exact science, as it is not always possible to unequivocally determine the language of a text, but for most cases, automated detection works fairly well. In Python, there is a good language detection library called <code>langdetect</code>.</p>
+<pre><code>(venv) $ pip install langdetect
+</code></pre>
+<p>The plan is to feed each blog post to this package, to try to determine the language. Since doing this analysis is somewhat time-consuming, I don't want to repeat this work every time a post is rendered to a page. What I'm going to do is set the detected language of a post at the time the post is submitted. The detected language is then going to be stored in the posts table.</p>
+<p>The first step is to add a <code>language</code> field to the <code>Post</code> model:</p>
+<p class="code_title"><em>app/models.py</em>: Add detected language to Post model.</p>
+
+<pre><code class="language-python">class Post(db.Model):
+    # ...
+    language: so.Mapped[Optional[str]] = so.mapped_column(sa.String(5))
+</code></pre>
+<p>As you recall, each time there is a change made to the database models, a database migration needs to be issued:</p>
+<pre><code>(venv) $ flask db migrate -m &quot;add language to posts&quot;
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.autogenerate.compare] Detected added column 'post.language'
+  Generating migrations/versions/2b017edaa91f_add_language_to_posts.py ... done
+</code></pre>
+<p>And then the migration needs to be applied to the database:</p>
+<pre><code>(venv) $ flask db upgrade
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Upgrade ae346256b650 -&gt; 2b017edaa91f, add language to posts
+</code></pre>
+<p>I can now detect and store the language when a post is submitted:</p>
+<p class="code_title"><em>app/routes.py</em>: Save language for new posts.</p>
+
+<pre><code class="language-python">from langdetect import detect, LangDetectException
+
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
+@login_required
+def index():
+    form = PostForm()
+    if form.validate_on_submit():
+        try:
+            language = detect(form.post.data)
+        except LangDetectException:
+            language = ''
+        post = Post(body=form.post.data, author=current_user,
+                    language=language)
+        # ...
+</code></pre>
+<p>With this change, each time a post is submitted, I run the text through the <code>detect()</code> function to try to determine the language. If the language cannot be identified, the <code>langdetect</code> package raises an exception of type <code>LangDetectException</code>. In that case I play it safe and save an empty string to the database. I'm going to adopt the convention that any posts that have the language set to an empty string are assumed to have an unknown language.</p>
+<h2>Displaying a "Translate" Link</h2>
+<p>The second step involves adding a "Translate" link next to any posts that are not in the language the is active for the current user.</p>
+<p class="code_title"><em>app/templates/_post.html</em>: Add a Translate link to posts.</p>
+
+<pre><code class="language-html">                {% if post.language and post.language != g.locale %}
+                &lt;br&gt;&lt;br&gt;
+                &lt;a href=&quot;#&quot;&gt;{{ _('Translate') }}&lt;/a&gt;
+                {% endif %}
+</code></pre>
+<p>I'm doing this in the <code>_post.html</code> sub-template, so that this functionality appears on any page that displays blog posts. The Translate link will only appear on posts for which the language was detected, and this language does not match the language selected by the function decorated with Flask-Babel's <code>locale_selector</code> function. Recall from <a href="/post/the-flask-mega-tutorial-part-xiii-i18n-and-l10n">Chapter 13</a> that the selected locale is stored as <code>g.locale</code> in the <code>before_request</code> handler. The text of the link needs to be added in a way that it can be translated by Flask-Babel, so I used the <code>_()</code> function when I defined it.</p>
+<p>Note that there is no associated an action with this link yet. First I want to figure out how to carry out the actual translations.</p>
+<h2>Using a Third-Party Translation Service</h2>
+<p>The two major translation services are <a href="https://developers.google.com/translate/">Google Cloud Translation API</a> and <a href="https://www.microsoft.com/en-us/translator/business/">Microsoft Translator Text API</a>. Both are paid services, and both have an entry level option for low volume of translations that is free. In this chapter I'm going to implement the Microsoft solution, but I'm going to do it in a way that it is easy to replace the translation service if you so desire.</p>
+<p>Before you can use the Microsoft Translator API, you will need to get an account with <a href="https://azure.com">Azure</a>, Microsoft's cloud service. You can sign up on their free tier. You will be asked to provide a credit card number during the signup process, but your card is not going to be charged while you stay on that level of service.</p>
+<p>Once you have the Azure account, go to the Azure Portal and click on the "Create a resource" button, type "translator" in the search box and press Enter. Find the Translator resource from the search results and click the "Create" button. You will now be presented with a form in which you can define a new translator resource that will be added to your account. Complete the form as follows:</p>
+<ul>
+<li>Subscription: select "Pay-As-You-Go"</li>
+<li>Resource group: click "Create new", and enter name "microblog-translator"</li>
+<li>Region: select the region closest to you</li>
+<li>Name: enter "microblog"</li>
+<li>Pricing tier: select "Free F0 (Up to 2M characters translated per month)"</li>
+</ul>
+<p>Click the "Review + create" button to continue on to the next page, in which you will see a summary of the options you have selected. Click the "Create" button to confirm the creation of the translation resource. If you wait a few seconds, you will receive a notification in the top bar that the translator resource was deployed. Click the "Go to resource" button, and then on the "Keys and Endpoint" option on the left sidebar. You will now see two keys, labeled "Key 1" and "Key 2". Copy either one of the keys to the clipboard and then enter it into an environment variable in your terminal (if you are using Microsoft Windows, replace <code>export</code> with <code>set</code>):</p>
+<pre><code>(venv) $ export MS_TRANSLATOR_KEY=&lt;paste-your-key-here&gt;
+</code></pre>
+<p>This key is used to authenticate with the translation service, so it needs to be added to the application configuration:</p>
+<p class="code_title"><em>config.py</em>: Add Microsoft Translator API key to the configuration.</p>
+
+<pre><code class="language-python">class Config:
+    # ...
+    MS_TRANSLATOR_KEY = os.environ.get('MS_TRANSLATOR_KEY')
+</code></pre>
+<p>As always with configuration values, I prefer to install them in environment variables and import them into the Flask configuration from there. This is particularly important with sensitive information such as keys or passwords that enable access to third-party services. You definitely do not want to write those explicitly in the code.</p>
+<p>The Microsoft Translator API is a web service that accepts HTTP requests. There are a few HTTP clients in Python, but the most popular and simple to use is the <code>requests</code> package. So let's install that into the virtual environment:</p>
+<pre><code>(venv) $ pip install requests
+</code></pre>
+<p>Below you can see the function that I coded to translate text using the Microsoft Translator API. I am putting it in a new <em>app/translate.py</em> module:</p>
+<p class="code_title"><em>app/translate.py</em>: Text translation function.</p>
+
+<pre><code class="language-python">import requests
+from flask_babel import _
+from app import app
+
+def translate(text, source_language, dest_language):
+    if 'MS_TRANSLATOR_KEY' not in app.config or \
+            not app.config['MS_TRANSLATOR_KEY']:
+        return _('Error: the translation service is not configured.')
+    auth = {
+        'Ocp-Apim-Subscription-Key': app.config['MS_TRANSLATOR_KEY'],
+        'Ocp-Apim-Subscription-Region': 'westus',
+    }
+    r = requests.post(
+        'https://api.cognitive.microsofttranslator.com'
+        '/translate?api-version=3.0&amp;from={}&amp;to={}'.format(
+            source_language, dest_language), headers=auth, json=[{'Text': text}])
+    if r.status_code != 200:
+        return _('Error: the translation service failed.')
+    return r.json()[0]['translations'][0]['text']
+</code></pre>
+<p>The function takes the text to translate and the source and destination language codes as arguments, and it returns a string with the translated text. It starts by checking that there is a key for the translation service in the configuration, returning an error if the key hasn't been defined. The error is also a string, so from the outside, this is going to look like the translated text. This ensures that in the case of an error, the user will see a meaningful error message.</p>
+<p>The <code>post()</code> method from the <code>requests</code> package sends an HTTP request with a <code>POST</code> method to the URL given as the first argument. I'm using the base URL that appears in the "Keys and Endpoint" page of the translator resource, which is https://api.cognitive.microsofttranslator.com/. The path for the translation endpoint is /translate, as given in the <a href="https://docs.microsoft.com/en-us/azure/cognitive-services/translator/reference/v3-0-translate">documentation</a>.</p>
+<p>The source and destination languages need to be given as query string arguments in the URL, named <code>from</code> and <code>to</code> respectively. The API also requires the <code>api-version=3.0</code> argument to be given in the query string. The text to translate needs to be given in JSON format in the body of the request, with the format <code>{"Text": "the text to translate here"}</code>.</p>
+<p>To authenticate with the service, I need to pass the key that I added to the configuration. This key needs to be given in a custom HTTP header with the name <code>Ocp-Apim-Subscription-Key</code>. The region in which the translator resource was deployed also needs to be provided, in a header with the name <code>Ocp-Apim-Subscription-Region</code>. The name that you need to provide for the region is shown in the "Keys and Endpoint" page, right below the two keys. In my case it is <code>westus</code> for the <code>West US</code> region that I selected, but it will be different for you if you selected a different region. I have created the <code>auth</code> dictionary with these two headers and then passed it to <code>requests</code> in the <code>headers</code> argument.</p>
+<p>The <code>requests.post()</code> method returns a response object, which contains all the details provided by the service. I first need to check that the status code is 200, which is the code for a successful request. If I get any other codes, I know that there was an error, so in that case I return an error string. If the status code is 200, then the body of the response has a JSON encoded string with the translation, so all I need to do is use the <code>json()</code> method from the response object to decode the JSON into a Python string that I can use. The JSON response is a list of translations, but since we are translating a single text I can get the first element and find the actual translated text within the translation structure.</p>
+<p>Below you can see a Python console session in which I use the new <code>translate()</code> function:</p>
+<pre><code class="language-python">&gt;&gt;&gt; from app.translate import translate
+&gt;&gt;&gt; translate('Hi, how are you today?', 'en', 'es')  # English to Spanish
+'Hola, ¿cómo estás hoy?'
+&gt;&gt;&gt; translate('Hi, how are you today?', 'en', 'de')  # English to German
+'Are Hallo, how you heute?'
+&gt;&gt;&gt; translate('Hi, how are you today?', 'en', 'it')  # English to Italian
+'Ciao, come stai oggi?'
+&gt;&gt;&gt; translate('Hi, how are you today?', 'en', 'fr')  # English to French
+&quot;Salut, comment allez-vous aujourd'hui ?&quot;
+</code></pre>
+<p>Pretty cool, right? Now it's time to integrate this functionality with the application.</p>
+<h2>Ajax From The Server</h2>
+<p>I'm going to start by implementing the server-side part. When the user clicks the "Translate" link that appears below a post, an asynchronous HTTP request will be issued to the server. I'll show you how to do this in the next section, so for now I'm going to concentrate on implementing the handling of this request by the server.</p>
+<p>An asynchronous (or Ajax) request is similar to the routes and view functions that I have created in the application, with the only difference that instead of returning HTML or a redirect, it just returns data, formatted as <a href="http://en.wikipedia.org/wiki/XML">XML</a> or more commonly <a href="http://en.wikipedia.org/wiki/JSON">JSON</a>. Below you can see the translation view function, which invokes the Microsoft Translator API and then returns the translated text in JSON format:</p>
+<p class="code_title"><em>app/routes.py</em>: Text translation view function.</p>
+
+<pre><code class="language-python">from app.translate import translate
+
+@app.route('/translate', methods=['POST'])
+@login_required
+def translate_text():
+    data = request.get_json()
+    return {'text': translate(data['text'],
+                              data['source_language'],
+                              data['dest_language'])}
+</code></pre>
+<p>As you can see, this is very short. I implemented this route as a <code>POST</code> request, which is the preferred format when the client needs to submit data to the server.</p>
+<p>The <code>request.get_json()</code> method returns a dictionary with data that the client has submitted in JSON format. What I'm doing in this function is to invoke the <code>translate()</code> function from the previous section, passing the three arguments directly from the JSON data that was submitted with the request. The result is incorporated into a dictionary with a single key called <code>text</code>, which is returned as the response. Flask automatically dictionaries returned by view functions to the JSON format.</p>
+<p>For example, if the client wanted to translate the string <code>Hello, World!</code> to Spanish, the response from this request would have the follow payload:</p>
+<pre><code>{ &quot;text&quot;: &quot;Hola, Mundo!&quot; }
+</code></pre>
+<h2>Ajax From The Client</h2>
+<p>So now that the server is able to provide translations through the <em>/translate</em> URL, I need to invoke this URL when the user clicks the "Translate" link I added above, passing the text to translate and the source and destination languages. If you are not familiar with working with JavaScript in the browser this is going to be a good learning experience.</p>
+<p>When working with JavaScript in the browser, the page currently being displayed is internally represented in the Document Object Model or DOM. This is a hierarchical structure that references all the elements that exist in the page. The JavaScript code running in this context can make changes to the DOM to trigger changes in the page.</p>
+<p>Let's first discuss how my JavaScript code running in the browser can obtain the three arguments that I need to send to the <code>translate()</code> function that runs in the server. To obtain the text, I need to locate the node within the DOM that contains the blog post body and read its contents. To make it easy to identify the DOM nodes that contain blog posts, I'm going to attach a unique ID to them. If you look at the <em>_post.html</em> template, the line that renders the post body just reads <code>{{ post.body }}</code>. What I'm going to do is wrap this content in a <code>&lt;span&gt;</code> element. This is not going to change anything visually, but it gives me a place where I can insert an identifier:</p>
+<p class="code_title"><em>app/templates/_post.html</em>: Add an ID to each blog post.</p>
+
+<pre><code class="language-html">                &lt;span id=&quot;post{{ post.id }}&quot;&gt;{{ post.body }}&lt;/span&gt;
+</code></pre>
+<p>This is going to assign a unique identifier to each blog post, with the format <code>post1</code>, <code>post2</code>, and so on, where the number matches the database identifier of each post. Now that each blog post has a unique identifier, I can use the <code>document.getElementById()</code> function available in the browser to locate the <code>&lt;span&gt;</code> element for that post and extract the text in it. For example, if I wanted to get the text for a post with ID 123 this is what I would do:</p>
+<pre><code>document.getElementById('post123').innerText
+</code></pre>
+<p>I will also want to have a place where I will be inserting the translated text once I receive it from the server. For this I'm going to replace the "Translate" link with the translated text, so I also need to have a unique identifier to locate it easily:</p>
+<p class="code_title"><em>app/templates/_post.html</em>: Add an ID to the translate link.</p>
+
+<pre><code class="language-html">                &lt;span id=&quot;translation{{ post.id }}&quot;&gt;
+                    &lt;a href=&quot;#&quot;&gt;{{ _('Translate') }}&lt;/a&gt;
+                &lt;/span&gt;
+</code></pre>
+<p>So now for a given post ID, I have a <code>post&lt;ID&gt;</code> node for the blog post, and a corresponding <code>translation&lt;ID&gt;</code> node where I will need to replace the Translate link with the translated text once I have it.</p>
+<p>The next step is to write a function that can do all the translation work. This function will take the input and output DOM nodes, and the source and destination languages. Then it will issue the asynchronous request to the server with the three arguments needed, and finally replace the Translate link with the translated text returned by the server. This sounds like a lot of work, but the implementation is fairly short. For convenience, this function will be added in the base template at the bottom of the <code>&lt;body&gt;</code> element, so that it is available in all the pages of the application.</p>
+<p class="code_title"><em>app/templates/base.html</em>: Client-side translate function.</p>
+
+<pre><code class="language-html">    ...
+    &lt;script&gt;
+      async function translate(sourceElem, destElem, sourceLang, destLang) {
+        document.getElementById(destElem).innerHTML =
+          '&lt;img src=&quot;{{ url_for('static', filename='loading.gif') }}&quot;&gt;';
+        const response = await fetch('/translate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json; charset=utf-8'},
+          body: JSON.stringify({
+            text: document.getElementById(sourceElem).innerText,
+            source_language: sourceLang,
+            dest_language: destLang
+          })
+        })
+        const data = await response.json();
+        document.getElementById(destElem).innerText = data.text;
+      }
+    &lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>The first two arguments of the <code>translate()</code> function are the unique IDs for the post and the Translate link nodes, called <code>sourceElem</code> and <code>destElem</code> respectively. The third and fourth arguments are the source and destination language codes. The function is defined with the <code>async</code> keyword, so that it can await asynchronous functions with the <code>await</code> keyword.</p>
+<p>The first thing the function does is cosmetic, but very cool: it adds a <em>spinner</em> image replacing the Translate link, so that the user knows that the translation is in progress. This is done by assigning to the <code>innerHTML</code> property of the element referenced by <code>destElem</code>, which effectively replaces the content of that element with new HTML. For the spinner, I'm going to use a small animated GIF that I have added to the <em>app/static/loading.gif</em> directory, which Flask reserves for static files. To generate the URL that references this image, I'm using the <code>url_for()</code> function, passing the special route name <code>static</code> and giving the filename of the image as an argument. You can find the <em>loading.gif</em> image in the <a href="https://github.com/miguelgrinberg/microblog/tree/v0.14">download package</a> for this chapter.</p>
+<p>So now I have a nice spinner that took the place of the Translate link, so the user knows to wait for the translation to appear a few moments later. The next step is to send the <code>POST</code> request to the <em>/translate</em> URL that I defined in the previous section. For this I'm going to use the <code>fetch()</code> function provided by the browser. This function submits data to the server at the URL given in the first argument. The dictionary passed as the second argument defines the characteristics of the request, including the HTTP method to use, any headers, and the body of the request with the data.</p>
+<p>The body is a string that is generated with the <code>JSON.stringify()</code> function, which takes a dictionary with data and returns a JSON payload with that data. The <code>Content-Type</code> header is added to the request to tell the server that the data is given in JSON format.</p>
+<p>The <code>fetch()</code> function is asynchronous, which means that it returns a promise object. To simplify its handling, the <code>await</code> keyword is used to wait for this function to complete. The return value is a response object.</p>
+<p>The server returns JSON data in this request, so the <code>response.json()</code> method is used to convert it to a dictionary (which in JavaScript is called an "object"). This is also an asynchronous operation, so the <code>await</code> keyword is used one more time. The result of this conversion is stored in <code>data</code>.</p>
+<p>The last line of the function sets the <code>innerText</code> property of the <code>destElem</code> node (which now has a spinner image), with the text returned by the server, which is either the translated version of the input text, or an error message.</p>
+<p>So now the only thing that is left is to trigger the <code>translate()</code> function with the correct arguments as a result of the user clicking a Translate link. There are also a few ways to do this, what I'm going to do is just embed the call to the function in the <code>href</code> attribute of the link:</p>
+<p class="code_title"><em>app/templates/_post.html</em>: Translate link handler.</p>
+
+<pre><code class="language-html">                &lt;span id=&quot;translation{{ post.id }}&quot;&gt;
+                    &lt;a href=&quot;javascript:translate(
+                                'post{{ post.id }}',
+                                'translation{{ post.id }}',
+                                '{{ post.language }}',
+                                '{{ g.locale }}');&quot;&gt;{{ _('Translate') }}&lt;/a&gt;
+                &lt;/span&gt;
+</code></pre>
+<p>The <code>href</code> element of a link can accept any JavaScript code if it is prefixed with <code>javascript:</code>, so that is a convenient way to make the call to the translation function. Because this link is going to be rendered in the server when the client requests the page, I can use <code>{{ }}</code> expressions to generate the four arguments to the function. Each post will have its own translate link, with its uniquely generated arguments.</p>
+<p>Now the live translation feature is complete! If you have set a valid Microsoft Translator API key in your environment, you should now be able to trigger translations. Assuming you have your browser set to prefer English, you will need to write a post in another language to see the "Translate" link. Below you can see an example:</p>
+<p><img alt="Translation" src="/static/images/mega-tutorial/ch15-translate.png" /></p>
+<p>In this chapter I introduced a few new texts that need to be translated into all the languages supported by the application, so it is necessary to update the translation catalogs:</p>
+<pre><code>(venv) $ flask translate update
+</code></pre>
+<p>For your own projects you will then need to edit the <em>messages.po</em> files in each language repository to include the translations for these new tests, but I have already created the Spanish translations in the download package for this chapter or the GitHub repository.</p>
+<p>To publish the new translations, they need to be compiled:</p>
+<pre><code>(venv) $ flask translate compile
+</code></pre>
+<p>Continue on to the <a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">next chapter</a>.</p></div>
+
+<h2>Buy me a coffee?</h2>
+<p class="card-text">Thank you for visiting my blog! If you enjoyed this article, please consider supporting my work and keeping me caffeinated with a small one-time donation through <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy me a coffee</a>. Thanks!</p>
+<a href="https://www.buymeacoffee.com/miguelgrinberg" target="_blank"><img src="/static/buymeacoffee-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+
+<h2>Share this post</h2>
+<!-- Sharingbutton Hacker News -->
+<a class="resp-sharing-button__link" href="https://news.ycombinator.com/submitlink?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xiv-ajax&amp;t=The%20Flask%20Mega-Tutorial%2C%20Part%20XIV%3A%20Ajax" target="_blank" rel="noopener" aria-label="Hacker News">
+  <div class="resp-sharing-button resp-sharing-button--hackernews resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><path fill-rule="evenodd" d="M60.94 82.314L17 0h20.08l25.85 52.093c.397.927.86 1.888 1.39 2.883.53.994.995 2.02 1.393 3.08.265.4.463.764.596 1.095.13.334.262.63.395.898.662 1.325 1.26 2.618 1.79 3.877.53 1.26.993 2.42 1.39 3.48 1.06-2.254 2.22-4.673 3.48-7.258 1.26-2.585 2.552-5.27 3.877-8.052L103.49 0h18.69L77.84 83.308v53.087h-16.9v-54.08z"></path></svg></div>Hacker News</div>
+</a>
+
+<!-- Sharingbutton Reddit -->
+<a class="resp-sharing-button__link" href="https://reddit.com/submit/?url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xiv-ajax&amp;resubmit=true&amp;title=The Flask Mega-Tutorial, Part XIV: Ajax" target="_blank" rel="noopener" aria-label="Reddit">
+  <div class="resp-sharing-button resp-sharing-button--reddit resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-6.07-1.72.08-1.1.4-3.05 1.52-3.7.72-.4 1.73-.24 3 .5C17.2 6.3 18.46 7.5 20 7.5c1.65 0 3-1.35 3-3s-1.35-3-3-3c-1.38 0-2.54.94-2.88 2.22-1.43-.72-2.64-.8-3.6-.25-1.64.94-1.95 3.47-2 4.55-2.33.08-4.45.7-6.1 1.72C4.86 8.98 3.96 8.5 3 8.5c-1.65 0-3 1.35-3 3 0 1.32.84 2.44 2.05 2.84-.03.22-.05.44-.05.66 0 3.86 4.5 7 10 7s10-3.14 10-7c0-.22-.02-.44-.05-.66 1.2-.4 2.05-1.54 2.05-2.84zM2.3 13.37C1.5 13.07 1 12.35 1 11.5c0-1.1.9-2 2-2 .64 0 1.22.32 1.6.82-1.1.85-1.92 1.9-2.3 3.05zm3.7.13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9.8 4.8c-1.08.63-2.42.96-3.8.96-1.4 0-2.74-.34-3.8-.95-.24-.13-.32-.44-.2-.68.15-.24.46-.32.7-.18 1.83 1.06 4.76 1.06 6.6 0 .23-.13.53-.05.67.2.14.23.06.54-.18.67zm.2-2.8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm5.7-2.13c-.38-1.16-1.2-2.2-2.3-3.05.38-.5.97-.82 1.6-.82 1.1 0 2 .9 2 2 0 .84-.53 1.57-1.3 1.87z"/></svg></div>Reddit</div>
+</a>
+
+<!-- Sharingbutton Twitter -->
+<a class="resp-sharing-button__link" href="https://twitter.com/intent/tweet/?text=The%20Flask%20Mega-Tutorial%2C%20Part%20XIV%3A%20Ajax&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xiv-ajax" target="_blank" rel="noopener" aria-label="Twitter">
+  <div class="resp-sharing-button resp-sharing-button--twitter resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/></svg></div>Twitter</div>
+</a>
+
+<!-- Sharingbutton LinkedIn -->
+<a class="resp-sharing-button__link" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xiv-ajax&amp;title=The%20Flask%20Mega-Tutorial%2C%20Part%20XIV%3A%20Ajax&amp;summary=The%20Flask%20Mega-Tutorial%2C%20Part%20XIV%3A%20Ajax&amp;source=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xiv-ajax" target="_blank" rel="noopener" aria-label="LinkedIn">
+  <div class="resp-sharing-button resp-sharing-button--linkedin resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.5 21.5h-5v-13h5v13zM4 6.5C2.5 6.5 1.5 5.3 1.5 4s1-2.4 2.5-2.4c1.6 0 2.5 1 2.6 2.5 0 1.4-1 2.5-2.6 2.5zm11.5 6c-1 0-2 1-2 2v7h-5v-13h5V10s1.6-1.5 4-1.5c3 0 5 2.2 5 6.3v6.7h-5v-7c0-1-1-2-2-2z"/></svg></div>LinkedIn</div>
+</a>
+
+<!-- Sharingbutton Facebook -->
+<a class="resp-sharing-button__link" href="https://facebook.com/sharer/sharer.php?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xiv-ajax" target="_blank" rel="noopener" aria-label="Facebook">
+  <div class="resp-sharing-button resp-sharing-button--facebook resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/></svg></div>Facebook</div>
+</a>
+
+<!-- Sharingbutton E-Mail -->
+<a class="resp-sharing-button__link" href="mailto:?subject=The%20Flask%20Mega-Tutorial%2C%20Part%20XIV%3A%20Ajax&amp;body=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xiv-ajax" target="_self" rel="noopener" aria-label="E-Mail">
+  <div class="resp-sharing-button resp-sharing-button--email resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 4H2C.9 4 0 4.9 0 6v12c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7.25 14.43l-3.5 2c-.08.05-.17.07-.25.07-.17 0-.34-.1-.43-.25-.14-.24-.06-.55.18-.68l3.5-2c.24-.14.55-.06.68.18.14.24.06.55-.18.68zm4.75.07c-.1 0-.2-.03-.27-.08l-8.5-5.5c-.23-.15-.3-.46-.15-.7.15-.22.46-.3.7-.14L12 13.4l8.23-5.32c.23-.15.54-.08.7.15.14.23.07.54-.16.7l-8.5 5.5c-.08.04-.17.07-.27.07zm8.93 1.75c-.1.16-.26.25-.43.25-.08 0-.17-.02-.25-.07l-3.5-2c-.24-.13-.32-.44-.18-.68s.44-.32.68-.18l3.5 2c.24.13.32.44.18.68z"/></svg></div>E-Mail</div>
+</a>
+
+<div id="comments" class="post-comment-count">
+  
+  <a class="btn btn-outline-secondary" href="/post/the-flask-mega-tutorial-part-xiv-ajax#comments">31 comments</a>
+  
+</div>
+
+
+<div class="comments">
+  <ul>
+    
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/0286c6a87475f8dae95c0bc9bc493893?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#1</span> <span class="badge text-bg-warning">Vladimir Kuzmenkov</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-04T17:49:08Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-04T17:49:08Z</span>
+  </p>
+  <div>
+    <p>Great chapter,</p>
+<p>I've implemented translation with google cloud, since I'm from Belarus and microsoft does not provide service for us.<br>
+Google translation service is a bit more complicated to configure, it would require the generation of json file with encrypted credentials and setting global variabal with the path to it.<br>
+Also google does not require origin language parameter, the language is detected automatically.</p>
+<p>Thanks!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/b4a1afc2c32ab182d154a266e875f537?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#2</span> <span class="badge text-bg-warning">zihao cai</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-01T21:03:58Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-01T21:03:58Z</span>
+  </p>
+  <div>
+    <p>Hello, Miguel:<br>
+I checked the language of the post and it shows "zh-cn", which is not the same as the value "zh" for "g.locale" in "_post.html", so it still displays the translate button, even though the translation is exactly the same as the post text. I then tried to recreate a translation using "flask translate init zh-cn", however the result was "ValueError: expected only letters, got 'zh-cn'" and "RootCode". " and "RuntimeError: init command failed". Theoretically it doesn't affect the usage, but I'd like to know how to solve this problem!</p>
+<p>Thanks!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#3</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-02T11:11:06Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-02T11:11:06Z</span>
+  </p>
+  <div>
+    <p>@zihao: you could for example check if the detected language has a <code>-</code>, and in that case only use the characters up to and without including it. You could do that with an expression such as:</p>
+<pre><code>language = language.split('-')[0]
+</code></pre>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/b4a1afc2c32ab182d154a266e875f537?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#4</span> <span class="badge text-bg-warning">zihao cai</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-02T14:23:06Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-02T14:23:06Z</span>
+  </p>
+  <div>
+    <p>Yes, i have tried 'post.language[0:2] != g.locale' to compare. Thank you!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/83015c6399b0570f785496a381b9b94c?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#5</span> <span class="badge text-bg-warning">Finlay</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-21T12:20:40Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-21T12:20:40Z</span>
+  </p>
+  <div>
+    <p>Thank you for going into detail on setting up a click-to-load function. This is what I'm trying to do on my project, although instead of translating text I'm trying to make an animation or image appear when I click a link or button, without the whole page refreshing.</p>
+<p>Do you perhaps have any pointers on how I would approach this task? I have the python code to generate the image, I just need the clicked link to execute the code to produce the image, then display it on the webpage. So it seems a simpler task that what you have done here as I'm not taking an argument from the webpage. However I still having some difficulty wrapping my head round the whole process.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#6</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-21T19:49:58Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-21T19:49:58Z</span>
+  </p>
+  <div>
+    <p>@Finlay: You can add a <code>&lt;img&gt;</code> tag to the page. In the <code>src</code> attribute you can write an endpoint that goes to a Flask route that returns the image data.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/83015c6399b0570f785496a381b9b94c?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#7</span> <span class="badge text-bg-warning">Finlay</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-03T10:27:29Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-03T10:27:29Z</span>
+  </p>
+  <div>
+    <p>Thank you for this tutorial. By going over it again and again I have managed to build the foundation of a basic app, which I'm very happy about!<br>
+In the app I'm building I don't need to have user login, but I would like to have information from the user kept while the user is accessing the app. In the app the user types in some numbers and then navigates to other pages to view graphs based on those numbers.<br>
+I've used Flask-Session for server side user-tracking, with sqlalchemy as the chosen database. So the database of my app is a bit simpler compared to this microblog.<br>
+in order to  'span id' the html tags to add the client side action feature, I've generated an id unique to the user with id(session) - object of Flask-Session, it's a 13-digit number. This has worked on my testing, but I'm wondering if you think this approach would work if the app went live. Do you think it would work if multiple users were accessing the app at the same time? Are there other approaches to consider?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#8</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-03T22:43:09Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-03T22:43:09Z</span>
+  </p>
+  <div>
+    <p>@Finlay: you probably don't need a unique id for your users if you don't have a login. I don't see anything wrong with using a random number as id, but you may want to make sure you really need to use an identifier. Your user session will already be initialized with a unique identifier, which will be used as a key in your database.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/83015c6399b0570f785496a381b9b94c?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#9</span> <span class="badge text-bg-warning">Finlay</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-04T10:34:12Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-04T10:34:12Z</span>
+  </p>
+  <div>
+    <p>Thank you for your response.<br>
+I'm trying to use an ajax call to display an image. I understand that the final returned object from the server(<a href="http://routes.py" rel="nofollow">routes.py</a>) to the client (html page) is a string. I have suceeded in displaying images before by sending a bytesio file. I want to use bytesio to avoid saving the images in files, to avoid clutter.<br>
+Can the final returned object be in bytesio format or can it only be string. One workaround I thought about was creating a javascript function to convert the string to bytearray on the html page, I read that TextEncoder() can do this. And then inserting the bytearray into the src in the img tag. But then I'm also not sure about how to span the src="" part. <br>
+&lt;img src=" \&lt;span "id= id_for_destElem"&gt;\&lt;/span&gt;" &gt;<br>
+doesn't seem to work. Nor does<br>
+&lt;img \&lt;span "id=id_for_destElem"&gt; src="" \&lt;/span&gt; &gt;</p>
+<p>I appreciate this question deviates from your tutorial, but I just wondered if you had any pointers for me.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#10</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-04T22:23:43Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-04T22:23:43Z</span>
+  </p>
+  <div>
+    <p>@Finlay: you can use a BytesIO object with the <a href="https://flask.palletsprojects.com/en/3.0.x/api/#flask.send_file" rel="nofollow">send_file()</a> function.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/d81e637904233859a1f0e0e3fcd05f79?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#11</span> <span class="badge text-bg-warning">Dan</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-09T08:30:55Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-09T08:30:55Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, great chapter as always. </p>
+<p>I have implemented the changes the same as you, however on line 70 in base.html I am getting three errors with the &lt;img&gt; tag for the loading.gif. I have downloaded the file correctly and have also compared to your code in github to make sure it matches. The entire file matches yours, just wondering if you'd happen to know what would be causing this? The error message just says '; expected' but there is a semi-colon on that line and on lines around it where it is needed.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#12</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-09T09:17:05Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-09T09:17:05Z</span>
+  </p>
+  <div>
+    <p>@Dan: I can't really tell you much without seeing the code. I suggest you download the actual working code from GitHub (link in the introduction of this article) and do a diff. Some differences are difficult to spot when you compare visually, better to let the machine tell you what the differences are.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/2c7fb710a2ef8f65d261f95b640aa7b1?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#13</span> <span class="badge text-bg-warning">Etaoin Shrdlu</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-30T19:23:39Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-30T19:23:39Z</span>
+  </p>
+  <div>
+    <p>Hi! I'm pretty sure that German translation of 'Hi, how are you today?' is wrong, it looks like a strange mix of German and English.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#14</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-06-01T11:18:17Z" data-function="fromNow" data-refresh="0" style="display: none">2024-06-01T11:18:17Z</span>
+  </p>
+  <div>
+    <p>@Etaoin: That is what the translation service returned, this tutorial does not produce translations. If the translations from the service I've chosen do not work for you then you can switch to a different one just by changing the logic in the <code>translate()</code> function.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/a88a6f38b6b9fc570b3b3551c273974a?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#15</span> <span class="badge text-bg-warning">Alex</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-06-28T14:04:37Z" data-function="fromNow" data-refresh="0" style="display: none">2024-06-28T14:04:37Z</span>
+  </p>
+  <div>
+    <p>VSC tells me there is a problem in base.html line 70, I think it wants the single quotes to be escaped: <br>
+'&lt;img src="{{ url_for(\'static\', filename=\'loading.gif\') }}"&gt;';</p>
+<p>The app runs fine with or without the escaped, but I'm sure that could trip people up.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#16</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-06-28T19:07:36Z" data-function="fromNow" data-refresh="0" style="display: none">2024-06-28T19:07:36Z</span>
+  </p>
+  <div>
+    <p>@Alex: the template is correct as I have it. VSC is incorrectly treating the file as HTML, but this file is a Jinja template. The syntax is different.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/1e37f2c2b6b992573a0253e18995471e?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#17</span> <span class="badge text-bg-warning">Brendon</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-09-12T05:38:37Z" data-function="fromNow" data-refresh="0" style="display: none">2024-09-12T05:38:37Z</span>
+  </p>
+  <div>
+    <p>I decided to try LibreTranslate as a translation backend. It worked well and was quite easy to set up!</p>
+<p>I have written up the steps here:<br>
+<a href="https://gist.github.com/brendonmackenzie/89a6b3d442912549331c6315551933b5" rel="nofollow">https://gist.github.com/brendonmackenzie/89a6b3d442912549331c6315551933b5</a></p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/06b7b39e582c094be216c382dc039576?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#18</span> <span class="badge text-bg-warning">Yuming</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-09-15T01:42:42Z" data-function="fromNow" data-refresh="0" style="display: none">2024-09-15T01:42:42Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel,<br>
+My Flask-based app currently uses Microsoft Azure to translate Chinese song lyrics into multiple foreign languages. When I’m not satisfied with the translation, I often use ChatGPT for comparison. I’ve noticed that ChatGPT often matches or surpasses Azure in translation quality, so I’m considering switching to ChatGPT for my app. I was wondering if you’ve tried using ChatGPT for this chapter, and if you have any sample API code you could share with us?<br>
+Thanks!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#19</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-09-17T08:55:04Z" data-function="fromNow" data-refresh="0" style="display: none">2024-09-17T08:55:04Z</span>
+  </p>
+  <div>
+    <p>@Yuming: No, sorry, I don't use ChatGPT. All you need to do to add support for a different translation service is to replace the <code>translate()</code> function in <a href="http://translate.py" rel="nofollow">translate.py</a> with your own version. The rest of the application does not need to change.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/06b7b39e582c094be216c382dc039576?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#20</span> <span class="badge text-bg-warning">Yuming</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-10-07T21:57:56Z" data-function="fromNow" data-refresh="0" style="display: none">2024-10-07T21:57:56Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel,</p>
+<p>I’ve added code to my website for using ChatGPT-4o for translations, and I’ve included the translate() function in <a href="http://translate.py" rel="nofollow">translate.py</a> at the end of this message.</p>
+<p>I would also like to share some interesting information, some of which came from ChatGPT’s answers to my questions:</p>
+<pre><code>1.  Azure Translator is specialized in translations and performs well across a variety of use cases, particularly for business, government, and professional translations. On the other hand, ChatGPT is a generalized AI that excels in a wide range of language-based tasks but isn’t as specialized in any one area, such as translation.
+2.  For more complex and nuanced translations, such as song lyrics, ChatGPT’s ability to capture subtle meanings, metaphors, and creative expressions can surpass more deterministic translation engines. Its flexibility in interpreting poetic language and cultural nuances makes it a strong option for these kinds of tasks.
+3.  However, for less common languages like Burmese, ChatGPT may fall behind other AI models because it hasn’t been as extensively trained or optimized for those languages.
+4.  Using the ChatGPT API is somewhat like conversing with a person. The API allows developers to provide specific instructions for tasks in plain language, offering greater customization.
+5.  The ChatGPT API also allows developers to have more control over the task. For instance, the “temperature” parameter can be adjusted to manage the level of accuracy and creativity in the output.
+6.  If the ChatGPT API parameters are set for higher creativity, multiple requests with the same input may produce different results. This is because the model can generate text through different interpretive paths. The aim isn’t necessarily to find a single “correct” answer but to offer a range of valid interpretations, especially in translation tasks where tone, word choice, and style play significant roles.
+</code></pre>
+<p>My Working Code:</p>
+<pre><code>from openai import OpenAI, OpenAIError
+
+def translate(text, source_language, dst_language):
+    if 'OPENAI_API_KEY' not in current_app.config or not current_app.config['OPENAI_API_KEY']:
+        return _('Error: OPENAI_API_KEY is missing.')
+
+    client = OpenAI(api_key=current_app.config['OPENAI_API_KEY'])
+
+    try:
+        response = client.chat.completions.create(
+            model=&quot;gpt-4o&quot;,
+            messages=[
+                {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;You are a helpful assistant who translates text.&quot;},
+                {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: f&quot;Translate the following lyrics from {source_language} into {dest_language}:\n{text}&quot;}
+            ],
+            temperature=0.5,
+            top_p=1.0,
+            max_tokens=2024,
+            frequency_penalty=0,
+            presence_penalty=0
+        )
+        if 'error' in response:
+            print(&quot;Error occurred:&quot;, response.error.message)
+        return response.choices[0].message.content.strip()
+
+    except OpenAIError as e:
+        print(&quot;An error occurred:&quot;, e)
+</code></pre>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/3e8c15431f06b55060508894b629ee3c?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#21</span> <span class="badge text-bg-warning">Pierre</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-01-02T18:43:46Z" data-function="fromNow" data-refresh="0" style="display: none">2025-01-02T18:43:46Z</span>
+  </p>
+  <div>
+    <p>Thank you.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/8878f37953822b45741243b5cab276c7?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#22</span> <span class="badge text-bg-warning">Dion</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-02-20T00:58:15Z" data-function="fromNow" data-refresh="0" style="display: none">2025-02-20T00:58:15Z</span>
+  </p>
+  <div>
+    <p>Line 70:<br>
+'&lt;img src="' + "{{ url_for('static', filename='loading.gif') }}" + '"&gt;';</p>
+<p>Gets rid of the red curly thing in vscode.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/04de129862df2c4c52f97d6695f966f1?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#23</span> <span class="badge text-bg-warning">Hussain</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-08-18T07:28:31Z" data-function="fromNow" data-refresh="0" style="display: none">2025-08-18T07:28:31Z</span>
+  </p>
+  <div>
+    <p>Hello,<br>
+Not sure why the earlier message didn't show up. Anyways, here goes another:</p>
+<p>I setup Libretranslate as Brendon suggested with the link. My <a href="http://translate.py" rel="nofollow">translate.py</a> shows below:</p>
+<pre><code>from flask_babel import _
+from app import app
+import json
+import requests
+
+
+def translate(text: str, source_language: str = &quot;auto&quot;, dest_language: str = &quot;en&quot;):
+    if &quot;LT_API_KEY&quot; not in app.config or not app.config[&quot;LT_API_KEY&quot;]:
+        return _(&quot;Error: the translation service credential is not configured&quot;)
+
+    if &quot;LT_API_URL&quot; not in app.config or not app.config[&quot;LT_API_URL&quot;]:
+        return _(&quot;Error: the translation service URL is not configured&quot;)
+
+    url = app.config[&quot;LT_API_URL&quot;]
+    auth = app.config[&quot;LT_API_KEY&quot;]
+
+    payload = {
+        &quot;q&quot;: text,
+        &quot;source&quot;: source_language,
+        &quot;target&quot;: dest_language,
+        &quot;format&quot;: &quot;text&quot;,
+        &quot;alternatives&quot;: 1,
+        &quot;api_key&quot; : auth,
+    }
+    headers = {&quot;Content-Type&quot;: &quot;application/json&quot;}
+
+    r = <a href="http://requests.post" rel="nofollow">requests.post</a>(url, data=json.dumps(payload), headers=headers)
+
+    if r.status_code == 200:
+        return r.json()[&quot;translatedText&quot;]
+    else:
+        return _(f&quot;Error: Request failed with status code: {r.status_code}&quot;)''
+</code></pre>
+<p>The <a href="http://routes.py" rel="nofollow">routes.py</a> code for translate:</p>
+<pre><code>def translate_text():
+    data = request.get_json()
+    return {'text': translate(data['text'],
+                              data['source_language'],
+                              data['dest_language'])}
+</code></pre>
+<p>The _post.html template is the same. When I run the flask shell to translate, it gives me an error saying <br>
+"RuntimeError: Working outside of request context.</p>
+<p>This typically means that you attempted to use functionality that needed<br>
+an active HTTP request. Consult the documentation on testing for<br>
+information about how to avoid this problem."</p>
+<p>When using the blog, the loading gif keeps spinning. Upon google'ing, it looks like an error due to app_context, but I'm not sure if that is correct and if it is, where do I correct / keep the context window for the app.</p>
+<p>Thanks.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#24</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-08-18T09:01:00Z" data-function="fromNow" data-refresh="0" style="display: none">2025-08-18T09:01:00Z</span>
+  </p>
+  <div>
+    <p>@Hussain: if you are calling <code>translate_text()</code> from the shell, then it is expected to fail. Your function uses <code>request</code>, which is only set during an actual request. As far the code hanging when running, you will need to provide more details. Your Flask console must be showing an error message and or stack trace when this happens.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/04de129862df2c4c52f97d6695f966f1?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#25</span> <span class="badge text-bg-warning">Hussain</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-08-18T12:43:05Z" data-function="fromNow" data-refresh="0" style="display: none">2025-08-18T12:43:05Z</span>
+  </p>
+  <div>
+    <p>Thanks for the response. </p>
+<p>The console shows no error message when converting the post from the blog. Just the loading gif that keeps spinning. When using the translate() from flask shell, it shows the runtime error message. The stack is below:</p>
+<p>''''Traceback (most recent call last):<br>
+  File "&lt;console&gt;", line 1, in &lt;module&gt;<br>
+File "/home/user/Documents/tutorials/blog/app/<a href="http://translate.py" rel="nofollow">translate.py</a>", line 31, in translate<br>
+    else:</p>
+<p>File "/home/user/Documents/tutorials/blog/venv/lib/python3.12/site-packages/flask_babel/<strong>init</strong>.py", line 756, in gettext<br>
+    return get_domain().gettext(<em>args, </em>*kwargs)<br>
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^<br>
+  File "/home/user/Documents/tutorials/blog/venv/lib/python3.12/site-packages/flask_babel/<strong>init</strong>.py", line 648, in gettext<br>
+    t = self.get_translations()<br>
+        ^^^^^^^^^^^^^^^^^^^^^^^<br>
+  File "/home/user/Documents/tutorials/blog/venv/lib/python3.12/site-packages/flask_babel/<strong>init</strong>.py", line 609, in get_translations<br>
+    locale = get_locale()<br>
+             ^^^^^^^^^^^^<br>
+  File "/home/user/Documents/tutorials/blog/venv/lib/python3.12/site-packages/flask_babel/<strong>init</strong>.py", line 263, in get_locale<br>
+    rv = babel.locale_selector()<br>
+         ^^^^^^^^^^^^^^^^^^^^^^^<br>
+  File "/home/user/Documents/tutorials/blog/app/<strong>init</strong>.py", line 13, in get_locale<br>
+    return request.accept_languages.best_match(app.config['LANGUAGES'])<br>
+           ^^^^^^^^^^^^^^^^^^^^^^^^<br>
+  File "/home/user/Documents/tutorials/blog/venv/lib/python3.12/site-packages/werkzeug/<a href="http://local.py" rel="nofollow">local.py</a>", line 318, in <strong>get</strong><br>
+    obj = instance._get_current_object()<br>
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^<br>
+  File "/home/user/Documents/tutorials/blog/venv/lib/python3.12/site-packages/werkzeug/<a href="http://local.py" rel="nofollow">local.py</a>", line 519, in _get_current_object<br>
+    raise RuntimeError(unbound_message) from None<br>
+RuntimeError: Working outside of request context.</p>
+<p>This typically means that you attempted to use functionality that needed<br>
+an active HTTP request. Consult the documentation on testing for<br>
+information about how to avoid this problem.''''</p>
+  </div>
+</div>
+    </li>
+    
+  </ul>
+</div>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xiv-ajax/page/1#comments">&laquo;&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xiv-ajax/page/0#comments">&laquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xiv-ajax/page/2#comments">&raquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xiv-ajax/page/0#comments">&raquo;&raquo;</a></li>
+  </ul>
+</nav>
+
+
+
+<div id="comment-form">
+  <h3>Leave a Comment</h3>
+
+  
+  
+  
+
+  
+<form action="#comment-form" method="post">
+  <input id="url" name="url" type="hidden" value="">
+<input id="csrf_token" name="csrf_token" type="hidden" value="IjdkMTBhYzkwMTU2N2VmM2RjYmRlNzFiMDhiNGVhMTJhNGY2N2Y4NGYi.ajz8fg.oVLy1MXvPfT5A2S22MW6DpqhtLc">
+    
+  <div class="mb-3">
+    <label class="form-label" for="name">Name</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="name" name="name" required type="text" value="">
+    </div>
+  </div>
+
+    
+    
+  <div class="mb-3">
+    <label class="form-label" for="email">Email</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="email" name="email" required type="text" value="">
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="comment">Comment</label>
+    <div class="input-group has-validation">
+      <textarea class="form-control" id="comment" name="comment" required>
+</textarea>
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="captcha">Captcha</label>
+    <div class="input-group has-validation">
+      
+<script src='https://www.google.com/recaptcha/api.js' async defer></script>
+<div class="g-recaptcha" data-sitekey="6Ld5Zs4SAAAAAOY0DOi4r18bgHlEaz41qAoRf__S"></div>
+
+    </div>
+  </div>
+
+    
+  <input class="btn btn-primary mb-3" id="submit" name="submit" type="submit" value="Submit">
+
+      
+</form>
+
+</div>
+
+
+</div>
+
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div id="sidebar">
+        
+          
+  
+
+
+
+<div class="card">
+  
+  
+  
+  
+  <div class="card-header">
+    <div class="row">
+      <div class="col">The Flask Mega-Tutorial</div>
+      <div class="col text-end">
+        <a href="/post/announcing-the-flask-mega-tutorial-2024-edition">
+          <h5 style="margin-bottom: 0px"><span class="badge text-bg-warning">2024 Edition!</span></h5>
+        </a>
+      </div>
+    </div>
+  </div>
+  <a class="card-book-cover" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">
+    <img src="/static/mega-tutorial-2024-small.png" alt="The New Flask Mega-Tutorial">
+  </a>
+  <div class="card-body">
+    <p class="card-text">If you would you like to support my work on my <a href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world">Flask Mega-Tutorial series</a> on this blog and as a reward have access to the complete tutorial in book format, you can now order it directly from my <a href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Courses</a> site or from <a href="https://amzn.to/3MQffrm">Amazon</a>.</p>
+  </div>
+  <div class="card-body">
+    <a class="card-link" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Click here to get this Book!</a><br />
+  </div>
+
+  
+</div>
+        
+        <div class="card">
+  <div class="card-header">About Miguel</div>
+  <div class="card-body">
+    <img style="float: right; margin: 0px 8px 8px 0px; padding: 4px; border: 1px solid #ccc;" src="/static/miguel.jpg" />
+    <p class="card-text">Welcome to my blog!</p>
+    <p class="card-text">I'm a software engineer and technical writer, currently living in Drogheda, Ireland.</p>
+    <p><u>Generative AI notice:</u> I do not use LLMs, agents or any other generative AI tools for help with writing, coding, image creation or any other tasks related to this blog or my open source work.</p>
+    <p class="card-text">You can also find me on
+      <a href="https://github.com/miguelgrinberg">Github</a>,
+      <a href="http://www.linkedin.com/in/miguelgrinberg">LinkedIn</a>,
+      <a href="https://bsky.app/profile/miguelgrinberg.com">Bluesky</a>,
+      <a href="https://mstdn.social/@miguelgrinberg">Mastodon</a>,
+      <a href="https://twitter.com/miguelgrinberg">Twitter</a>,
+      <a href="https://youtube.com/miguelgrinberg">YouTube</a>,
+      <!--<a href="https://www.facebook.com/miguelgrinbergblog">Facebook</a>,-->
+      <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy Me a Coffee</a>,
+      and <a href="https://patreon.com/miguelgrinberg">Patreon</a>.</p>
+    <p class="card-text">Thank you for visiting!</p>
+  </div>
+</div>
+        
+        <div class="card" id="categories">
+  <div class="card-header">Categories</div>
+  <div class="card-body">
+    
+    <div class="category">
+      <a href="/category/AI/feed"><img src="/static/rss-small.png" title="AI RSS Feed" label="AI RSS Feed" alt="AI RSS Feed" /></a>
+      <form action="/category/AI" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="AI" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Arduino/feed"><img src="/static/rss-small.png" title="Arduino RSS Feed" label="Arduino RSS Feed" alt="Arduino RSS Feed" /></a>
+      <form action="/category/Arduino" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Arduino" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Authentication/feed"><img src="/static/rss-small.png" title="Authentication RSS Feed" label="Authentication RSS Feed" alt="Authentication RSS Feed" /></a>
+      <form action="/category/Authentication" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Authentication" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Blog/feed"><img src="/static/rss-small.png" title="Blog RSS Feed" label="Blog RSS Feed" alt="Blog RSS Feed" /></a>
+      <form action="/category/Blog" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Blog" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/C++/feed"><img src="/static/rss-small.png" title="C++ RSS Feed" label="C++ RSS Feed" alt="C++ RSS Feed" /></a>
+      <form action="/category/C++" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="C++" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/CSS/feed"><img src="/static/rss-small.png" title="CSS RSS Feed" label="CSS RSS Feed" alt="CSS RSS Feed" /></a>
+      <form action="/category/CSS" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="CSS" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Cloud/feed"><img src="/static/rss-small.png" title="Cloud RSS Feed" label="Cloud RSS Feed" alt="Cloud RSS Feed" /></a>
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" /> <small><em>12</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Database/feed"><img src="/static/rss-small.png" title="Database RSS Feed" label="Database RSS Feed" alt="Database RSS Feed" /></a>
+      <form action="/category/Database" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Database" /> <small><em>33</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Docker/feed"><img src="/static/rss-small.png" title="Docker RSS Feed" label="Docker RSS Feed" alt="Docker RSS Feed" /></a>
+      <form action="/category/Docker" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Docker" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Filmmaking/feed"><img src="/static/rss-small.png" title="Filmmaking RSS Feed" label="Filmmaking RSS Feed" alt="Filmmaking RSS Feed" /></a>
+      <form action="/category/Filmmaking" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Filmmaking" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Flask/feed"><img src="/static/rss-small.png" title="Flask RSS Feed" label="Flask RSS Feed" alt="Flask RSS Feed" /></a>
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" /> <small><em>130</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Games/feed"><img src="/static/rss-small.png" title="Games RSS Feed" label="Games RSS Feed" alt="Games RSS Feed" /></a>
+      <form action="/category/Games" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Games" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Infra/feed"><img src="/static/rss-small.png" title="Infra RSS Feed" label="Infra RSS Feed" alt="Infra RSS Feed" /></a>
+      <form action="/category/Infra" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Infra" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/IoT/feed"><img src="/static/rss-small.png" title="IoT RSS Feed" label="IoT RSS Feed" alt="IoT RSS Feed" /></a>
+      <form action="/category/IoT" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="IoT" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/JavaScript/feed"><img src="/static/rss-small.png" title="JavaScript RSS Feed" label="JavaScript RSS Feed" alt="JavaScript RSS Feed" /></a>
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" /> <small><em>37</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/MicroPython/feed"><img src="/static/rss-small.png" title="MicroPython RSS Feed" label="MicroPython RSS Feed" alt="MicroPython RSS Feed" /></a>
+      <form action="/category/MicroPython" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="MicroPython" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microdot/feed"><img src="/static/rss-small.png" title="Microdot RSS Feed" label="Microdot RSS Feed" alt="Microdot RSS Feed" /></a>
+      <form action="/category/Microdot" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microdot" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microservices/feed"><img src="/static/rss-small.png" title="Microservices RSS Feed" label="Microservices RSS Feed" alt="Microservices RSS Feed" /></a>
+      <form action="/category/Microservices" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microservices" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Movie Reviews/feed"><img src="/static/rss-small.png" title="Movie Reviews RSS Feed" label="Movie Reviews RSS Feed" alt="Movie Reviews RSS Feed" /></a>
+      <form action="/category/Movie%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Movie Reviews" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Personal/feed"><img src="/static/rss-small.png" title="Personal RSS Feed" label="Personal RSS Feed" alt="Personal RSS Feed" /></a>
+      <form action="/category/Personal" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Personal" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Photography/feed"><img src="/static/rss-small.png" title="Photography RSS Feed" label="Photography RSS Feed" alt="Photography RSS Feed" /></a>
+      <form action="/category/Photography" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Photography" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Product Reviews/feed"><img src="/static/rss-small.png" title="Product Reviews RSS Feed" label="Product Reviews RSS Feed" alt="Product Reviews RSS Feed" /></a>
+      <form action="/category/Product%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Product Reviews" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Programming/feed"><img src="/static/rss-small.png" title="Programming RSS Feed" label="Programming RSS Feed" alt="Programming RSS Feed" /></a>
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" /> <small><em>198</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Project Management/feed"><img src="/static/rss-small.png" title="Project Management RSS Feed" label="Project Management RSS Feed" alt="Project Management RSS Feed" /></a>
+      <form action="/category/Project%20Management" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Project Management" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Python/feed"><img src="/static/rss-small.png" title="Python RSS Feed" label="Python RSS Feed" alt="Python RSS Feed" /></a>
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" /> <small><em>187</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/REST/feed"><img src="/static/rss-small.png" title="REST RSS Feed" label="REST RSS Feed" alt="REST RSS Feed" /></a>
+      <form action="/category/REST" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="REST" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Raspberry Pi/feed"><img src="/static/rss-small.png" title="Raspberry Pi RSS Feed" label="Raspberry Pi RSS Feed" alt="Raspberry Pi RSS Feed" /></a>
+      <form action="/category/Raspberry%20Pi" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Raspberry Pi" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/React/feed"><img src="/static/rss-small.png" title="React RSS Feed" label="React RSS Feed" alt="React RSS Feed" /></a>
+      <form action="/category/React" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="React" /> <small><em>19</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Reviews/feed"><img src="/static/rss-small.png" title="Reviews RSS Feed" label="Reviews RSS Feed" alt="Reviews RSS Feed" /></a>
+      <form action="/category/Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Reviews" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Robotics/feed"><img src="/static/rss-small.png" title="Robotics RSS Feed" label="Robotics RSS Feed" alt="Robotics RSS Feed" /></a>
+      <form action="/category/Robotics" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Robotics" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Security/feed"><img src="/static/rss-small.png" title="Security RSS Feed" label="Security RSS Feed" alt="Security RSS Feed" /></a>
+      <form action="/category/Security" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Security" /> <small><em>14</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Video/feed"><img src="/static/rss-small.png" title="Video RSS Feed" label="Video RSS Feed" alt="Video RSS Feed" /></a>
+      <form action="/category/Video" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Video" /> <small><em>22</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/WebSocket/feed"><img src="/static/rss-small.png" title="WebSocket RSS Feed" label="WebSocket RSS Feed" alt="WebSocket RSS Feed" /></a>
+      <form action="/category/WebSocket" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="WebSocket" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Webcast/feed"><img src="/static/rss-small.png" title="Webcast RSS Feed" label="Webcast RSS Feed" alt="Webcast RSS Feed" /></a>
+      <form action="/category/Webcast" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Webcast" /> <small><em>3</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Windows/feed"><img src="/static/rss-small.png" title="Windows RSS Feed" label="Windows RSS Feed" alt="Windows RSS Feed" /></a>
+      <form action="/category/Windows" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Windows" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+  </div>
+</div>
+        
+      </div>
+    </div>
+    
+  </div>
+  <div id="footer">
+    
+    <p>&copy; 2012-<script type="text/javascript">document.write(new Date().getFullYear());</script> by Miguel Grinberg. All rights reserved. <a href="mailto:webmaster _at_ miguelgrinberg _dot_ com">Questions?</a></p>
+  </div>
+</div>
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="/static/prettify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js" integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg==" crossorigin="anonymous"></script>
+
+<script>
+moment.locale("en");
+function flask_moment_render(elem) {{
+    const timestamp = moment(elem.dataset.timestamp);
+    const func = elem.dataset.function;
+    const format = elem.dataset.format;
+    const timestamp2 = elem.dataset.timestamp2;
+    const no_suffix = elem.dataset.nosuffix;
+    const units = elem.dataset.units;
+    let args = [];
+    if (format)
+        args.push(format);
+    if (timestamp2)
+        args.push(moment(timestamp2));
+    if (no_suffix)
+        args.push(no_suffix);
+    if (units)
+        args.push(units);
+    elem.textContent = timestamp[func].apply(timestamp, args);
+    elem.classList.remove('flask-moment');
+    elem.style.display = "";
+}}
+function flask_moment_render_all() {{
+    const moments = document.querySelectorAll('.flask-moment');
+    moments.forEach(function(moment) {{
+        flask_moment_render(moment);
+        const refresh = moment.dataset.refresh;
+        if (refresh && refresh > 0) {{
+            (function(elem, interval) {{
+                setInterval(function() {{
+                    flask_moment_render(elem);
+                }}, interval);
+            }})(moment, refresh);
+        }}
+    }})
+}}
+document.addEventListener("DOMContentLoaded", flask_moment_render_all);
+</script>
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-20EHZP9GRZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-20EHZP9GRZ');
+  </script>
+  
+  <script type="text/javascript">
+    function setThemeUI() {
+      document.getElementById('select-theme-auto').classList.remove('active');
+      document.getElementById('select-theme-light').classList.remove('active');
+      document.getElementById('select-theme-dark').classList.remove('active');
+      const theme = getPreferredTheme();
+      const actualTheme = document.documentElement.getAttribute('data-bs-theme', 'light');
+      document.getElementById('select-theme-' + theme).classList.add('active');
+      document.getElementById('current-theme').href.baseVal = `#icon-theme-${actualTheme}`;
+    };
+
+    function updateTheme(theme) {
+      if (theme === 'auto') {
+        localStorage.removeItem('theme')
+      }
+      else {
+        localStorage.setItem('theme', theme)
+      }
+      setTheme(getPreferredTheme());
+    }
+
+    setThemeUI();
+
+    const darkModePreference = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModePreference.addEventListener("change", e => {
+      if (getPreferredTheme() === 'auto') {
+        setTheme('auto');
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // add prettyprint class to all <pre><code></code></pre> blocks
+      let prettify = false;
+      document.querySelectorAll('div.post-body pre code').forEach((code) => {
+        code.parentNode.classList.add('prettyprint');
+        prettify = true;
+      });
+      prettyPrint();
+    });
+  </script>
+
+  </body>
+</html>

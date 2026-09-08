@@ -1,0 +1,1133 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ML Roadmap 2026 — Ay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+
+
+@media print {
+  .print-note {
+    display: none;
+  }
+
+  /* Force the browser to render all background colors and gradients exactly as seen on screen */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+/* ═══════════════════════════════════════
+   PRINT PAGE SETUP — A3 PORTRAIT
+═══════════════════════════════════════ */
+@page {
+  size: A3 portrait;
+  margin: 0;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ═══════════════════════════════════════
+   SCREEN PRINT INSTRUCTIONS
+═══════════════════════════════════════ */
+.print-note {
+  background: #1a1a2e;
+  color: #e0ddd6;
+  padding: 14px 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.6;
+}
+.print-note strong { color: #7ee8c9; }
+@media print { .print-note { display: none; } }
+
+/* ═══════════════════════════════════════
+   POSTER ROOT
+═══════════════════════════════════════ */
+.poster {
+  width: 297mm;
+  height: 420mm;
+  background: #F8F6F1;
+  font-family: 'Inter', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ═══════════════════════════════════════
+   HEADER BAND
+═══════════════════════════════════════ */
+.header {
+  background: #0E1118;
+  padding: 6.5mm 8mm 5.5mm;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.header-left {}
+.header-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22pt;
+  font-weight: 700;
+  color: #F5F2EA;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.header-title span {
+  color: #2CC68F;
+}
+.header-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 7.5pt;
+  color: #8A8680;
+  margin-top: 2mm;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.header-right {
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7pt;
+  color: #5A5850;
+  line-height: 1.7;
+}
+.header-right .yr {
+  font-size: 11pt;
+  color: #2CC68F;
+  font-weight: 500;
+  display: block;
+}
+
+/* ═══════════════════════════════════════
+   GANTT TIMELINE
+═══════════════════════════════════════ */
+.timeline-band {
+  background: #EFECE4;
+  border-bottom: 1px solid #DDD9CE;
+  padding: 4mm 8mm 4.5mm;
+  flex-shrink: 0;
+}
+.timeline-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 6.5pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #8A8680;
+  margin-bottom: 2.5mm;
+}
+.gantt-wrap {
+  position: relative;
+}
+.month-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr) 1.5fr;
+  margin-bottom: 1.5mm;
+}
+.month-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 5.5pt;
+  color: #7A7870;
+  text-align: center;
+  padding-bottom: 1mm;
+  border-bottom: 1px solid #CCC9BF;
+}
+.month-label.explore {
+  color: #9B7ECA;
+  font-weight: 500;
+}
+.gantt-rows {
+  margin-top: 1.5mm;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2mm;
+}
+.gantt-row {
+  display: flex;
+  align-items: center;
+  height: 4.5mm;
+  position: relative;
+}
+.gantt-row-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 5pt;
+  color: #7A7870;
+  width: 18mm;
+  flex-shrink: 0;
+  text-align: right;
+  padding-right: 2.5mm;
+}
+.gantt-track {
+  flex: 1;
+  height: 100%;
+  background: #E4E0D6;
+  border-radius: 1mm;
+  position: relative;
+  overflow: hidden;
+}
+.gantt-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 1mm;
+  display: flex;
+  align-items: center;
+  padding: 0 2mm;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 5pt;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+}
+/* 7 months + explore = 8.5 units. Using 8.5 units total */
+/* Month widths: each month = 1/8.5 = 11.76% */
+/* Explore = 1.5/8.5 = 17.65% */
+/* Total = 100% */
+
+/* Positioning: left % based on week position out of 28 weeks */
+/* CS109x: weeks 1-2 → 0% to 7.14% */
+/* CS229: weeks 3-10 → 7.14% to 35.7% */
+/* Karpathy: weeks 8-15 → 25% to 53.6% (within first 7 months portion) */
+/* MIT 6.S191: weeks 13-17 → 42.9% to 60.7% */
+/* Explore: weeks 18-28 → 60.7% to 100% */
+
+/* Using the 7-month + explore grid where 7 months = 82.35% and explore = 17.65% */
+/* 1 month = 11.76% of total width */
+/* 1 week = 2.94% of total width */
+
+.bar-statquest {
+  background: repeating-linear-gradient(90deg, #1D9E75 0, #1D9E75 3mm, #16875F 3mm, #16875F 5mm);
+  opacity: 0.35;
+  left: 0; width: 82.35%;
+  border-radius: 1mm;
+}
+.bar-math4ml {
+  background: repeating-linear-gradient(90deg, #2E6FBF 0, #2E6FBF 3mm, #24589A 3mm, #24589A 5mm);
+  opacity: 0.35;
+  left: 0; width: 100%;
+  border-radius: 1mm;
+}
+.bar-cs109x {
+  background: #1D9E75;
+  /* weeks 1-2: 2 weeks out of 28 = 7.14% of 82.35% portion */
+  left: 0; width: 5.88%;
+}
+.bar-cs229 {
+  background: #2E6FBF;
+  /* weeks 3-10: left=7.14%*(82.35/100), width=28.57%*(82.35/100) */
+  left: 5.88%; width: 23.53%;
+}
+.bar-karpathy {
+  background: #D4682A;
+  /* weeks 8-15: left=25%*(82.35/100), width=28.57%*(82.35/100) */
+  left: 20.59%; width: 23.53%;
+}
+.bar-6s191 {
+  background: #7855CB;
+  /* weeks 13-17: left=42.86%*(82.35/100), width=17.86%*(82.35/100) */
+  left: 35.29%; width: 14.71%;
+}
+.bar-explore {
+  background: linear-gradient(90deg, #9B7ECA, #7855CB);
+  /* months 5-7: weeks 17-28, starts at 58.82%, explore band */
+  left: 55.88%; width: 44.12%;
+  border-radius: 1mm;
+}
+
+/* ═══════════════════════════════════════
+   MAIN BODY — 4 COLUMN GRID
+═══════════════════════════════════════ */
+.body-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  flex: 1;
+  border-top: 1px solid #DDD9CE;
+  min-height: 0;
+}
+.col {
+  border-right: 1px solid #DDD9CE;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.col:last-child { border-right: none; }
+
+.col-header {
+  padding: 2.5mm 4mm 2mm;
+  flex-shrink: 0;
+  border-bottom: 2px solid;
+}
+.col-header h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.col-header .col-sub {
+  font-size: 5.5pt;
+  margin-top: 0.5mm;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+}
+
+/* Column color themes */
+.col-spine .col-header { border-color: #1D9E75; background: #EBF9F3; }
+.col-spine .col-header h2 { color: #0F6944; }
+.col-spine .col-header .col-sub { color: #2A9E75; }
+
+.col-books .col-header { border-color: #2E6FBF; background: #EAF0FB; }
+.col-books .col-header h2 { color: #1A4A8A; }
+.col-books .col-header .col-sub { color: #2E6FBF; }
+
+.col-projects .col-header { border-color: #D4682A; background: #FBF0E8; }
+.col-projects .col-header h2 { color: #8C3F10; }
+.col-projects .col-header .col-sub { color: #D4682A; }
+
+.col-papers .col-header { border-color: #7855CB; background: #F2EDFB; }
+.col-papers .col-header h2 { color: #4A2E96; }
+.col-papers .col-header .col-sub { color: #7855CB; }
+
+.col-body {
+  padding: 3mm 4mm;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── SECTIONS WITHIN COLUMNS ── */
+.sec-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 5pt;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9A9790;
+  margin-top: 2.5mm;
+  margin-bottom: 1.2mm;
+  padding-bottom: 0.8mm;
+  border-bottom: 0.5px solid #DDD9CE;
+}
+.sec-label:first-child { margin-top: 0; }
+
+/* ── SPINE ITEMS ── */
+.course-item {
+  margin-bottom: 2mm;
+}
+.course-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 5.5pt;
+  font-weight: 500;
+  color: #1D9E75;
+  letter-spacing: 0.03em;
+}
+.course-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 7pt;
+  font-weight: 600;
+  color: #1A1814;
+  line-height: 1.2;
+}
+.course-meta {
+  font-size: 5.5pt;
+  color: #7A7870;
+  margin-top: 0.4mm;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.4;
+}
+.course-note {
+  font-size: 5.5pt;
+  color: #52504A;
+  margin-top: 0.5mm;
+  font-style: italic;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.35;
+}
+.always-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5mm;
+  margin-bottom: 1.5mm;
+}
+.always-dot {
+  width: 3mm;
+  height: 3mm;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.5mm;
+}
+.always-body {}
+.always-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 6.5pt;
+  font-weight: 600;
+  color: #1A1814;
+}
+.always-desc {
+  font-size: 5pt;
+  color: #7A7870;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.35;
+  margin-top: 0.3mm;
+}
+
+/* ── BOOK ITEMS ── */
+.book-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5mm;
+  margin-bottom: 1.8mm;
+}
+.book-phase {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 5pt;
+  font-weight: 500;
+  color: white;
+  background: #2E6FBF;
+  padding: 0.3mm 1.2mm;
+  border-radius: 0.8mm;
+  flex-shrink: 0;
+  margin-top: 0.5mm;
+  white-space: nowrap;
+}
+.book-phase.later { background: #9B7ECA; }
+.book-body {}
+.book-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 6.5pt;
+  font-weight: 600;
+  color: #1A1814;
+  line-height: 1.25;
+}
+.book-author {
+  font-size: 5pt;
+  color: #9A9790;
+  font-family: 'Inter', sans-serif;
+  margin-top: 0.2mm;
+}
+.book-why {
+  font-size: 5pt;
+  color: #52504A;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.35;
+  margin-top: 0.3mm;
+  font-style: italic;
+}
+
+/* ── PROJECT ITEMS ── */
+.project-item {
+  margin-bottom: 2mm;
+  padding-left: 2mm;
+  border-left: 1.5px solid #E0DBD0;
+}
+.project-tier {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 4.5pt;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #D4682A;
+}
+.project-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 6.5pt;
+  font-weight: 600;
+  color: #1A1814;
+  line-height: 1.2;
+  margin-top: 0.3mm;
+}
+.project-desc {
+  font-size: 5pt;
+  color: #52504A;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.35;
+  margin-top: 0.3mm;
+}
+.project-item.highlight {
+  border-left-color: #D4682A;
+  background: #FDF7F4;
+  padding: 1.5mm 2mm;
+  border-radius: 0 1mm 1mm 0;
+}
+
+/* ── PAPER ITEMS ── */
+.paper-item {
+  margin-bottom: 1.8mm;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5mm;
+}
+.paper-month {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 4.8pt;
+  font-weight: 500;
+  color: white;
+  background: #7855CB;
+  padding: 0.3mm 1.2mm;
+  border-radius: 0.8mm;
+  flex-shrink: 0;
+  margin-top: 0.4mm;
+  white-space: nowrap;
+}
+.paper-body {}
+.paper-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 6.5pt;
+  font-weight: 600;
+  color: #1A1814;
+  line-height: 1.2;
+}
+.paper-authors {
+  font-size: 5pt;
+  color: #9A9790;
+  font-family: 'Inter', sans-serif;
+  margin-top: 0.2mm;
+}
+.paper-why {
+  font-size: 5pt;
+  color: #52504A;
+  font-family: 'Inter', sans-serif;
+  font-style: italic;
+  line-height: 1.3;
+  margin-top: 0.2mm;
+}
+
+/* ═══════════════════════════════════════
+   BOTTOM BAND — 3 COLUMNS
+═══════════════════════════════════════ */
+.bottom-band {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border-top: 2px solid #DDD9CE;
+  flex-shrink: 0;
+  background: #F2EFE8;
+}
+.bot-col {
+  padding: 3mm 4mm;
+  border-right: 1px solid #DDD9CE;
+}
+.bot-col:last-child { border-right: none; }
+.bot-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 7pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 2mm;
+  display: flex;
+  align-items: center;
+  gap: 1.5mm;
+}
+.bot-title::before {
+  content: '';
+  display: inline-block;
+  width: 2mm;
+  height: 2mm;
+  border-radius: 50%;
+}
+.bot-col-tools .bot-title { color: #1A6B7A; }
+.bot-col-tools .bot-title::before { background: #2A8EA0; }
+.bot-col-fields .bot-title { color: #4A2E96; }
+.bot-col-fields .bot-title::before { background: #7855CB; }
+.bot-col-rules .bot-title { color: #5C4A00; }
+.bot-col-rules .bot-title::before { background: #B8900A; }
+
+.tool-item {
+  display: flex;
+  gap: 1.5mm;
+  margin-bottom: 1.5mm;
+  align-items: flex-start;
+}
+.tool-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 6pt;
+  font-weight: 600;
+  color: #1A1814;
+  min-width: 20mm;
+  flex-shrink: 0;
+}
+.tool-url {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 5pt;
+  color: #2A8EA0;
+}
+.tool-desc {
+  font-size: 5pt;
+  color: #7A7870;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.3;
+  margin-top: 0.3mm;
+}
+
+.fields-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2mm;
+}
+.field-chip {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 5.5pt;
+  font-weight: 600;
+  padding: 0.8mm 1.8mm;
+  border-radius: 1mm;
+  color: white;
+  line-height: 1;
+}
+.fc1 { background: #2E6FBF; }
+.fc2 { background: #1D9E75; }
+.fc3 { background: #7855CB; }
+.fc4 { background: #D4682A; }
+.fc5 { background: #2A8EA0; }
+.fc6 { background: #0F6944; }
+.fc7 { background: #9B4A7A; }
+.fc8 { background: #5A4AB8; }
+.field-note {
+  font-size: 5pt;
+  color: #7A7870;
+  font-family: 'Inter', sans-serif;
+  font-style: italic;
+  margin-top: 2mm;
+  line-height: 1.4;
+}
+
+.rule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5mm;
+  margin-bottom: 1.8mm;
+}
+.rule-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 5.5pt;
+  font-weight: 500;
+  color: #B8900A;
+  flex-shrink: 0;
+  width: 4mm;
+}
+.rule-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 6pt;
+  font-weight: 500;
+  color: #1A1814;
+  line-height: 1.35;
+}
+.rule-sub {
+  font-size: 5pt;
+  color: #7A7870;
+  font-family: 'Inter', sans-serif;
+  font-style: italic;
+  margin-top: 0.3mm;
+}
+
+/* ═══════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════ */
+.footer {
+  background: #0E1118;
+  padding: 2.5mm 8mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.footer-quote {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 7pt;
+  font-weight: 500;
+  color: #5A5850;
+  letter-spacing: 0.02em;
+}
+.footer-quote em {
+  color: #2CC68F;
+  font-style: normal;
+}
+.footer-right {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 5.5pt;
+  color: #3A3830;
+}
+</style>
+</head>
+<body>
+
+<div class="print-note">
+  <strong>To print as A3:</strong> File → Print → Paper size: A3 · Orientation: Portrait · Margins: None · ✅ Print backgrounds · Scale: Fit to page
+</div>
+
+<div class="poster">
+
+  <!-- ═══ HEADER ═══ -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-title">Machine Learning <span>Roadmap</span></div>
+      <div class="header-sub">Self-directed study plan · Research ability · 7 months</div>
+    </div>
+    <div class="header-right">
+      <span class="yr">2026</span>
+      AY · FUTA<br>SEN/24/9483
+    </div>
+  </div>
+
+  <!-- ═══ TIMELINE GANTT ═══ -->
+  <div class="timeline-band">
+    <div class="timeline-title">Course timeline — 7 months + exploration</div>
+    <div class="gantt-wrap">
+      <div class="month-headers">
+        <div class="month-label">Month 1</div>
+        <div class="month-label">Month 2</div>
+        <div class="month-label">Month 3</div>
+        <div class="month-label">Month 4</div>
+        <div class="month-label">Month 5</div>
+        <div class="month-label">Month 6</div>
+        <div class="month-label">Month 7</div>
+        <div class="month-label explore">Explore ↗</div>
+      </div>
+      <div class="gantt-rows">
+        <div class="gantt-row">
+          <div class="gantt-row-label">StatQuest</div>
+          <div class="gantt-track">
+            <div class="gantt-bar bar-statquest"></div>
+            <div class="gantt-bar" style="left:0;width:82.35%;background:transparent;color:#0F6944;font-size:4.5pt;">always running</div>
+          </div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-row-label">Math for ML</div>
+          <div class="gantt-track">
+            <div class="gantt-bar bar-math4ml"></div>
+            <div class="gantt-bar" style="left:0;width:100%;background:transparent;color:#1A4A8A;font-size:4.5pt;">read reactively, always</div>
+          </div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-row-label">CS109x</div>
+          <div class="gantt-track">
+            <div class="gantt-bar bar-cs109x">CS109x · 2 wks</div>
+          </div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-row-label">CS229</div>
+          <div class="gantt-track">
+            <div class="gantt-bar bar-cs229">CS229 — Stanford ML · 8 weeks</div>
+          </div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-row-label">Karpathy</div>
+          <div class="gantt-track">
+            <div class="gantt-bar bar-karpathy">Neural Nets: Zero to Hero · ~8 weeks</div>
+          </div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-row-label">MIT 6.S191</div>
+          <div class="gantt-track">
+            <div class="gantt-bar bar-6s191">6.S191 · 5 wks</div>
+            <div class="gantt-bar bar-explore">Exploration + Projects + Papers</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MAIN BODY — 4 COLUMNS ═══ -->
+  <div class="body-grid">
+
+    <!-- COL 1: SPINE -->
+    <div class="col col-spine">
+      <div class="col-header">
+        <h2>The Spine</h2>
+        <div class="col-sub">6 items · nothing else</div>
+      </div>
+      <div class="col-body">
+
+        <div class="sec-label">Always on</div>
+        <div class="always-item">
+          <div class="always-dot" style="background:#1D9E75"></div>
+          <div class="always-body">
+            <div class="always-name">StatQuest — Josh Starmer</div>
+            <div class="always-desc">When a concept doesn't click, find the StatQuest video first. YouTube · free · ongoing.</div>
+          </div>
+        </div>
+        <div class="always-item">
+          <div class="always-dot" style="background:#2E6FBF"></div>
+          <div class="always-body">
+            <div class="always-name">Math for ML — Deisenroth</div>
+            <div class="always-desc">Read reactively. Cover the chapter that matches what the current course needs. Free PDF · Cambridge.</div>
+          </div>
+        </div>
+
+        <div class="sec-label">Month 1</div>
+        <div class="course-item">
+          <div class="course-code">CS109x · Harvard · 2 weeks</div>
+          <div class="course-name">Intro to Data Science with Python</div>
+          <div class="course-meta">edX · Pandas, NumPy, probability, simple models</div>
+          <div class="course-note">Entry point. Gets you ML-ready fast without wasting time on basics you already know.</div>
+        </div>
+
+        <div class="sec-label">Months 2–3 · Theory backbone</div>
+        <div class="course-item">
+          <div class="course-code">CS229 · Stanford · 8 weeks</div>
+          <div class="course-name">Machine Learning</div>
+          <div class="course-meta">YouTube · free · Andrew Ng · heavy math</div>
+          <div class="course-note">The course that separates practitioners from researchers. Do not skip problem sets. This is the work.</div>
+        </div>
+
+        <div class="sec-label">Months 2.5–4 · Build from scratch</div>
+        <div class="course-item">
+          <div class="course-code">Karpathy · YouTube · ~8 weeks · overlaps CS229</div>
+          <div class="course-name">Neural Networks: Zero to Hero</div>
+          <div class="course-meta">Pure Python → PyTorch · micrograd → GPT-2</div>
+          <div class="course-note">Implement backprop, MLP, makemore, GPT-2 from scratch. Start while still in CS229 — they reinforce each other. Most important thing you'll do all year.</div>
+        </div>
+
+        <div class="sec-label">Months 3.5–5 · Deep learning</div>
+        <div class="course-item">
+          <div class="course-code">MIT 6.S191 · YouTube · 5 weeks</div>
+          <div class="course-name">Intro to Deep Learning</div>
+          <div class="course-meta">MIT · free · updated yearly · 2025 edition</div>
+          <div class="course-note">Dense and fast. CNNs, RNNs, transformers, RL, generative models. Do after Karpathy builds your foundation so lectures land properly.</div>
+        </div>
+
+        <div class="sec-label">Months 5–7 · Exploration</div>
+        <div class="course-item">
+          <div class="course-code">Specialization course · TBD</div>
+          <div class="course-name">Pick based on what pulls you</div>
+          <div class="course-meta">CV / RL / Generative / Efficient ML / Graph / Science</div>
+          <div class="course-note">Don't decide now. The field finds you through the work. Check Fields tab for options.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- COL 2: BOOKS -->
+    <div class="col col-books">
+      <div class="col-header">
+        <h2>Books</h2>
+        <div class="col-sub">Sequenced by when each is useful</div>
+      </div>
+      <div class="col-body">
+
+        <div class="sec-label">Month 1–2 · Start now</div>
+        <div class="book-item">
+          <div class="book-phase">M1</div>
+          <div class="book-body">
+            <div class="book-title">The Hundred-Page ML Book</div>
+            <div class="book-author">Andriy Burkov</div>
+            <div class="book-why">Best fast ML map. Read first to know where CS229 is taking you. Short — finish in a week of sessions.</div>
+          </div>
+        </div>
+        <div class="book-item">
+          <div class="book-phase">M2</div>
+          <div class="book-body">
+            <div class="book-title">Hands-On ML with Scikit-Learn, Keras & TF</div>
+            <div class="book-author">Aurélien Géron</div>
+            <div class="book-why">Most practically useful ML book. Vol 1 alongside CS229. Vol 2 in month 5. The bridge between theory and code.</div>
+          </div>
+        </div>
+
+        <div class="sec-label">Months 3–4 · Deep learning entry</div>
+        <div class="book-item">
+          <div class="book-phase">M3</div>
+          <div class="book-body">
+            <div class="book-title">Grokking Deep Learning</div>
+            <div class="book-author">Andrew Trask</div>
+            <div class="book-why">Builds backprop from scratch using only NumPy. Narrative style, not textbook. Perfect Karpathy companion.</div>
+          </div>
+        </div>
+        <div class="book-item">
+          <div class="book-phase">M4</div>
+          <div class="book-body">
+            <div class="book-title">Neural Networks and Deep Learning</div>
+            <div class="book-author">Michael Nielsen · free online</div>
+            <div class="book-why">Slow, deep, clear prose. Second angle on backprop and CNNs. Reads like a well-written blog.</div>
+          </div>
+        </div>
+
+        <div class="sec-label">Month 5 · Applied depth</div>
+        <div class="book-item">
+          <div class="book-phase">M5</div>
+          <div class="book-body">
+            <div class="book-title">Deep Learning with Python</div>
+            <div class="book-author">François Chollet (Keras creator)</div>
+            <div class="book-why">Honest, practical, conceptually clear. Reads well. Pairs with 6.S191 lectures.</div>
+          </div>
+        </div>
+
+        <div class="sec-label">Month 6–7 · Research-grade</div>
+        <div class="book-item">
+          <div class="book-phase">M6</div>
+          <div class="book-body">
+            <div class="book-title">Build a Large Language Model From Scratch</div>
+            <div class="book-author">Sebastian Raschka</div>
+            <div class="book-why">Implement GPT-2 from scratch in PyTorch. Most direct bridge from courses to research thinking.</div>
+          </div>
+        </div>
+        <div class="book-item">
+          <div class="book-phase">M7</div>
+          <div class="book-body">
+            <div class="book-title">Deep Learning</div>
+            <div class="book-author">Goodfellow, Bengio, Courville · free online</div>
+            <div class="book-why">The field's textbook. Use as reference, not cover-to-cover. Chapters 6–9 first.</div>
+          </div>
+        </div>
+
+        <div class="sec-label">Field-dependent · pick after Month 5</div>
+        <div class="book-item">
+          <div class="book-phase later">Later</div>
+          <div class="book-body">
+            <div class="book-title">ML: A Probabilistic Perspective — Murphy</div>
+            <div class="book-why">Graduate-level. Read if you land on generative models or Bayesian methods.</div>
+          </div>
+        </div>
+        <div class="book-item">
+          <div class="book-phase later">Later</div>
+          <div class="book-body">
+            <div class="book-title">Reinforcement Learning: An Introduction</div>
+            <div class="book-author">Sutton & Barto · free online</div>
+            <div class="book-why">The RL bible. Only if RL pulls you in exploration phase.</div>
+          </div>
+        </div>
+        <div class="book-item">
+          <div class="book-phase later">Later</div>
+          <div class="book-body">
+            <div class="book-title">Deep Learning for Coders — Howard & Gugger</div>
+            <div class="book-why">Top-down PyTorch. After solid theory from Chollet + Karpathy.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- COL 3: PROJECTS -->
+    <div class="col col-projects">
+      <div class="col-header">
+        <h2>Projects</h2>
+        <div class="col-sub">3 tiers · every project gets a writeup</div>
+      </div>
+      <div class="col-body">
+
+        <div class="sec-label">Tier 1 · Foundation · Months 1–3</div>
+        <div class="project-item">
+          <div class="project-tier">T1 · Month 1</div>
+          <div class="project-name">EDA deep-dive on WESAD dataset</div>
+          <div class="project-desc">You have the data. Distribution analysis, class imbalance, sensor correlation, feature importance. Write it up. Becomes your first technical writeup and a real portfolio piece.</div>
+        </div>
+        <div class="project-item">
+          <div class="project-tier">T1 · Month 2</div>
+          <div class="project-name">End-to-end classification pipeline</div>
+          <div class="project-desc">Kaggle/UCI dataset. Clean, engineer features, train multiple classifiers, evaluate with cross-validation + F1. Write up every decision. Teaches the full ML workflow.</div>
+        </div>
+        <div class="project-item">
+          <div class="project-tier">T1 · Month 3</div>
+          <div class="project-name">Linear + logistic regression from scratch</div>
+          <div class="project-desc">Pure NumPy. Gradient descent by hand. Then compare to sklearn on the same data. Every mismatch tells you something.</div>
+        </div>
+
+        <div class="sec-label">Tier 2 · Build from scratch · Months 3–6</div>
+        <div class="project-item">
+          <div class="project-tier">T2 · Month 3–4</div>
+          <div class="project-name">Backpropagation engine from scratch</div>
+          <div class="project-desc">Implement micrograd (scalar autograd). Then extend it. Every DL framework you ever use will make more sense afterward.</div>
+        </div>
+        <div class="project-item">
+          <div class="project-tier">T2 · Month 4–5</div>
+          <div class="project-name">Character-level language model</div>
+          <div class="project-desc">Bigram → MLP → full char-LM. Teaches embedding, batching, training loop, evaluation in a context small enough to fully understand.</div>
+        </div>
+        <div class="project-item">
+          <div class="project-tier">T2 · Month 5</div>
+          <div class="project-name">CNN on CIFAR-10 — train and analyze</div>
+          <div class="project-desc">Not just accuracy. Visualize filters, plot training curves, analyze failure cases. The analysis is more important than the number.</div>
+        </div>
+        <div class="project-item">
+          <div class="project-tier">T2 · Month 6</div>
+          <div class="project-name">Transformer attention from scratch</div>
+          <div class="project-desc">Implement multi-head self-attention in PyTorch without nn.Transformer. Verify against the Vaswani paper. Karpathy + the paper converge here.</div>
+        </div>
+
+        <div class="sec-label">Tier 3 · Replication · Months 7+ · highest leverage</div>
+        <div class="project-item highlight">
+          <div class="project-tier">T3 · Month 7–onwards</div>
+          <div class="project-name">Replicate one paper from scratch</div>
+          <div class="project-desc">Pick: AlexNet, Word2Vec, DCGAN, DQN, or one from your chosen field. Implement from the paper — no tutorial. Document every gap between paper's claims and what you had to figure out. That gap document IS research thinking. Post it publicly.</div>
+        </div>
+
+        <div class="sec-label">Rule for every project</div>
+        <div style="font-size:5.5pt;color:#52504A;font-family:'Inter',sans-serif;font-style:italic;line-height:1.5;margin-top:0.5mm;">Write up what you tried, what failed, what you changed, what you learned. Three paragraphs minimum. This is how projects become research evidence rather than just code on GitHub.</div>
+
+      </div>
+    </div>
+
+    <!-- COL 4: PAPERS -->
+    <div class="col col-papers">
+      <div class="col-header">
+        <h2>Paper habit</h2>
+        <div class="col-sub">1 per week · from Month 2 · 3 sentences after every paper</div>
+      </div>
+      <div class="col-body">
+
+        <div class="sec-label">3-pass method</div>
+        <div style="font-size:5.5pt;color:#52504A;font-family:'Inter',sans-serif;line-height:1.5;margin-bottom:2mm;font-style:italic;">Pass 1: title, abstract, conclusion, figures only (15 min). Pass 2: read everything, skip proofs (1 hr). Pass 3: reconstruct math — only for papers you're replicating.</div>
+
+        <div class="sec-label">Months 2–3 · Readable foundations</div>
+        <div class="paper-item">
+          <div class="paper-month">M2</div>
+          <div class="paper-body">
+            <div class="paper-title">A Few Useful Things to Know About ML</div>
+            <div class="paper-authors">Domingos, 2012</div>
+            <div class="paper-why">Best first ML paper. Conceptual, well-written. Builds the right mental model before the math arrives.</div>
+          </div>
+        </div>
+        <div class="paper-item">
+          <div class="paper-month">M3</div>
+          <div class="paper-body">
+            <div class="paper-title">Random Forests</div>
+            <div class="paper-authors">Breiman, 2001</div>
+            <div class="paper-why">Landmark ensemble paper. Read the original alongside CS229's trees module.</div>
+          </div>
+        </div>
+        <div class="paper-item">
+          <div class="paper-month">M3</div>
+          <div class="paper-body">
+            <div class="paper-title">XGBoost: A Scalable Tree Boosting System</div>
+            <div class="paper-authors">Chen & Guestrin, 2016</div>
+            <div class="paper-why">You used this at HealthTrace. Now understand what it's actually doing.</div>
+          </div>
+        </div>
+
+        <div class="sec-label">Months 4–5 · Landmark techniques</div>
+        <div class="paper-item">
+          <div class="paper-month">M4</div>
+          <div class="paper-body">
+            <div class="paper-title">Dropout: Preventing Neural Networks from Overfitting</div>
+            <div class="paper-authors">Srivastava et al., 2014</div>
+            <div class="paper-why">Short, clear, important. A simple idea that became ubiquitous.</div>
+          </div>
+        </div>
+        <div class="paper-item">
+          <div class="paper-month">M4</div>
+          <div class="paper-body">
+            <div class="paper-title">Adam: A Method for Stochastic Optimization</div>
+            <div class="paper-authors">Kingma & Ba, 2014</div>
+            <div class="paper-why">You'll use Adam in every project. Read while building training loops.</div>
+          </div>
+        </div>
+        <div class="paper-item">
+          <div class="paper-month">M5</div>
+          <div class="paper-body">
+            <div class="paper-title">Batch Normalization</div>
+            <div class="paper-authors">Ioffe & Szegedy, 2015</div>
+            <div class="paper-why">Short paper, massive impact. Understand why it exists, not just how to use it.</div>
+          </div>
+        </div>
+
+        <div class="sec-label">Months 5–6 · Deep learning landmarks</div>
+        <div class="paper-item">
+          <div class="paper-month">M5</div>
+          <div class="paper-body">
+            <div class="paper-title">ImageNet Classification with Deep CNNs (AlexNet)</div>
+            <div class="paper-authors">Krizhevsky et al., 2012</div>
+            <div class="paper-why">The paper that started modern DL. Read during 6.S191's CNN module.</div>
+          </div>
+        </div>
+        <div class="paper-item">
+          <div class="paper-month">M6</div>
+          <div class="paper-body">
+            <div class="paper-title">Deep Residual Learning for Image Recognition (ResNet)</div>
+            <div class="paper-authors">He et al., 2015</div>
+            <div class="paper-why">Skip connections, vanishing gradients. One of the most cited papers in CS.</div>
+          </div>
+        </div>
+        <div class="paper-item">
+          <div class="paper-month">M6</div>
+          <div class="paper-body">
+            <div class="paper-title">Attention Is All You Need</div>
+            <div class="paper-authors">Vaswani et al., 2017</div>
+            <div class="paper-why">Read AFTER Karpathy builds the transformer with you. You'll actually understand it.</div>
+          </div>
+        </div>
+
+        <div class="sec-label">Month 7+ · Field exploration</div>
+        <div class="paper-item">
+          <div class="paper-month">M7</div>
+          <div class="paper-body">
+            <div class="paper-title">Survey paper in your chosen field</div>
+            <div class="paper-authors">Find via Semantic Scholar · search "[field] survey 2024"</div>
+            <div class="paper-why">Gives you the map of a field before committing to a specialization course.</div>
+          </div>
+        </div>
+        <div class="paper-item">
+          <div class="paper-month">M7+</div>
+          <div class="paper-body">
+            <div class="paper-title">1 current paper/week from NeurIPS / ICML / ICLR</div>
+            <div class="paper-authors">Via Papers With Code · find papers with released code</div>
+            <div class="paper-why">Read paper → run code → read paper again. The second reading lands differently.</div>
+          </div>
+        </div>
+
+        <div class="sec-label">After every paper — write 3 sentences</div>
+        <div style="font-size:5.5pt;color:#52504A;font-family:'Inter',sans-serif;font-style:italic;line-height:1.5;margin-top:0.5mm;">① What problem they solved. ② What approach they took. ③ What you'd question or extend. The writing is where understanding gets built — not the reading itself.</div>
+
+      </div>
+    </div>
+
+  </div><!-- end body-grid -->
+
+  <!-- ═══ BOTTOM BAND ═══ -->
+  <div class="bottom-band">
+
+    <div class="bot-col bot-col-tools">
+      <div class="bot-title">Websites &amp; Tools</div>
+      <div class="tool-item"><div><div class="tool-name">Papers With Code</div><div class="tool-url">paperswithcode.com</div><div class="tool-desc">Papers linked to code and benchmarks. Start here for any landmark paper.</div></div></div>
+      <div class="tool-item"><div><div class="tool-name">Semantic Scholar</div><div class="tool-url">semanticscholar.org</div><div class="tool-desc">AI-powered research discovery. Better than Google Scholar for ML papers.</div></div></div>
+      <div class="tool-item"><div><div class="tool-name">ArXiv Sanity Lite</div><div class="tool-url">arxiv-sanity-lite.com</div><div class="tool-desc">Karpathy-built ArXiv filter. Create account, save papers, get recommendations.</div></div></div>
+      <div class="tool-item"><div><div class="tool-name">Connected Papers</div><div class="tool-url">connectedpapers.com</div><div class="tool-desc">Paste any paper → see its citation neighborhood as a visual graph.</div></div></div>
+      <div class="tool-item"><div><div class="tool-name">Google Colab</div><div class="tool-url">colab.research.google.com</div><div class="tool-desc">Free GPU. Use it for every project. Works on slow internet.</div></div></div>
+      <div class="tool-item"><div><div class="tool-name">Ahead of AI (Raschka)</div><div class="tool-url">magazine.sebastianraschka.com</div><div class="tool-desc">Monthly deep-dives on ML research. Technically honest, not hype.</div></div></div>
+    </div>
+
+    <div class="bot-col bot-col-fields">
+      <div class="bot-title">Fields to Explore · Pick at Month 5</div>
+      <div class="fields-grid">
+        <div class="field-chip fc1">Computer Vision</div>
+        <div class="field-chip fc2">Reinforcement Learning</div>
+        <div class="field-chip fc3">Generative Models</div>
+        <div class="field-chip fc4">Efficient ML</div>
+        <div class="field-chip fc5">Graph ML</div>
+        <div class="field-chip fc6">ML for Science</div>
+        <div class="field-chip fc7">NLP / LLMs</div>
+        <div class="field-chip fc8">Multimodal ML</div>
+      </div>
+      <div class="field-note">Don't choose now. By Month 5, after building CNNs, language models, and a transformer — whichever felt most alive is your signal. The field finds you through the work, not the other way around.</div>
+    </div>
+
+    <div class="bot-col bot-col-rules">
+      <div class="bot-title">Rules for the Year</div>
+      <div class="rule-item"><div class="rule-num">01</div><div><div class="rule-text">1 paper per week from Month 2</div><div class="rule-sub">3 sentences written after every paper. No exceptions.</div></div></div>
+      <div class="rule-item"><div class="rule-num">02</div><div><div class="rule-text">Every project gets a writeup</div><div class="rule-sub">What failed, what you changed, what you learned. Min 3 paragraphs.</div></div></div>
+      <div class="rule-item"><div class="rule-num">03</div><div><div class="rule-text">StatQuest before re-reading slides</div><div class="rule-sub">When stuck, find the StatQuest video first. Always faster.</div></div></div>
+      <div class="rule-item"><div class="rule-num">04</div><div><div class="rule-text">Build &gt; consume</div><div class="rule-sub">If you've been reading for 2 hours without writing any code, stop.</div></div></div>
+      <div class="rule-item"><div class="rule-num">05</div><div><div class="rule-text">One replication by end of year</div><div class="rule-sub">Paper → code, no tutorial. That gap document is research thinking.</div></div></div>
+      <div class="rule-item"><div class="rule-num">06</div><div><div class="rule-text">Don't pick a field before Month 5</div><div class="rule-sub">Premature specialization costs you more than it saves.</div></div></div>
+    </div>
+
+  </div><!-- end bottom-band -->
+
+  <!-- ═══ FOOTER ═══ -->
+  <div class="footer">
+    <div class="footer-quote">Consume less. <em>Build more.</em> Write everything down.</div>
+    <div class="footer-right">MIT EECS PhD · AI &amp; Decision Making · Phase 1 of 3</div>
+  </div>
+
+</div><!-- end poster -->
+
+</body>
+</html>
+

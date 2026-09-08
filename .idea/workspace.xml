@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="ec1e0e09-3a20-4681-aceb-94f4316f8978" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/PythonProject3.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/R.A.G.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/api_testing.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dataset.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hello.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/prompt_eval.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="HTML File" />
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProblemsViewState">
+    <hideBySeverity>
+      <option value="11" />
+      <option value="12" />
+      <option value="13" />
+      <option value="14" />
+      <option value="15" />
+      <option value="16" />
+    </hideBySeverity>
+    <option name="selectedTabId" value="ProjectErrors" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="3CQoaleCyh96jHprlMbvYKvrGgc" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.Data_preprocessing.executor": "Run",
+    "Python.Docs_scrape.executor": "Run",
+    "Python.Dummy_agent.executor": "Run",
+    "Python.R.A.G.executor": "Run",
+    "Python.Storing.executor": "Run",
+    "Python.VectorDB.executor": "Run",
+    "Python.api_testing.executor": "Run",
+    "Python.bare_metal_api_calling.executor": "Run",
+    "Python.check.executor": "Run",
+    "Python.clean_course.executor": "Run",
+    "Python.data_analysis.executor": "Run",
+    "Python.donwload2.executor": "Run",
+    "Python.download.executor": "Run",
+    "Python.download2.executor": "Run",
+    "Python.download3.executor": "Run",
+    "Python.download4.executor": "Run",
+    "Python.embeddings_classification.executor": "Run",
+    "Python.firewall.executor": "Run",
+    "Python.hello.executor": "Run",
+    "Python.http.executor": "Run",
+    "Python.i_am.back.executor": "Run",
+    "Python.images.executor": "Run",
+    "Python.merge.executor": "Run",
+    "Python.neww.executor": "Run",
+    "Python.nothing.executor": "Run",
+    "Python.prompt_eval.executor": "Run",
+    "Python.tool.executor": "Run",
+    "Python.tool_use.executor": "Run",
+    "Python.unknown.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master",
+    "run.code.analysis.last.selected.profile": "aDefault",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
+  },
+  "keyToStringList": {
+    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "SVG"
+    ]
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\USER\PycharmProjects\PythonProject3\Rag_chat_bot" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-e0ed3721d81e-36ea0e71a18c-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.25410.159" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="ec1e0e09-3a20-4681-aceb-94f4316f8978" name="Changes" comment="" />
+      <created>1776327220648</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1776327220648</updated>
+    </task>
+    <servers />
+  </component>
+</project>

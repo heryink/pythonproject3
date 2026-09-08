@@ -1,0 +1,1750 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    
+  <script type="text/javascript">
+    function getPreferredTheme() {
+      const storedTheme = localStorage.getItem('theme')
+      if (storedTheme) {
+        return storedTheme
+      }
+      return 'auto';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    };
+
+    setTheme(getPreferredTheme());
+  </script>
+  
+    <title>
+  
+    The Flask Mega-Tutorial, Part XXII: Background Jobs - miguelgrinberg.com
+  
+</title>
+  
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="miguelgrinberg.com">
+  <meta name="copyright" content="Copyright (c) 2012-2024 Miguel Grinberg">
+  <meta name="author" content="Miguel Grinberg">
+  
+  <meta name="keywords" content="flask, python, programming, javascript, celery, rq, redisqueue, redis, background jobs">
+  
+  
+  <link rel="canonical" href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxii-background-jobs">
+  
+
+  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+
+  <link href="/static/tomorrow.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/tomorrow-night.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/social.css" rel="stylesheet" type="text/css" />
+  <link href="/static/style_20260305.css" rel="stylesheet" type="text/css" />
+
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  <link rel="alternate" type="application/rss+xml" href="/feed" title="miguelgrinberg.com RSS feed">
+
+    <meta property="og:title" content="The Flask Mega-Tutorial, Part XXII: Background Jobs">
+    <meta property="og:description" content="This is the twenty second installment of the Flask Mega-Tutorial series, in which I&#39;m going to tell you how to create background jobs that run independently of the web server.You are reading the 2024…">
+    <meta property="og:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xxii-background-jobs.jpg">
+    <meta property="og:url" content="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxii-background-jobs">
+    <meta name="twitter:title" content="The Flask Mega-Tutorial, Part XXII: Background Jobs">
+    <meta name="twitter:description" content="This is the twenty second installment of the Flask Mega-Tutorial series, in which I&#39;m going to tell you how to create background jobs that run independently of the web server.You are reading the 2024…">
+    <meta name="twitter:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xxii-background-jobs.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@miguelgrinberg">
+
+  </head>
+  <body>
+    <svg style="display: none" version="2.0">
+      <defs>
+        <symbol id="icon-theme-auto" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-circle-half" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/>
+        </symbol>
+        <symbol id="icon-theme-light" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </symbol>
+        <symbol id="icon-theme-dark" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-moon-stars-fill" viewBox="0 0 16 16">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+        </symbol>
+      </defs>
+    </svg>
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/index">miguelgrinberg.com</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/index">Home</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/my-courses-and-books">My Courses and Books</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/hire-me">Consulting</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/about-me">About Me</a></li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <svg width="20" height="20" version="2.0"><use id="current-theme" href="#icon-theme-light"></svg>
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a id="select-theme-light" class="dropdown-item" href="javascript:updateTheme('light'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-light"></svg>&nbsp; Light Mode
+              </a>
+            </li>
+            <li>
+              <a id="select-theme-dark" class="dropdown-item" href="javascript:updateTheme('dark'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-dark"></svg>&nbsp; Dark Mode
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a id="select-theme-auto" class="dropdown-item" href="javascript:updateTheme('auto'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-auto"></svg>&nbsp; System Default
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item social-icons">
+          <a href="http://github.com/miguelgrinberg"><img src="/static/social/github.png" alt="GitHub" title="GitHub" /></a>
+          <a href="http://www.linkedin.com/in/miguelgrinberg"><img src="/static/social/linkedin.png" alt="LinkedIn" title="LinkedIn" /></a>
+          <a href="https://bsky.app/profile/miguelgrinberg.com"><img src="/static/social/bluesky.png" alt="Bluesky" title="Bluesky" /></a>
+          <a rel="me" href="https://mstdn.social/@miguelgrinberg"><img src="/static/social/mastodon.png" alt="Mastodon" title="Mastodon" /></a>
+          <a href="https://twitter.com/miguelgrinberg"><img src="/static/social/twitter.png" alt="Twitter" title="Twitter" /></a>
+          <a href="https://youtube.com/miguelgrinberg"><img src="/static/social/youtube.png" alt="YouTube" title="YouTube" /></a>
+          <a href="https://www.buymeacoffee.com/miguelgrinberg"><img src="/static/social/buymeacoffee.png" alt="Buy Me a Coffee" title="Buy Me a Coffee" /></a>
+          <a href="https://patreon.com/miguelgrinberg"><img src="/static/social/patreon.png" alt="Patreon" title="Patreon" /></a>
+          <a type="application/rss+xml" href="/feed"><img src="/static/social/rss.png" alt="RSS Feed" title="RSS Feed" /></a>
+          <!--<a href="https://www.facebook.com/miguelgrinbergblog"><img src="/static/social/facebook.png" alt="Facebook" title="Facebook" /></a>-->
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <div id="main">
+        
+        
+        
+        
+        
+
+<div class="post">
+
+<div class="post-header">
+  <h1><a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">The Flask Mega-Tutorial, Part XXII: Background Jobs</a></h1>
+  <h2>
+    Posted by
+    <form action="/author/Miguel%20Grinberg" method="POST">
+      <input type="submit" class="btn btn-danger btn-sm" value="Miguel Grinberg" />
+    </form>
+    on
+    <button class="btn btn-secondary btn-sm" disabled><span class="flask-moment" data-timestamp="2023-12-03T10:40:21Z" data-function="format" data-format="LL" data-refresh="0" style="display: none">2023-12-03T10:40:21Z</span></button>
+    under
+    
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" />
+      </form>
+    
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" />
+      </form>
+    
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" />
+      </form>
+    
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" />
+      </form>
+    
+    
+  </h2>
+</div>
+<div class="post-body"><p>This is the twenty second installment of the Flask Mega-Tutorial series, in which I'm going to tell you how to create background jobs that run independently of the web server.</p>
+<p>You are reading the 2024 edition of the Flask Mega-Tutorial. The complete course is also available to order in e-book and paperback formats from <a href="https://amzn.to/3ahVnPN">Amazon</a>. Thank you for your support!</p>
+<p>If you are looking for the 2018 edition of this course, you can find it <a href="/post/the-flask-mega-tutorial-part-i-hello-world-2018">here</a>.</p>
+<p>For your reference, here is the complete list of articles in this series:</p>
+<ul>
+<li><a href="/post/the-flask-mega-tutorial-part-i-hello-world">Chapter 1:  Hello, World!</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ii-templates">Chapter 2:  Templates</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iii-web-forms">Chapter 3:  Web Forms</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iv-database">Chapter 4:  Database</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5:  User Logins</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vi-profile-page-and-avatars">Chapter 6:  Profile Page and Avatars</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7:  Error Handling</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-viii-followers">Chapter 8:  Followers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ix-pagination">Chapter 9:  Pagination</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-x-email-support">Chapter 10:  Email Support</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xi-facelift">Chapter 11:  Facelift</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xii-dates-and-times">Chapter 12:  Dates and Times</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiii-i18n-and-l10n">Chapter 13:  I18n and L10n</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiv-ajax">Chapter 14:  Ajax</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15:  A Better Application Structure</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16:  Full-Text Search</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17:  Deployment on Linux</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18:  Deployment on Heroku</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">Chapter 19:  Deployment on Docker Containers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">Chapter 20:  Some JavaScript Magic</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21:  User Notifications</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">Chapter 22:  Background Jobs</a> (this article)</li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">Chapter 23:  Application Programming Interfaces (APIs)</a></li>
+</ul>
+<p>This chapter is dedicated to the implementation of long or complex processes that need to run as part of the application. These processes cannot be executed synchronously in the context of a request because that would block the response to the client for the duration of the task. I briefly touched on this topic in <a href="/post/the-flask-mega-tutorial-part-x-email-support">Chapter 10</a>, when I moved the sending of emails to background threads to prevent the client from having to wait during those 3-4 seconds that it takes to send an email. While using threads for emails is acceptable, this solution does not scale well when the processes in question are much longer. The accepted practice is to offload long tasks to a worker process, or more likely to a pool of them.</p>
+<p>To justify the need for having long running tasks, I'm going to introduce an export feature to Microblog through which users will be able to request a data file with all their blog posts. When a user makes use of this option, the application is going to start an export task that will generate a JSON file with all the user's posts, and then send it to the user by email. All this activity is going to happen in a worker process, and while it happens the user will see a notification showing the percentage of completion.</p>
+<p><em>The GitHub links for this chapter are: <a href="https://github.com/miguelgrinberg/microblog/tree/v0.22">Browse</a>, <a href="https://github.com/miguelgrinberg/microblog/archive/v0.22.zip">Zip</a>, <a href="https://github.com/miguelgrinberg/microblog/compare/v0.21...v0.22">Diff</a>.</em></p>
+<h2>Introduction to Task Queues</h2>
+<p>Task queues provide a convenient solution for the application to request the execution of a task by a <em>worker process</em>. Worker processes run independently of the application and can even be located on a different system. The communication between the application and the workers is done through a <em>message queue</em>. The application submits a job, and then monitors its progress by interacting with the queue. The following diagram shows a typical implementation:</p>
+<p><img alt="Task Queue Diagram" src="/static/images/mega-tutorial/ch22-queue-diagram.png" /></p>
+<p>The most popular task queue for Python is <a href="http://www.celeryproject.org/">Celery</a>. This is a fairly sophisticated package that has many options and supports several message queues. Another popular Python task queue is <a href="http://python-rq.org/">Redis Queue</a> or just RQ, which sacrifices some flexibility, such as only supporting a <a href="https://redis.io/">Redis</a> message queue, but in exchange it is much simpler to set up than Celery.</p>
+<p>Both Celery and RQ are perfectly adequate to support background tasks in a Flask application, so my choice for this application is going to favor the simplicity of RQ. However, implementing the same functionality with Celery should be relatively easy. If you are interested in Celery more than RQ, you can read the <a href="https://blog.miguelgrinberg.com/post/using-celery-with-flask">Using Celery with Flask</a> article that I have on my blog.</p>
+<h2>Using RQ</h2>
+<p>RQ is a standard Python package, that is installed with <code>pip</code>:</p>
+<pre><code>(venv) $ pip install rq
+(venv) $ pip freeze &gt; requirements.txt
+</code></pre>
+<p>As I mentioned earlier, the communication between the application and the RQ workers is going to be carried out in a Redis message queue, so you need to have a Redis server running. There are many options to get a Redis server installed and running, from one-click installers to downloading the source code and compiling it directly on your system. If you are using Windows, Microsoft maintains installers <a href="https://github.com/MicrosoftArchive/redis/releases">here</a>. On Linux, you can likely get it as a package through your operating system's package manager, and macOS users can run <code>brew install redis</code> and then start the service manually with the <code>redis-server</code> command.</p>
+<p>You will not need to interact with Redis at all outside of just ensuring that the service is running and accessible to RQ.</p>
+<p>Note that RQ does not run on the Windows native Python interpreter. If you are using the Windows platform, you can only run RQ under Unix emulation. The two Unix emulation layers that I recommend to Windows users are <a href="https://cygwin.org">Cygwin</a> and the <a href="https://msdn.microsoft.com/en-us/commandline/wsl/about">Windows Subsystem for Linux (WSL)</a>, and both are compatible with RQ.</p>
+<h3>Creating a Task</h3>
+<p>I'm going to show you how to run a simple task through RQ so that you familiarize with it. A task, is nothing more than a Python function. Here is an example task, that I'm going to put in a new <em>app/tasks.py</em> module:</p>
+<p class="code_title"><em>app/tasks.py</em>: Example background task.</p>
+
+<pre><code class="language-python">import time
+
+def example(seconds):
+    print('Starting task')
+    for i in range(seconds):
+        print(i)
+        time.sleep(1)
+    print('Task completed')
+</code></pre>
+<p>This task takes a number of seconds as an argument, and then waits that amount of time, printing a counter once a second.</p>
+<h3>Running the RQ Worker</h3>
+<p>Now that the task is ready, a worker can be starter. This is done with the <code>rq worker</code> command:</p>
+<pre><code>(venv) $ rq worker microblog-tasks
+18:55:06 RQ worker 'rq:worker:miguelsmac.90369' started, version 0.9.1
+18:55:06 Cleaning registries for queue: microblog-tasks
+18:55:06
+18:55:06 *** Listening on microblog-tasks...
+</code></pre>
+<p>The worker process is now connected to Redis, and watching for any jobs that may be assigned to it on a queue named <code>microblog-tasks</code>. In cases where you want to have multiple workers to have more throughput, all you need to do is run more instances of <code>rq worker</code>, all connected to the same queue. Then when a job shows up in the queue, any of the available worker processes will pick it up. In a production environment you will probably want to have at least as many workers as available CPUs.</p>
+<h3>Executing Tasks</h3>
+<p>Now open a second terminal window and activate the virtual environment on it. I'm going to use a shell session to kick off the <code>example()</code> task in the worker:</p>
+<pre><code class="language-python">&gt;&gt;&gt; from redis import Redis
+&gt;&gt;&gt; import rq
+&gt;&gt;&gt; queue = rq.Queue('microblog-tasks', connection=Redis.from_url('redis://'))
+&gt;&gt;&gt; job = queue.enqueue('app.tasks.example', 23)
+&gt;&gt;&gt; job.get_id()
+'c651de7f-21a8-4068-afd5-8b982a6f6d32'
+</code></pre>
+<p>The <code>Queue</code> class from RQ represents the task queue as seen from the application side. The arguments it takes are the queue name, and a <code>Redis</code> connection object, which in this case I initialize with a default URL. If you have your Redis server running on a different host or port number, you will need to use a different URL.</p>
+<p>The <code>enqueue()</code> method on the queue is used to add a job to the queue. The first argument is the name of the task you want to execute, given directly as a function object, or as an import string. I find the string option much more convenient, as that makes it unnecessary to import the function on the application's side. Any remaining arguments given to <code>enqueue()</code> are going to be passed to the function running in the worker.</p>
+<p>As soon as you make the <code>enqueue()</code> call you are going to notice some activity on your first terminal window, the one running the RQ worker. You will see that the <code>example()</code> function is now running, and printing the counter once per second. At the same time, your other terminal is not blocked and you can continue evaluating expressions in the shell. In the example above, I called the <code>job.get_id()</code> method to obtain the unique identifier assigned to the task. Another interesting expression you can try with the <code>job</code> object is to check if the function on the worker has finished:</p>
+<pre><code class="language-python">&gt;&gt;&gt; job.is_finished
+False
+</code></pre>
+<p>If you passed a <code>23</code> like I did in my example above, then the function is going to run for about 23 seconds. After that time, the <code>job.is_finished</code> expression will become <code>True</code>. Isn't this pretty cool? I really like the simplicity of RQ.</p>
+<p>Once the function completes, the worker goes back to waiting for new jobs, so you can repeat the <code>enqueue()</code> call with different arguments if you want to experiment more. The data that is stored in the queue regarding a task will stay there for some time (500 seconds by default), but eventually will be removed. This is important, the task queue does not preserve a history of executed jobs.</p>
+<h3>Reporting Task Progress</h3>
+<p>The example task I have used above is unrealistically simple. Normally, for a long running task you will want some sort of progress information to be made available to the application, which in turn can show it to the user. RQ supports this by using the <code>meta</code> attribute of the job object. Let me rewrite the <code>example()</code> task to write progress reports:</p>
+<p class="code_title"><em>app/tasks.py</em>: Example background task with progress.</p>
+
+<pre><code class="language-python">import time
+from rq import get_current_job
+
+def example(seconds):
+    job = get_current_job()
+    print('Starting task')
+    for i in range(seconds):
+        job.meta['progress'] = 100.0 * i / seconds
+        job.save_meta()
+        print(i)
+        time.sleep(1)
+    job.meta['progress'] = 100
+    job.save_meta()
+    print('Task completed')
+</code></pre>
+<p>This new version of <code>example()</code> uses RQ's <code>get_current_job()</code> function to get a job instance, which is similar to the one returned to the application when it submits the task. The <code>meta</code> attribute of the job object is a dictionary where the task can write any custom data that it wants to communicate to the application. In this example, I'm writing a <code>progress</code> item that represents the percentage of completion of the task. Each time the progress is updated I call <code>job.save_meta()</code> to instruct RQ to write the data to Redis, where the application can find it.</p>
+<p>On the application side (currently just a Python shell), I can run this task and then monitor progress as follows:</p>
+<pre><code class="language-python">&gt;&gt;&gt; job = queue.enqueue('app.tasks.example', 23)
+&gt;&gt;&gt; job.meta
+{}
+&gt;&gt;&gt; job.refresh()
+&gt;&gt;&gt; job.meta
+{'progress': 13.043478260869565}
+&gt;&gt;&gt; job.refresh()
+&gt;&gt;&gt; job.meta
+{'progress': 69.56521739130434}
+&gt;&gt;&gt; job.refresh()
+&gt;&gt;&gt; job.meta
+{'progress': 100}
+&gt;&gt;&gt; job.is_finished
+True
+</code></pre>
+<p>As you can see above, on this side the <code>meta</code> attribute is available to read. The <code>refresh()</code> method needs to be invoked for the contents to be updated from Redis.</p>
+<h2>Database Representation of Tasks</h2>
+<p>For the example above it was enough to start a task and watch it run. For a web application things get a bit more complicated, because once one of these task is started as part of a request, that request is going to end, and all the context for that task is going to be lost. Because I want the application to keep track of what tasks each user is running, I need to use a database table to maintain some state. Below you can see the new <code>Task</code> model implementation:</p>
+<p class="code_title"><em>app/models.py</em>: Task model.</p>
+
+<pre><code class="language-python"># ...
+import redis
+import rq
+
+class User(UserMixin, db.Model):
+    # ...
+    tasks: so.WriteOnlyMapped['Task'] = so.relationship(back_populates='user')
+
+# ...
+
+class Task(db.Model):
+    id: so.Mapped[str] = so.mapped_column(sa.String(36), primary_key=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(128), index=True)
+    description: so.Mapped[Optional[str]] = so.mapped_column(sa.String(128))
+    user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id))
+    complete: so.Mapped[bool] = so.mapped_column(default=False)
+
+    user: so.Mapped[User] = so.relationship(back_populates='tasks')
+
+    def get_rq_job(self):
+        try:
+            rq_job = rq.job.Job.fetch(self.id, connection=current_app.redis)
+        except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
+            return None
+        return rq_job
+
+    def get_progress(self):
+        job = self.get_rq_job()
+        return job.meta.get('progress', 0) if job is not None else 100
+</code></pre>
+<p>An interesting difference between this model and the previous ones is that the <code>id</code> primary key field is a string, not an integer. This is because for this model, I'm not going to rely on the database's own primary key generation and instead I'm going to use the job identifiers generated by RQ.</p>
+<p>The model is going to store the task's fully qualified name (as passed to RQ), a description for the task that is appropriate for showing to users, a relationship to the user that requested the task, and a boolean that indicates if the task completed or not. The purpose of the <code>complete</code> field is to separate tasks that ended from those that are actively running, as running tasks require special handling to show progress updates.</p>
+<p>The <code>get_rq_job()</code> method is a helper method that loads the RQ <code>Job</code> instance, from a given task id, which I can get from the model. This is done with <code>Job.fetch()</code>, which loads the <code>Job</code> instance from the data that exists in Redis about it. The <code>get_progress()</code> method builds on top of <code>get_rq_job()</code> and returns the progress percentage for the task. This method has a couple of interesting assumptions. If the job id from the model does not exist in the RQ queue, that means that the job already finished and the data expired and was removed from the queue, so in that case the percentage returned is 100. On the other extreme, if the job exists, but there is no information associated with the <code>meta</code> attribute, then it is safe to assume that the job is scheduled to run, but did not get a chance to start yet, so in that situation a 0 is returned as progress.</p>
+<p>To apply the changes to the database schema, a new migration needs to be generated, and then the database upgraded:</p>
+<pre><code>(venv) $ flask db migrate -m &quot;tasks&quot;
+(venv) $ flask db upgrade
+</code></pre>
+<p>The new model can also be added to the shell context, to make it accessible in shell sessions without having to import it:</p>
+<p class="code_title"><em>microblog.py</em>: Add Task model to shell context.</p>
+
+<pre><code class="language-python">import sqlalchemy as sa
+import sqlalchemy.orm as so
+from app import create_app, db
+from app.models import User, Post, Message, Notification, Task
+
+app = create_app()
+
+@app.shell_context_processor
+def make_shell_context():
+    return {'sa': sa, 'so': so, 'db': db, 'User': User, 'Post': Post,
+            'Message': Message, 'Notification': Notification, 'Task': Task}
+</code></pre>
+<h2>Integrating RQ with the Flask Application</h2>
+<p>The connection URL for the Redis service needs to be added to the configuration:</p>
+<pre><code class="language-python">class Config:
+    # ...
+    REDIS_URL = os.environ.get('REDIS_URL') or 'redis://'
+</code></pre>
+<p>As always, the Redis connection URL will be sourced from an environment variable, and if the variable isn't defined, a default URL that assumes the service is running on the same host and in the default port will be used.</p>
+<p>The application factory function will be in charge of initializing Redis and RQ:</p>
+<p class="code_title"><em>app/__init__.py</em>: RQ integration.</p>
+
+<pre><code class="language-python"># ...
+from redis import Redis
+import rq
+
+# ...
+
+def create_app(config_class=Config):
+    # ...
+    app.redis = Redis.from_url(app.config['REDIS_URL'])
+    app.task_queue = rq.Queue('microblog-tasks', connection=app.redis)
+
+    # ...
+</code></pre>
+<p>The <code>app.task_queue</code> is going to be the queue where tasks are submitted. Having the queue attached to the application is convenient because anywhere in the application I can use <code>current_app.task_queue</code> to access it. To make it easy for any part of the application to submit or check on a task, I can create a few helper methods in the <code>User</code> model:</p>
+<p class="code_title"><em>app/models.py</em>: Task helper methods in the user model.</p>
+
+<pre><code class="language-python"># ...
+
+class User(UserMixin, db.Model):
+    # ...
+
+    def launch_task(self, name, description, *args, **kwargs):
+        rq_job = current_app.task_queue.enqueue(f'app.tasks.{name}', self.id,
+                                                *args, **kwargs)
+        task = Task(id=rq_job.get_id(), name=name, description=description,
+                    user=self)
+        db.session.add(task)
+        return task
+
+    def get_tasks_in_progress(self):
+        query = self.tasks.select().where(Task.complete == False)
+        return db.session.scalars(query)
+
+    def get_task_in_progress(self, name):
+        query = self.tasks.select().where(Task.name == name,
+                                          Task.complete == False)
+        return db.session.scalar(query)
+</code></pre>
+<p>The <code>launch_task()</code> method takes care of submitting a task to the RQ queue, along with adding it to the database. The <code>name</code> argument is the function name, as defined in <em>app/tasks.py</em>. When submitting to RQ, the function prepends <code>app.tasks.</code> to this name to build the fully qualified function name. The <code>description</code> argument is a friendly description of the task that can be presented to users. For the function that export the blog posts, I will set the name to <code>export_posts</code> and the description to <code>Exporting posts...</code>. The remaining arguments are positional and keyword arguments that will be passed to the task. The function begins by calling the queue's <code>enqueue()</code> method to submit the job. The job object that is returned contains the task id assigned by RQ, so I can use that to create a corresponding <code>Task</code> object in my database.</p>
+<p>Note that <code>launch_task()</code> adds the new task object to the session, but it does not issue a commit. In general, it is best to operate on the database session in the higher level functions, as that allows you to combine several updates made by lower level functions in a single transaction. This is not a strict rule, and in fact, you are going to see an exception where a commit is issued in a child function later in this chapter.</p>
+<p>The <code>get_tasks_in_progress()</code> method returns the complete list of functions that are outstanding for the user. You will see later that I use this method to include information about running tasks in the pages that are rendered to the user.</p>
+<p>Finally, the <code>get_task_in_progress()</code> is a simpler version of the previous one that returns a specific task. I prevent users from starting two or more tasks of the same type concurrently, so before I launch a task, I can use this method to find out if a previous task is currently running.</p>
+<h2>Sending Emails from the RQ Task</h2>
+<p>This may seem like a distraction from the main topic, but I said above that when the background export task completes, an email is going to be sent to the user with a JSON file that contains all the posts. The email functionality that I built in <a href="/post/the-flask-mega-tutorial-part-xi-facelift">Chapter 11</a> needs to be extended in two ways. First, I need to add support for file attachments, so that I can attach a JSON file. Second, the <code>send_email()</code> function always sends emails asynchronously, using a background thread. When I'm going to send an email from a background task, which is already asynchronous, having a second level background task based on a thread makes little sense, so I need to support both synchronous and asynchronous email sending.</p>
+<p>Luckily, Flask-Mail supports attachments, so all I need to do is extend the <code>send_email()</code> function to take them in an additional argument, and then configure them in the <code>Message</code> object. And to optionally send the email in the foreground, I just need to add a boolean <code>sync</code> argument:</p>
+<p class="code_title"><em>app/email.py</em>: Send emails with attachments.</p>
+
+<pre><code class="language-python"># ...
+
+def send_email(subject, sender, recipients, text_body, html_body,
+               attachments=None, sync=False):
+    msg = Message(subject, sender=sender, recipients=recipients)
+    msg.body = text_body
+    msg.html = html_body
+    if attachments:
+        for attachment in attachments:
+            msg.attach(*attachment)
+    if sync:
+        mail.send(msg)
+    else:
+        Thread(target=send_async_email,
+               args=(current_app._get_current_object(), msg)).start()
+</code></pre>
+<p>The <code>attach()</code> method of the <code>Message</code> class accepts three arguments that define an attachment: the filename, the media type, and the actual file data. The filename is just the name that the recipient will see associated with the attachment, it does not need to be a real file. The media type defines what type of attachment is this, which helps email readers render it appropriately. For example, if you send <code>image/png</code> as the media type, an email reader will know that the attachment is an image, in which case it can show it as such. For the blog post data file I'm going to use the JSON format, which uses a <code>application/json</code> media type. The third and last argument is a string or byte sequence with the contents of the attachment.</p>
+<p>To make it simple, the <code>attachments</code> argument to <code>send_email()</code> is going to be a list of tuples, and each tuple is going to have three elements which correspond to the three arguments of <code>attach()</code>. So for each element in this list, I need to send the tuple as arguments to <code>attach()</code>. In Python, if you have a list or tuple with arguments that you want to send to a function, you can use <code>func(*args)</code> to have that list expanded into the actual argument list, instead of having to use a more tedious syntax such as <code>func(args[0], args[1], args[2])</code>. So for example, if you have <code>args = [1, 'foo']</code>, the call will send two arguments, same as if you called <code>func(1, 'foo')</code>. Without the <code>*</code>, the call would have a single argument which would be the list.</p>
+<p>As far as the synchronous sending of the email, what I needed to do is just revert back to calling <code>mail.send(msg)</code> directly when <code>sync</code> is <code>True</code>.</p>
+<h2>Task Helpers</h2>
+<p>While the <code>example()</code> task I used above was a simple standalone function, the function that exports blog posts is going to need some of the functionality I have in the application, like access to the database and the email sending function. Because this is going to run in a separate process, I need to initialize Flask-SQLAlchemy and Flask-Mail, which in turn need a Flask application instance from which to get their configuration. So I'm going to add a Flask application instance and application context at the top of the <em>app/tasks.py</em> module:</p>
+<p class="code_title"><em>app/tasks.py</em>: Create application and context.</p>
+
+<pre><code class="language-python">from app import create_app
+
+app = create_app()
+app.app_context().push()
+</code></pre>
+<p>The application is created in this module because this is the only module that the RQ worker is going to import. When you use the <code>flask</code> command, the <em>microblog.py</em> module in the root directory creates the application, but the RQ worker knows nothing about that, so it needs to create its own application instance if the task functions need it. You have seen the <code>app.app_context()</code> method in a couple of places already, pushing a context makes the application be the "current" application instance, and this enables extensions such as Flask-SQLAlchemy to use <code>current_app.config</code> to obtain their configuration. Without the context, the <code>current_app</code> expression would return an error.</p>
+<p>I then started thinking about how I was going to report progress while this function is running. In addition to passing progress information through the <code>job.meta</code> dictionary, I'd like to push notifications to the client, so that the completion percentage can be updated dynamically without the user having to refresh the page. For this I'm going to use the notification mechanisms I built in <a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21</a>. The updates are going to work in a very similar way to the unread messages badge. When the server renders a template, it will include "static" progress information obtained from <code>job.meta</code>, but then once the page is on the client's browser, the notifications are going to dynamically update the percentage using notifications. Because of the notifications, updating the progress of a running task is going to be slightly more involved than how I did it in the previous example, so I'm going to create a wrapper function dedicated to updating progress:</p>
+<p class="code_title"><em>app/tasks.py</em>: Set task progress.</p>
+
+<pre><code class="language-python">from rq import get_current_job
+from app import db
+from app.models import Task
+
+# ...
+
+def _set_task_progress(progress):
+    job = get_current_job()
+    if job:
+        job.meta['progress'] = progress
+        job.save_meta()
+        task = db.session.get(Task, job.get_id())
+        task.user.add_notification('task_progress', {'task_id': job.get_id(),
+                                                     'progress': progress})
+        if progress &gt;= 100:
+            task.complete = True
+        db.session.commit()
+</code></pre>
+<p>The export task can call <code>_set_task_progress()</code> to record the progress percentage. The function first writes the percentage to the <code>job.meta</code> dictionary and saves it to Redis, then it loads the corresponding task object from the database and uses <code>task.user</code> to push a notification to the user that requested the task, using the existing <code>add_notification()</code> method. The notification is going to be named <code>task_progress</code>, and the data associated with it is going to be a dictionary with two items, the task identifier and the progress number. Later I will add JavaScript code to act on this new notification type.</p>
+<p>The function checks if the progress indicates that the function has completed, and in that case also updates the <code>complete</code> attribute of the task object in the database. The database commit call ensures that the task and the notification object added by <code>add_notification()</code> are both saved immediately to the database. I needed to be very careful in how I designed the parent task to not make any database changes, since this commit call would write those as well.</p>
+<h2>Implementing the Export Task</h2>
+<p>Now all the pieces are in place for me to write the export function. The high level structure of this function is going to be as follows:</p>
+<p class="code_title"><em>app/tasks.py</em>: Export posts general structure.</p>
+
+<pre><code class="language-python">def export_posts(user_id):
+    try:
+        # read user posts from database
+        # send email with data to user
+    except Exception:
+        # handle unexpected errors
+    finally:
+        # handle clean up
+</code></pre>
+<p>Why wrap the whole task in a try/except block? The application code that exists in request handlers is protected against unexpected errors because Flask itself catches exceptions and then handles them observing any error handlers and logging configuration I have set up for the application. This function, however, is going to run in a separate process that is controlled by RQ, not Flask, so if any unexpected errors occur the task will abort, RQ will display the error to the console and then will go back to wait for new jobs. So basically, unless you are watching the output of the RQ worker or logging it to a file, you will never find out there was an error.</p>
+<p>Let's start looking at the sections indicated with comments above with the simplest ones, which are the error handling and clean up at the end:</p>
+<p class="code_title"><em>app/tasks.py</em>: Export posts error handling.</p>
+
+<pre><code class="language-python">import sys
+# ...
+
+def export_posts(user_id):
+    try:
+        # ...
+    except Exception:
+        _set_task_progress(100)
+        app.logger.error('Unhandled exception', exc_info=sys.exc_info())
+    finally:
+        _set_task_progress(100)
+</code></pre>
+<p>Whenever an unexpected error occurs, I'm going to use the logger object from the Flask application to log the error, along with the stack trace, information which is provided by the <code>sys.exc_info()</code> call. The nice thing about using the Flask application logger to log errors here as well is that any logging mechanisms you have implemented for the Flask application will be observed. For example, in <a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7</a> I configured errors to be sent out to the administrator email address. Just by using <code>app.logger</code> I also get that behavior for these errors. In the <code>finally</code> clause, which will run both for errored and successful runs, I mark the task as finished by setting the progress to 100%.</p>
+<p>Next, I'm going to code the actual export, which simply issues a database query and walks through the results in a loop, accumulating them in a dictionary:</p>
+<p class="code_title"><em>app/tasks.py</em>: Read user posts from the database.</p>
+
+<pre><code class="language-python">import time
+from app.models import User, Post
+
+# ...
+
+def export_posts(user_id):
+    try:
+        user = db.session.get(User, user_id)
+        _set_task_progress(0)
+        data = []
+        i = 0
+        total_posts = db.session.scalar(sa.select(sa.func.count()).select_from(
+            user.posts.select().subquery()))
+        for post in db.session.scalars(user.posts.select().order_by(
+                Post.timestamp.asc())):
+            data.append({'body': post.body,
+                         'timestamp': post.timestamp.isoformat() + 'Z'})
+            time.sleep(5)
+            i += 1
+            _set_task_progress(100 * i // total_posts)
+
+        # send email with data to user
+    except Exception:
+        # ...
+    finally:
+        # ...
+</code></pre>
+<p>For each post, the function is going to include a dictionary with two elements, the post body and the time the post was written. The time is going to be written in the <a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a> standard. The Python's <code>datetime</code> objects that I'm using do not store a timezone, so after I export the time in the ISO format I add the 'Z', which indicates UTC.</p>
+<p>The code gets slightly complicated due to the need to keep track of progress. I maintain the counter <code>i</code>, and I need to issue an extra database query before I enter the loop for <code>total_posts</code> to have the number of posts. Using <code>i</code> and <code>total_posts</code>, each loop iteration can update the task progress with a number from 0 to 100.</p>
+<p>You may have noticed that I also added a <code>time.sleep(5)</code> call in each loop iteration. The main reason I added the sleep is to make the export task last longer, and be able to see the progress go up even when the export covers just a handful of blog posts.</p>
+<p>Below you can see the last part of the function, which sends an email to the user with all the information collected in <code>data</code> as an attachment:</p>
+<p class="code_title"><em>app/tasks.py</em>: Email posts to user.</p>
+
+<pre><code class="language-python">import json
+from flask import render_template
+from app.email import send_email
+
+# ...
+
+def export_posts(user_id):
+    try:
+        # ...
+
+        send_email(
+            '[Microblog] Your blog posts',
+            sender=app.config['ADMINS'][0], recipients=[user.email],
+            text_body=render_template('email/export_posts.txt', user=user),
+            html_body=render_template('email/export_posts.html', user=user),
+            attachments=[('posts.json', 'application/json',
+                          json.dumps({'posts': data}, indent=4))],
+            sync=True)
+    except Exception:
+        # ...
+    finally:
+        # ...
+</code></pre>
+<p>This is simply a call to the <code>send_email()</code> function. The attachment is defined as a tuple with the three elements that are then passed to the <code>attach()</code> method of Flask-Mail's <code>Message</code> object. The third element in the tuple is the attachment contents, which are generated with Python's <code>json.dumps()</code> function.</p>
+<p>There are a pair of new templates referenced here, which provide the contents of the email body in plain text and HTML form. Here is the text template:</p>
+<p class="code_title"><em>app/templates/email/export_posts.txt</em>: Export posts text email template.</p>
+
+<pre><code>Dear {{ user.username }},
+
+Please find attached the archive of your posts that you requested.
+
+Sincerely,
+
+The Microblog Team
+</code></pre>
+<p>Here is the HTML version of the email:</p>
+<p class="code_title"><em>app/templates/email/export_posts.html</em>: Export posts HTML email template.</p>
+
+<pre><code class="language-html">&lt;p&gt;Dear {{ user.username }},&lt;/p&gt;
+&lt;p&gt;Please find attached the archive of your posts that you requested.&lt;/p&gt;
+&lt;p&gt;Sincerely,&lt;/p&gt;
+&lt;p&gt;The Microblog Team&lt;/p&gt;
+</code></pre>
+<h2>Export Functionality in the Application</h2>
+<p>All the core pieces to support the background export tasks are now in place. What remains is to hook up this functionality to the application, so that users can place requests for their posts to be emailed to them.</p>
+<p>Below you can see a new <code>export_posts</code> view function:</p>
+<p class="code_title"><em>app/main/routes.py</em>: Export posts route and view function.</p>
+
+<pre><code class="language-python">@bp.route('/export_posts')
+@login_required
+def export_posts():
+    if current_user.get_task_in_progress('export_posts'):
+        flash(_('An export task is currently in progress'))
+    else:
+        current_user.launch_task('export_posts', _('Exporting posts...'))
+        db.session.commit()
+    return redirect(url_for('main.user', username=current_user.username))
+</code></pre>
+<p>The function first checks if the user has an outstanding export task, and in that case just flashes a message. It really makes no sense to have two export tasks for the same user at the same time, so this is prevented. I can check for this condition using the <code>get_task_in_progress()</code> method I implemented earlier.</p>
+<p>If the user isn't already running an export, then <code>launch_task()</code> is invoked to start a one. The first argument is the name of the function that will be passed to the RQ worker, prefixed with <code>app.tasks.</code>. The second argument is just a friendly text description that will be shown to the user. Both values are written to the <code>Task</code> object in the database. The function ends with a redirect to the user profile page.</p>
+<p>Now I need to expose a link to this route that the user can access to request the export. I think the most appropriate place to do this is in the user profile page, where the link can only be shown when users view their own page, right below the "Edit your profile" link:</p>
+<p class="code_title"><em>app/templates/user.html</em>: Export link in user profile page.</p>
+
+<pre><code class="language-html">                ...
+                &lt;p&gt;
+                    &lt;a href=&quot;{{ url_for('main.edit_profile') }}&quot;&gt;
+                        {{ _('Edit your profile') }}
+                    &lt;/a&gt;
+                &lt;/p&gt;
+                {% if not current_user.get_task_in_progress('export_posts') %}
+                &lt;p&gt;
+                    &lt;a href=&quot;{{ url_for('main.export_posts') }}&quot;&gt;
+                        {{ _('Export your posts') }}
+                    &lt;/a&gt;
+                &lt;/p&gt;
+                ...
+                {% endif %}
+</code></pre>
+<p>This link is tied to a conditional, because I don't want it to appear when the user already has an export in progress.</p>
+<p>At this point the background jobs should be functional, but without giving any feedback to the user. If you want to try this out, you can start the application and the RQ worker as follows:</p>
+<ul>
+<li>Make sure you have Redis running</li>
+<li>In a first terminal window, start one or more instances of the RQ worker. For this you have to use the command <code>rq worker microblog-tasks</code></li>
+<li>In a second terminal window, start the Flask application with <code>flask run</code> (remember to set <code>FLASK_APP</code> first)</li>
+</ul>
+<h2>Progress Notifications</h2>
+<p>To wrap up this feature I want to inform the user when a background task is running, including a percentage of completion. In looking through the Bootstrap component options, I decided to use an alert below the navigation bar for this. Alerts are these color horizontal bars that display information to the user. The blue alert boxes are what I'm using to render flashed messages. Now I'm going to add a green one to show progress status. Below you can see how that is going to look:</p>
+<p><img alt="Progress Alert" src="/static/images/mega-tutorial/ch22-progress-alert.png" /></p>
+<p class="code_title"><em>app/templates/base.html</em>: Export progress alert in base template.</p>
+
+<pre><code class="language-html">...
+{% block content %}
+    &lt;div class=&quot;container&quot;&gt;
+        {% if current_user.is_authenticated %}
+        {% with tasks = current_user.get_tasks_in_progress() %}
+        {% if tasks %}
+            {% for task in tasks %}
+            &lt;div class=&quot;alert alert-success&quot; role=&quot;alert&quot;&gt;
+                {{ task.description }}
+                &lt;span id=&quot;{{ task.id }}-progress&quot;&gt;{{ task.get_progress() }}&lt;/span&gt;%
+            &lt;/div&gt;
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        {% endif %}
+        ...
+{% endblock %}
+...
+</code></pre>
+<p>The method to render the task alerts is almost identical to the flashed messages. The outer conditional skips all the alert related markup when the user is not logged in. For logged in users, I get the currently in-progress task list by calling the <code>get_tasks_in_progress()</code> method I created earlier. In the current version of the application I will only get one result at the most, since I don't allow more than one active export at a time, but in the future I may want to support other types of tasks that can coexist, so writing this in a generic way could save me time later.</p>
+<p>For each task I write an alert element to the page. The color of the alert is controlled with the second CSS style, which in this case is <code>alert-success</code>, while in the case of the flashed messages was <code>alert-info</code>. The <a href="https://getbootstrap.com/docs/3.3/components/#alerts">Bootstrap documentation</a> includes the details on the HTML structure for the alerts. The text of the alert includes the <code>description</code> field stored in the <code>Task</code> model, followed by the completion percentage.</p>
+<p>The percentage is wrapped in a <code>&lt;span&gt;</code> element that has a <code>id</code> attribute. The reason for this is that I'm going to refresh the percentage from JavaScript when notifications are received. The id that I'm using for a given task is constructed as the task id with <code>-progress</code> appended at the end. When a notification arrives, it will contain the task id, so I can easily locate the correct <code>&lt;span&gt;</code> element to update with a selector for <code>#&lt;task.id&gt;-progress</code>.</p>
+<p>If you try the application at this point, you are going to see "static" progress updates, each time you navigate to a new page. You will notice that after you start an export task, you can freely navigate to different pages of the application, and the state of the running task is always recalled.</p>
+<p>To prepare for applying dynamic updates to the percentage <code>&lt;span&gt;</code> elements, I'm going to write a little helper function in the JavaScript side:</p>
+<p class="code_title"><em>app/templates/base.html</em>: Helper function to dynamically update task progress.</p>
+
+<pre><code class="language-html">...
+{% block scripts %}
+    ...
+    &lt;script&gt;
+        ...
+        function set_task_progress(task_id, progress) {
+            const progressElement = document.getElementById(task_id + '-progress');
+            if (progressElement) {
+                progressElement.innerText = progress;
+            }
+        }
+    &lt;/script&gt;
+    ...
+{% endblock %}
+</code></pre>
+<p>This function takes a task <code>id</code> and a progress value, uses the DOM API in the browser to locate the <code>&lt;span&gt;</code> element for the task, and if the element exists, it writes the new progress as its new contents.</p>
+<p>The notifications are already arriving to the browser because the <code>_set_task_progress()</code> function in <em>app/tasks.py</em> calls <code>add_notification()</code> each time the progress is updated. If you are confused about how these notifications could be reaching the browser without me having to do anything, it's really because in <a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21</a> I was wise to implement the notifications feature in a completely generic way. Any notifications that are added through the <code>add_notification()</code> method will be seen by the browser when it periodically asks the server for notification updates.</p>
+<p>But the JavaScript code that processes these notifications only recognizes those that have a <code>unread_message_count</code> name, and ignores the rest. What I need to do now is expand that function to also handle <code>task_progress</code> notifications by calling the <code>set_task_progress()</code> function I defined above. Here is an updated version of the loop that processes notifications from JavaScript:</p>
+<p class="code_title"><em>app/templates/base.html</em>: Notification handler.</p>
+
+<pre><code class="language-javascript">          for (let i = 0; i &lt; notifications.length; i++) {
+            switch (notifications[i].name) {
+              case 'unread_message_count':
+                set_message_count(notifications[i].data);
+                break;
+              case 'task_progress':
+                set_task_progress(notifications[i].data.task_id,
+                    notifications[i].data.progress);
+                break;
+            }
+            since = notifications[i].timestamp;
+          }
+</code></pre>
+<p>Now that I need to handle two different notifications, I decided to replace the <code>if</code> statement that checked for the <code>unread_message_count</code> notification name with a <code>switch</code> statement that contains one section for each of the notifications I now need to support. If you are not very familiar with the "C" family of languages you may not have seen switch statements before. These provide a convenient syntax that replaces a long chain of <code>if/elseif</code> statements. This is nice because as I need to support more notifications, I can simply keep adding them as additional <code>case</code> blocks.</p>
+<p>If you recall, the data that the RQ task attaches to the <code>task_progress</code> notification is a dictionary with two elements, <code>task_id</code> and <code>progress</code>, which are the two arguments that I need to use to invoke <code>set_task_progress()</code>.</p>
+<p>If you run the application now, the progress indicator in the green alert box is going to refresh every 10 seconds, as notifications are delivered to the client.</p>
+<p>Because I have introduced new translatable strings in this chapter, the translation files need to be updated. If you are maintaining a non-English language file, you need to use Flask-Babel to refresh your translation files and then add new translations:</p>
+<pre><code>(venv) $ flask translate update
+</code></pre>
+<p>If you are using the Spanish translation, then I have done the translation work for you, so you can just extract the <em>app/translations/es/LC_MESSAGES/messages.po</em> files from the <a href="https://github.com/miguelgrinberg/microblog/archive/version-0.22.zip">download package</a> for this chapter and add it to your project.</p>
+<p>After the translations are done, you have to compile the translation files:</p>
+<pre><code>(venv) $ flask translate compile
+</code></pre>
+<h2>Deployment Considerations</h2>
+<p>To complete this chapter, I want to discuss how the deployment of the application changes. To support background tasks I have added two new components to the stack, a Redis server, and one or more RQ workers. Obviously these need to be included in your deployment strategy, so I'm going to briefly go over the different deployment options I covered in previous chapters and how they are affected by these changes.</p>
+<h3>Deployment on a Linux Server</h3>
+<p>If you are running your application on a Linux server, adding Redis should be as simple as installing this package from your operating system. For Ubuntu Linux, you have to run <code>sudo apt-get install redis-server</code>.</p>
+<p>To run the RQ worker process, you can follow the "Setting Up Gunicorn and Supervisor" section in <a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17</a> to create a second Supervisor configuration in which you run <code>rq worker microblog-tasks</code> instead of <code>gunicorn</code>. If you want to run more than one worker (and you probably should for production), you can use Supervisor's <code>numprocs</code> directive to indicate how many instances you want to have running concurrently.</p>
+<h3>Deployment on Heroku</h3>
+<p>To deploy the application on Heroku you are going to need to add a Redis service to your account. This is similar to the process that I used to add the Postgres database. Redis also has a free tier, which can be added with the following command:</p>
+<pre><code>$ heroku addons:create heroku-redis:hobby-dev
+</code></pre>
+<p>The access URL for your new redis service is going to be added to your Heroku environment as a <code>REDIS_URL</code> variable, which is exactly what the application expects.</p>
+<p>The free plan in Heroku allows one web dyno and one worker dyno, so you can host a single <code>rq</code> worker along with your application without incurring into any expenses. For this you will need to declare the worker in a separate line in your procfile:</p>
+<pre><code>web: flask db upgrade; flask translate compile; gunicorn microblog:app
+worker: rq worker -u $REDIS_URL microblog-tasks
+</code></pre>
+<p>After you deploy with these changes, you can start the worker with the following command:</p>
+<pre><code>$ heroku ps:scale worker=1
+</code></pre>
+<h3>Deployment on Docker</h3>
+<p>If you are deploying the application to Docker containers, then you first need to create a Redis container on the same network the application is using. For this you can use one of the official Redis images from the Docker registry:</p>
+<pre><code>$ docker run --name redis -d -p 6379:6379 --network microblog-network redis:latest
+</code></pre>
+<p>When you run your application you will need to set the <code>REDIS_URL</code> environment variable, similar to how the MySQL container was handled. Here is a complete command to start the application including a redis link:</p>
+<pre><code>$ docker run --name microblog -d -p 8000:5000 --rm -e SECRET_KEY=my-secret-key \
+    -e MAIL_SERVER=smtp.googlemail.com -e MAIL_PORT=587 -e MAIL_USE_TLS=true \
+    -e MAIL_USERNAME=&lt;your-gmail-username&gt; -e MAIL_PASSWORD=&lt;your-gmail-password&gt; \
+    --network microblog-network \
+    -e DATABASE_URL=mysql+pymysql://microblog:&lt;database-password&gt;@mysql/microblog \
+    -e REDIS_URL=redis://redis:6379/0 \
+    microblog:latest
+</code></pre>
+<p>Finally, you will need to run one or more containers for the RQ workers. Because the workers are based on the same code as the main application, you can use the same container image you use for your application, overriding the start up command so that the worker is started instead of the web application. Here is an example <code>docker run</code> command that starts a worker:</p>
+<pre><code>$ docker run --name rq-worker -d --rm -e SECRET_KEY=my-secret-key \
+    -e MAIL_SERVER=smtp.googlemail.com -e MAIL_PORT=587 -e MAIL_USE_TLS=true \
+    -e MAIL_USERNAME=&lt;your-gmail-username&gt; -e MAIL_PASSWORD=&lt;your-gmail-password&gt; \
+    --network microblog-network \
+    -e DATABASE_URL=mysql+pymysql://microblog:&lt;database-password&gt;@mysql/microblog \
+    -e REDIS_URL=redis://redis:6379/0 \
+    --entrypoint venv/bin/rq \
+    microblog:latest worker -u redis://redis:6379/0 microblog-tasks
+</code></pre>
+<p>Overriding the default start up command of a Docker image is a bit tricky because the command needs to be given in two parts. The <code>--entrypoint</code> argument takes just the executable name, but the arguments (if any) need to be given after the image and tag, at the end of the command line. Note that <code>rq</code> needs to be given as <code>venv/bin/rq</code> so that it works without having the virtual environment activated.</p>
+<p>Continue on to the <a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">next chapter</a>.</p></div>
+
+<h2>Buy me a coffee?</h2>
+<p class="card-text">Thank you for visiting my blog! If you enjoyed this article, please consider supporting my work and keeping me caffeinated with a small one-time donation through <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy me a coffee</a>. Thanks!</p>
+<a href="https://www.buymeacoffee.com/miguelgrinberg" target="_blank"><img src="/static/buymeacoffee-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+
+<h2>Share this post</h2>
+<!-- Sharingbutton Hacker News -->
+<a class="resp-sharing-button__link" href="https://news.ycombinator.com/submitlink?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxii-background-jobs&amp;t=The%20Flask%20Mega-Tutorial%2C%20Part%20XXII%3A%20Background%20Jobs" target="_blank" rel="noopener" aria-label="Hacker News">
+  <div class="resp-sharing-button resp-sharing-button--hackernews resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><path fill-rule="evenodd" d="M60.94 82.314L17 0h20.08l25.85 52.093c.397.927.86 1.888 1.39 2.883.53.994.995 2.02 1.393 3.08.265.4.463.764.596 1.095.13.334.262.63.395.898.662 1.325 1.26 2.618 1.79 3.877.53 1.26.993 2.42 1.39 3.48 1.06-2.254 2.22-4.673 3.48-7.258 1.26-2.585 2.552-5.27 3.877-8.052L103.49 0h18.69L77.84 83.308v53.087h-16.9v-54.08z"></path></svg></div>Hacker News</div>
+</a>
+
+<!-- Sharingbutton Reddit -->
+<a class="resp-sharing-button__link" href="https://reddit.com/submit/?url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxii-background-jobs&amp;resubmit=true&amp;title=The Flask Mega-Tutorial, Part XXII: Background Jobs" target="_blank" rel="noopener" aria-label="Reddit">
+  <div class="resp-sharing-button resp-sharing-button--reddit resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-6.07-1.72.08-1.1.4-3.05 1.52-3.7.72-.4 1.73-.24 3 .5C17.2 6.3 18.46 7.5 20 7.5c1.65 0 3-1.35 3-3s-1.35-3-3-3c-1.38 0-2.54.94-2.88 2.22-1.43-.72-2.64-.8-3.6-.25-1.64.94-1.95 3.47-2 4.55-2.33.08-4.45.7-6.1 1.72C4.86 8.98 3.96 8.5 3 8.5c-1.65 0-3 1.35-3 3 0 1.32.84 2.44 2.05 2.84-.03.22-.05.44-.05.66 0 3.86 4.5 7 10 7s10-3.14 10-7c0-.22-.02-.44-.05-.66 1.2-.4 2.05-1.54 2.05-2.84zM2.3 13.37C1.5 13.07 1 12.35 1 11.5c0-1.1.9-2 2-2 .64 0 1.22.32 1.6.82-1.1.85-1.92 1.9-2.3 3.05zm3.7.13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9.8 4.8c-1.08.63-2.42.96-3.8.96-1.4 0-2.74-.34-3.8-.95-.24-.13-.32-.44-.2-.68.15-.24.46-.32.7-.18 1.83 1.06 4.76 1.06 6.6 0 .23-.13.53-.05.67.2.14.23.06.54-.18.67zm.2-2.8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm5.7-2.13c-.38-1.16-1.2-2.2-2.3-3.05.38-.5.97-.82 1.6-.82 1.1 0 2 .9 2 2 0 .84-.53 1.57-1.3 1.87z"/></svg></div>Reddit</div>
+</a>
+
+<!-- Sharingbutton Twitter -->
+<a class="resp-sharing-button__link" href="https://twitter.com/intent/tweet/?text=The%20Flask%20Mega-Tutorial%2C%20Part%20XXII%3A%20Background%20Jobs&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxii-background-jobs" target="_blank" rel="noopener" aria-label="Twitter">
+  <div class="resp-sharing-button resp-sharing-button--twitter resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/></svg></div>Twitter</div>
+</a>
+
+<!-- Sharingbutton LinkedIn -->
+<a class="resp-sharing-button__link" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxii-background-jobs&amp;title=The%20Flask%20Mega-Tutorial%2C%20Part%20XXII%3A%20Background%20Jobs&amp;summary=The%20Flask%20Mega-Tutorial%2C%20Part%20XXII%3A%20Background%20Jobs&amp;source=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxii-background-jobs" target="_blank" rel="noopener" aria-label="LinkedIn">
+  <div class="resp-sharing-button resp-sharing-button--linkedin resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.5 21.5h-5v-13h5v13zM4 6.5C2.5 6.5 1.5 5.3 1.5 4s1-2.4 2.5-2.4c1.6 0 2.5 1 2.6 2.5 0 1.4-1 2.5-2.6 2.5zm11.5 6c-1 0-2 1-2 2v7h-5v-13h5V10s1.6-1.5 4-1.5c3 0 5 2.2 5 6.3v6.7h-5v-7c0-1-1-2-2-2z"/></svg></div>LinkedIn</div>
+</a>
+
+<!-- Sharingbutton Facebook -->
+<a class="resp-sharing-button__link" href="https://facebook.com/sharer/sharer.php?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxii-background-jobs" target="_blank" rel="noopener" aria-label="Facebook">
+  <div class="resp-sharing-button resp-sharing-button--facebook resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/></svg></div>Facebook</div>
+</a>
+
+<!-- Sharingbutton E-Mail -->
+<a class="resp-sharing-button__link" href="mailto:?subject=The%20Flask%20Mega-Tutorial%2C%20Part%20XXII%3A%20Background%20Jobs&amp;body=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxii-background-jobs" target="_self" rel="noopener" aria-label="E-Mail">
+  <div class="resp-sharing-button resp-sharing-button--email resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 4H2C.9 4 0 4.9 0 6v12c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7.25 14.43l-3.5 2c-.08.05-.17.07-.25.07-.17 0-.34-.1-.43-.25-.14-.24-.06-.55.18-.68l3.5-2c.24-.14.55-.06.68.18.14.24.06.55-.18.68zm4.75.07c-.1 0-.2-.03-.27-.08l-8.5-5.5c-.23-.15-.3-.46-.15-.7.15-.22.46-.3.7-.14L12 13.4l8.23-5.32c.23-.15.54-.08.7.15.14.23.07.54-.16.7l-8.5 5.5c-.08.04-.17.07-.27.07zm8.93 1.75c-.1.16-.26.25-.43.25-.08 0-.17-.02-.25-.07l-3.5-2c-.24-.13-.32-.44-.18-.68s.44-.32.68-.18l3.5 2c.24.13.32.44.18.68z"/></svg></div>E-Mail</div>
+</a>
+
+<div id="comments" class="post-comment-count">
+  
+  <a class="btn btn-outline-secondary" href="/post/the-flask-mega-tutorial-part-xxii-background-jobs#comments">50 comments</a>
+  
+</div>
+
+
+<div class="comments">
+  <ul>
+    
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/e1345f133a97351dcde162bd009a51b9?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#1</span> <span class="badge text-bg-warning">Jo</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-21T19:14:41Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-21T19:14:41Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel,</p>
+<p>On linux deployment, do I put two programs in the same conf.d file or do i make one file for gunicorn and one file for rq?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#2</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-21T23:38:45Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-21T23:38:45Z</span>
+  </p>
+  <div>
+    <p>@Jo: separate files. The files for this tutorial are all available on GitHub, so you can check this for yourself without having to ask me. See the links in the introduction section.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/e1345f133a97351dcde162bd009a51b9?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#3</span> <span class="badge text-bg-warning">Jo</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-22T00:02:52Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-22T00:02:52Z</span>
+  </p>
+  <div>
+    <p>Aha, I didn't realize you also put the deployment files there. Many thanks! In the mean time I put both in the same file and it seemed to work, but I have no idea if any caveats, so will restructure to two files.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/d4958a3a08760c22b6038e0cc0f5c8b1?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#4</span> <span class="badge text-bg-warning">Dave</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-22T21:31:55Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-22T21:31:55Z</span>
+  </p>
+  <div>
+    <p>In my docker container I found the path at usr/local/bin</p>
+<p>I haven't hooked up the email system so trying to think of another way to test if this is working. Does it save the json anywhere in the container? How could I return the file directly to the users browser?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#5</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-23T00:31:10Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-23T00:31:10Z</span>
+  </p>
+  <div>
+    <p>@Dave: You can add code to save the json file to disk to the task, it does not do that in the way I designed it.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/efc8a7ee4d65baf1968920c260b34120?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#6</span> <span class="badge text-bg-warning">ManoRJ</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-09T17:21:20Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-09T17:21:20Z</span>
+  </p>
+  <div>
+    <p>Miguel, thanks!</p>
+<p>As a beginner I am struggling to implement cron scheduled periodic tasks.<br>
+I want to perform db queries (flask_sqlalchemy) on a daily basis, but due to some checks and complexity of those, I could not attach them to my application factory. I know rq-scheduler, flask_rq2 and apscheduler exist.</p>
+<p>Could you give me a hint? Thank you</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/96138bf56c4af2e039ed1dae1d748c62?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#7</span> <span class="badge text-bg-warning">Grant</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-09T21:55:12Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-09T21:55:12Z</span>
+  </p>
+  <div>
+    <p>Hi!</p>
+<p>After implementing and running export posts a number of times, I see the finished jobs are never removed from Task table. Would this not create a problem in the future in that there would be a lot of unused data piling up? Should a mechanism be created to periodically remove old tasks? I was thinking after logging in removing all completed tasks.</p>
+<p>The same issue is for notifications in the last chapter. They pile up without being removed, and I wonder the same thing with them. Thanks!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#8</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-09T23:50:37Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-09T23:50:37Z</span>
+  </p>
+  <div>
+    <p>@Grant: In real-world projects data is rarely deleted from databases. You can remove tasks and notifications once they are used, but in general it makes more sense to keep them as a form of audit log.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#9</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-09T23:52:31Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-09T23:52:31Z</span>
+  </p>
+  <div>
+    <p>@ManoRJ: I don't understand what you mean by "some checks and complexity of those". I would make sure you can run your queries from a flask shell, for example, and once you have them working you can add them to a cron job as shown in this article.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/96138bf56c4af2e039ed1dae1d748c62?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#10</span> <span class="badge text-bg-warning">Grant</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-10T02:21:55Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-10T02:21:55Z</span>
+  </p>
+  <div>
+    <p>Interesting. The notifications (especially) and tasks seems like temp data instead of something to store long term. But I'm still learning so that's why I'm asking. Thanks!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#11</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-10T10:35:09Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-10T10:35:09Z</span>
+  </p>
+  <div>
+    <p>@Grant: You may want to know how many tasks you executed over a period of time. If you delete the task records you would not be able to get this information. I'm not saying that you shouldn't delete them, just that in general disk space is cheap and it makes sense to preserve information in case you need it in the future.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/8ed2c8c2fbdda3315c03d6a022b004e1?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#12</span> <span class="badge text-bg-warning">Farouk</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-15T12:16:34Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-15T12:16:34Z</span>
+  </p>
+  <div>
+    <p>Thanks a million times Miguel, remarkable tutorial. </p>
+<p>I followed every single bit from the beginning and everything works perfectly, until the very last command to deploy the RQ worker. when i run the cmd for the worker container i get the bellow error, can you please advise!</p>
+<p>docker run --name rq-worker -d --rm -e SECRET_KEY=a-really-long-and-unique-key-that-nobody-knows     -e MAIL_SERVER= "some server here" -e MAIL_PORT=587 -e MAIL_USE_TLS=true     -e MAIL_USERNAME="some username" -e MAIL_PASSWORD='some password'     --network myapp-network     -e DATABASE_URL=mysql+pymysql://myapp:myapp@mysql/myapp -e REDIS_URL=redis://redis:6379/0 --entrypoint venv/bin/rq myapp:latest worker -u redis://redis:6379/0 myapp-tasks<br>
+d0dc9a5959f0c525bc78a0f35d841f3akjhkd1b31d612b4f023792c483b5bed87<br>
+docker: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: exec: "venv/bin/rq": stat venv/bin/rq: no such file or directory: unknown.</p>
+<p>i have my venv directory in my project main folder.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#13</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-15T12:49:34Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-15T12:49:34Z</span>
+  </p>
+  <div>
+    <p>@Farouk: I think this is because you did not install the <code>rq</code> package.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/8ed2c8c2fbdda3315c03d6a022b004e1?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#14</span> <span class="badge text-bg-warning">Farouk</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-15T12:59:58Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-15T12:59:58Z</span>
+  </p>
+  <div>
+    <p>Thank you @Miguel for your quick reply.</p>
+<p>The RQ packeage is installed and works just fine before deployment to Docker container, it only complains when i run the command to create a worker container.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#15</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-15T17:00:44Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-15T17:00:44Z</span>
+  </p>
+  <div>
+    <p>@Farouk: Sorry, this is my own mistake. Try using <code>rq</code> instead  of <code>venv/bin/rq</code> in the <code>docker run</code> command. There is no virtualenv in this Docker image.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/eb98e2e0dcd930f6e181d31129ebaf6c?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#16</span> <span class="badge text-bg-warning">Ido</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-05T09:52:48Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-05T09:52:48Z</span>
+  </p>
+  <div>
+    <p>Inside the <a href="http://tasks.py" rel="nofollow">tasks.py</a> file you are creating a new flask app with the default config.<br>
+Assuming you want to run your tests on functionality that depends on the tasks and there is a change in the config effecting the task this would not work.<br>
+How would you suggest to change it so that the test config is also passed to the tasks context?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#17</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-05T10:33:58Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-05T10:33:58Z</span>
+  </p>
+  <div>
+    <p>@Ido: the <a href="http://tasks.py" rel="nofollow">tasks.py</a> file creates the Flask application exactly as the main server does in <a href="http://microblog.py" rel="nofollow">microblog.py</a>. If you need to pass options that affect the configuration, you can add them in both places.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/eb98e2e0dcd930f6e181d31129ebaf6c?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#18</span> <span class="badge text-bg-warning">Ido</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-05T13:37:17Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-05T13:37:17Z</span>
+  </p>
+  <div>
+    <p>Thanks for the fast answer @Miguel.<br>
+I will try to rephrase, could you please explain how will you add a test for the export_posts endpoint or something similar that is calling a task which is dependent on something in the config that is not the same between production and tests?</p>
+<p>Will adding in the setup phase something that runs the tasks will do the trick?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#19</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-05T14:05:36Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-05T14:05:36Z</span>
+  </p>
+  <div>
+    <p>@Ido: You are overcomplicating this, I think. The tests use their own database, which is different from the database used during development, and the one used in production. This is controlled through environment variables, and should work for the main application and for the instance created in <a href="http://tasks.py" rel="nofollow">tasks.py</a>. If you have other settings that need to be different, you can define them through environment variables as well. Or as I suggested above, you can add arguments to <code>create_app()</code> if you prefer.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/6b755dca7565cc35ba8d083ac047380f?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#20</span> <span class="badge text-bg-warning">Kris</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-03-25T17:48:52Z" data-function="fromNow" data-refresh="0" style="display: none">2024-03-25T17:48:52Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, thanks for your articles on Flask! <br>
+I'm thankful for how how in-depth you go with explaining why a package is used and what alternatives there are. I am having an issue getting Redis or Celery to work on Windows for testing. I originally tried installing a redis-server .msi file and running the server this way. Truthfully I couldn't get the server to run, so I decided to try running purely from a docker-compose container  where I instantiate redis server and redis-worker containers. Somewhat alternated based from <a href="https://github.com/fcakyon/flask-redis-docker" rel="nofollow">https://github.com/fcakyon/flask-redis-docker</a>. <br>
+I'm wondering if you can update your article with further guidance on how to setup Redis on Windows? My target application greatly requires the use of task queues and I cannot get past my AttributeErrors where my task worker cannot find the targeted job path to run. If not, do you have any suggestions on what I can look for or alternative articles to check out?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#21</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-03-25T23:56:16Z" data-function="fromNow" data-refresh="0" style="display: none">2024-03-25T23:56:16Z</span>
+  </p>
+  <div>
+    <p>@Kris: I don't use Windows every day, but as far as I know the installer I reference in this article works fine. Alternatively you can set up Redis under WSL, following Ubuntu setup instructions.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/6b755dca7565cc35ba8d083ac047380f?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#22</span> <span class="badge text-bg-warning">Kris</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-03-26T05:33:14Z" data-function="fromNow" data-refresh="0" style="display: none">2024-03-26T05:33:14Z</span>
+  </p>
+  <div>
+    <p>@Miguel: I setup a virtual machine and was able to play with redis a bit. I found my issue: I was simply starting my worker in the app directory. If you do this, the path 'app./path/to/function' can't be found because it's already in the folder app. Glad I found it, a bit difficult to debug on Windows ¯_(ツ)_/¯</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/96144021819fa8bfb1eeec4c68425168?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#23</span> <span class="badge text-bg-warning">et</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-18T20:46:59Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-18T20:46:59Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel,<br>
+I have a question about Redis connections as I am running into hitting the connection maximum on Heroku much faster than anticipated. I'm sure I'm not understanding something. <br>
+I've done some testing on microblog locally just to make sure it wasn't something wrong with my app (which implements background jobs just as you direct) or a Heroku thing.</p>
+<p>in <strong>init</strong>.py, just below<br>
+    app.task_queue = rq.Queue('microblog-tasks', connection=app.redis)<br>
+I added:<br>
+    connections = <a href="http://app.redis.info" rel="nofollow">app.redis.info</a>()['connected_clients']<br>
+    print("Total connections", connections) </p>
+<p>When I run the app, with the microblog-tasks not running,<br>
+I get<br>
+Total connections 5<br>
+ * Serving Flask app '<a href="http://microblog.py" rel="nofollow">microblog.py</a>'<br>
+ * Debug mode: on<br>
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.<br>
+ * Running on http://127.0.0.1:5001<br>
+Press CTRL+C to quit<br>
+ * Restarting with stat<br>
+Total connections 6<br>
+ * Debugger is active!</p>
+<p>I'm not surprised at the 5 since Redis starts a pool of 5 connections?. But then Werkzeug restarting adds a 6th?</p>
+<p>Then I start rq worker microblog-tasks, and export my posts:<br>
+microblog-tasks: app.tasks.export_posts(1) (06cd0609-bd4f-442b-af00-0c4028043ba1)<br>
+Total connections 10<br>
+Why did it start a new pool?</p>
+<p>Total connections stay at 10 with each download. If I quit the app and restart it with the worker still up:<br>
+microblog-0.22 % flask run --port 5001<br>
+Total connections 7<br>
+ * Serving Flask app '<a href="http://microblog.py" rel="nofollow">microblog.py</a>'<br>
+ * Debug mode: on<br>
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.<br>
+ * Running on http://127.0.0.1:5001<br>
+Press CTRL+C to quit<br>
+ * Restarting with stat<br>
+Total connections 8<br>
+ * Debugger is active!</p>
+<p>My app has 2 queues which I automatically scale up and down using heroku3. I also send some tasks for which I don't need progress to heroku run.<br>
+All these tasks go through <strong>init</strong>.py as they need all need the database and the number of connections goes up very quickly with minimal activity.<br>
+Any suggestions to force the new workers to use the unused connections in the pool?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#24</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-18T22:31:03Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-18T22:31:03Z</span>
+  </p>
+  <div>
+    <p>@et: </p>
+<blockquote>
+<p>But then Werkzeug restarting adds a 6th?</p>
+</blockquote>
+<p>first of all, do not use the code reloader when testing connections or other production related settings. The reloader creates additional processes that do not exist in production. Since you are testing how connections are used on your production site, you should use a set up that matches production as much as possible. Use the same web server, same type of concurrency, same number of workers, etc.</p>
+<blockquote>
+<p>Then I start rq worker microblog-tasks, and export my posts:<br>
+Why did it start a new pool?</p>
+</blockquote>
+<p>It's a separate Python process. How would the RQ worker access a pool that is maintained in the web server process? Each process has its own connection pool, two or more Python processes cannot see each other's structures. This is true for everything. Your relational database works in the same way.</p>
+<blockquote>
+<p>Any suggestions to force the new workers to use the unused connections in the pool?</p>
+</blockquote>
+<p>I really see no indication from what you are saying that there are unused connections in any pool. As explained above, each Python process has its own connection pool.</p>
+<p>I also don't know what is the significance of the 5 number of connections that you see when you start. I would imagine each server process makes one connection to redis and not 5, at least initially, before there is any concurrency in place? I'm not really sure how to interpret your observations.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/96144021819fa8bfb1eeec4c68425168?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#25</span> <span class="badge text-bg-warning">et</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-19T10:32:53Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-19T10:32:53Z</span>
+  </p>
+  <div>
+    <p>Thanks for the quick reply Miguel. <br>
+I showed you the tests I did in development with the microblog to keep it as simple and as close as possible to your blog for my question. The Werkzeug thing was just an aside that surprised me, of course for my site, I test the production environment as best I can and the results are the same. That's why I tested it with microblog in the first place, to make sure it was real, not a special issue with my site or heroku.</p>
+<p>I think the issue is when running create_app() from <a href="http://tasks.py" rel="nofollow">tasks.py</a>, it runs <strong>init</strong>.py, which creates a new redis for that app instance, which creates a new connection pool (default of 5 connections). <br>
+That new pool would only be used if the background task itself was required to enqueue another background task.</p>
+<p>As you suggested when answering another question about testing I've tried adding an argument to create_app(bgworker=False) in <strong>init</strong>.py, and put the redis and queue creation in an if statement:<br>
+    if not bgworker:<br>
+        app.redis = Redis.from_url(app.config['REDIS_URL'])<br>
+        app.task_queue = rq.Queue('microblog-tasks', connection=app.redis)</p>
+<p>When calling it from <a href="http://tasks.py" rel="nofollow">tasks.py</a> I now set bgworker=True. The microblog app works just fine like that. I trust the extra connections I used to see are not made anymore but there is no app.redis to be able to run <a href="http://app.redis.info" rel="nofollow">app.redis.info</a>()['connected_clients'] on the background app.<br>
+In real life I should be able to monitor the connections with the heroku Redis monitoring tool (which is how I found this issue in the first place).</p>
+<p>This made me realise that I really need to consider what is actually needed by a background task. Depending on what it's doing, it may not need all the components of the full app.</p>
+  </div>
+</div>
+    </li>
+    
+  </ul>
+</div>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxii-background-jobs/page/1#comments">&laquo;&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxii-background-jobs/page/0#comments">&laquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxii-background-jobs/page/2#comments">&raquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxii-background-jobs/page/0#comments">&raquo;&raquo;</a></li>
+  </ul>
+</nav>
+
+
+
+<div id="comment-form">
+  <h3>Leave a Comment</h3>
+
+  
+  
+  
+
+  
+<form action="#comment-form" method="post">
+  <input id="url" name="url" type="hidden" value="">
+<input id="csrf_token" name="csrf_token" type="hidden" value="Ijg0ZTgyZjUxNjUwZjhmN2I1YTU3ODllZGI3MTFkZTY3ODY0NWVmMmMi.ajz8lA.2Ymxk1NFpKimkuVTdgynr8n5puc">
+    
+  <div class="mb-3">
+    <label class="form-label" for="name">Name</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="name" name="name" required type="text" value="">
+    </div>
+  </div>
+
+    
+    
+  <div class="mb-3">
+    <label class="form-label" for="email">Email</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="email" name="email" required type="text" value="">
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="comment">Comment</label>
+    <div class="input-group has-validation">
+      <textarea class="form-control" id="comment" name="comment" required>
+</textarea>
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="captcha">Captcha</label>
+    <div class="input-group has-validation">
+      
+<script src='https://www.google.com/recaptcha/api.js' async defer></script>
+<div class="g-recaptcha" data-sitekey="6Ld5Zs4SAAAAAOY0DOi4r18bgHlEaz41qAoRf__S"></div>
+
+    </div>
+  </div>
+
+    
+  <input class="btn btn-primary mb-3" id="submit" name="submit" type="submit" value="Submit">
+
+      
+</form>
+
+</div>
+
+
+</div>
+
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div id="sidebar">
+        
+          
+  
+
+
+
+<div class="card">
+  
+  
+  <div class="card-header">Flask Web Development, 2nd Edition</div>
+  <a class="card-book-cover" href="https://amzn.to/3lE2mok">
+    <img src="/static/flask2e-book-cover-small.png" alt="Flask Web Development, 2nd Edition">
+  </a>
+  <div class="card-body">
+    <p class="card-text">If you want to learn modern web development techniques with Python and Flask, you may find the second edition of my <a href="https://amzn.to/3lE2mok">O'Reilly book</a> useful.</p>
+  </div>
+  <div class="card-body">
+    <a class="card-link" href="https://amzn.to/3lE2mok">Click here to get this Book!</a><br />
+  </div>
+
+  
+</div>
+        
+        <div class="card">
+  <div class="card-header">About Miguel</div>
+  <div class="card-body">
+    <img style="float: right; margin: 0px 8px 8px 0px; padding: 4px; border: 1px solid #ccc;" src="/static/miguel.jpg" />
+    <p class="card-text">Welcome to my blog!</p>
+    <p class="card-text">I'm a software engineer and technical writer, currently living in Drogheda, Ireland.</p>
+    <p><u>Generative AI notice:</u> I do not use LLMs, agents or any other generative AI tools for help with writing, coding, image creation or any other tasks related to this blog or my open source work.</p>
+    <p class="card-text">You can also find me on
+      <a href="https://github.com/miguelgrinberg">Github</a>,
+      <a href="http://www.linkedin.com/in/miguelgrinberg">LinkedIn</a>,
+      <a href="https://bsky.app/profile/miguelgrinberg.com">Bluesky</a>,
+      <a href="https://mstdn.social/@miguelgrinberg">Mastodon</a>,
+      <a href="https://twitter.com/miguelgrinberg">Twitter</a>,
+      <a href="https://youtube.com/miguelgrinberg">YouTube</a>,
+      <!--<a href="https://www.facebook.com/miguelgrinbergblog">Facebook</a>,-->
+      <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy Me a Coffee</a>,
+      and <a href="https://patreon.com/miguelgrinberg">Patreon</a>.</p>
+    <p class="card-text">Thank you for visiting!</p>
+  </div>
+</div>
+        
+        <div class="card" id="categories">
+  <div class="card-header">Categories</div>
+  <div class="card-body">
+    
+    <div class="category">
+      <a href="/category/AI/feed"><img src="/static/rss-small.png" title="AI RSS Feed" label="AI RSS Feed" alt="AI RSS Feed" /></a>
+      <form action="/category/AI" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="AI" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Arduino/feed"><img src="/static/rss-small.png" title="Arduino RSS Feed" label="Arduino RSS Feed" alt="Arduino RSS Feed" /></a>
+      <form action="/category/Arduino" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Arduino" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Authentication/feed"><img src="/static/rss-small.png" title="Authentication RSS Feed" label="Authentication RSS Feed" alt="Authentication RSS Feed" /></a>
+      <form action="/category/Authentication" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Authentication" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Blog/feed"><img src="/static/rss-small.png" title="Blog RSS Feed" label="Blog RSS Feed" alt="Blog RSS Feed" /></a>
+      <form action="/category/Blog" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Blog" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/C++/feed"><img src="/static/rss-small.png" title="C++ RSS Feed" label="C++ RSS Feed" alt="C++ RSS Feed" /></a>
+      <form action="/category/C++" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="C++" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/CSS/feed"><img src="/static/rss-small.png" title="CSS RSS Feed" label="CSS RSS Feed" alt="CSS RSS Feed" /></a>
+      <form action="/category/CSS" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="CSS" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Cloud/feed"><img src="/static/rss-small.png" title="Cloud RSS Feed" label="Cloud RSS Feed" alt="Cloud RSS Feed" /></a>
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" /> <small><em>12</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Database/feed"><img src="/static/rss-small.png" title="Database RSS Feed" label="Database RSS Feed" alt="Database RSS Feed" /></a>
+      <form action="/category/Database" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Database" /> <small><em>33</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Docker/feed"><img src="/static/rss-small.png" title="Docker RSS Feed" label="Docker RSS Feed" alt="Docker RSS Feed" /></a>
+      <form action="/category/Docker" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Docker" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Filmmaking/feed"><img src="/static/rss-small.png" title="Filmmaking RSS Feed" label="Filmmaking RSS Feed" alt="Filmmaking RSS Feed" /></a>
+      <form action="/category/Filmmaking" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Filmmaking" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Flask/feed"><img src="/static/rss-small.png" title="Flask RSS Feed" label="Flask RSS Feed" alt="Flask RSS Feed" /></a>
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" /> <small><em>130</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Games/feed"><img src="/static/rss-small.png" title="Games RSS Feed" label="Games RSS Feed" alt="Games RSS Feed" /></a>
+      <form action="/category/Games" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Games" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Infra/feed"><img src="/static/rss-small.png" title="Infra RSS Feed" label="Infra RSS Feed" alt="Infra RSS Feed" /></a>
+      <form action="/category/Infra" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Infra" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/IoT/feed"><img src="/static/rss-small.png" title="IoT RSS Feed" label="IoT RSS Feed" alt="IoT RSS Feed" /></a>
+      <form action="/category/IoT" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="IoT" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/JavaScript/feed"><img src="/static/rss-small.png" title="JavaScript RSS Feed" label="JavaScript RSS Feed" alt="JavaScript RSS Feed" /></a>
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" /> <small><em>37</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/MicroPython/feed"><img src="/static/rss-small.png" title="MicroPython RSS Feed" label="MicroPython RSS Feed" alt="MicroPython RSS Feed" /></a>
+      <form action="/category/MicroPython" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="MicroPython" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microdot/feed"><img src="/static/rss-small.png" title="Microdot RSS Feed" label="Microdot RSS Feed" alt="Microdot RSS Feed" /></a>
+      <form action="/category/Microdot" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microdot" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microservices/feed"><img src="/static/rss-small.png" title="Microservices RSS Feed" label="Microservices RSS Feed" alt="Microservices RSS Feed" /></a>
+      <form action="/category/Microservices" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microservices" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Movie Reviews/feed"><img src="/static/rss-small.png" title="Movie Reviews RSS Feed" label="Movie Reviews RSS Feed" alt="Movie Reviews RSS Feed" /></a>
+      <form action="/category/Movie%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Movie Reviews" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Personal/feed"><img src="/static/rss-small.png" title="Personal RSS Feed" label="Personal RSS Feed" alt="Personal RSS Feed" /></a>
+      <form action="/category/Personal" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Personal" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Photography/feed"><img src="/static/rss-small.png" title="Photography RSS Feed" label="Photography RSS Feed" alt="Photography RSS Feed" /></a>
+      <form action="/category/Photography" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Photography" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Product Reviews/feed"><img src="/static/rss-small.png" title="Product Reviews RSS Feed" label="Product Reviews RSS Feed" alt="Product Reviews RSS Feed" /></a>
+      <form action="/category/Product%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Product Reviews" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Programming/feed"><img src="/static/rss-small.png" title="Programming RSS Feed" label="Programming RSS Feed" alt="Programming RSS Feed" /></a>
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" /> <small><em>198</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Project Management/feed"><img src="/static/rss-small.png" title="Project Management RSS Feed" label="Project Management RSS Feed" alt="Project Management RSS Feed" /></a>
+      <form action="/category/Project%20Management" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Project Management" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Python/feed"><img src="/static/rss-small.png" title="Python RSS Feed" label="Python RSS Feed" alt="Python RSS Feed" /></a>
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" /> <small><em>187</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/REST/feed"><img src="/static/rss-small.png" title="REST RSS Feed" label="REST RSS Feed" alt="REST RSS Feed" /></a>
+      <form action="/category/REST" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="REST" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Raspberry Pi/feed"><img src="/static/rss-small.png" title="Raspberry Pi RSS Feed" label="Raspberry Pi RSS Feed" alt="Raspberry Pi RSS Feed" /></a>
+      <form action="/category/Raspberry%20Pi" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Raspberry Pi" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/React/feed"><img src="/static/rss-small.png" title="React RSS Feed" label="React RSS Feed" alt="React RSS Feed" /></a>
+      <form action="/category/React" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="React" /> <small><em>19</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Reviews/feed"><img src="/static/rss-small.png" title="Reviews RSS Feed" label="Reviews RSS Feed" alt="Reviews RSS Feed" /></a>
+      <form action="/category/Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Reviews" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Robotics/feed"><img src="/static/rss-small.png" title="Robotics RSS Feed" label="Robotics RSS Feed" alt="Robotics RSS Feed" /></a>
+      <form action="/category/Robotics" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Robotics" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Security/feed"><img src="/static/rss-small.png" title="Security RSS Feed" label="Security RSS Feed" alt="Security RSS Feed" /></a>
+      <form action="/category/Security" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Security" /> <small><em>14</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Video/feed"><img src="/static/rss-small.png" title="Video RSS Feed" label="Video RSS Feed" alt="Video RSS Feed" /></a>
+      <form action="/category/Video" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Video" /> <small><em>22</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/WebSocket/feed"><img src="/static/rss-small.png" title="WebSocket RSS Feed" label="WebSocket RSS Feed" alt="WebSocket RSS Feed" /></a>
+      <form action="/category/WebSocket" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="WebSocket" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Webcast/feed"><img src="/static/rss-small.png" title="Webcast RSS Feed" label="Webcast RSS Feed" alt="Webcast RSS Feed" /></a>
+      <form action="/category/Webcast" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Webcast" /> <small><em>3</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Windows/feed"><img src="/static/rss-small.png" title="Windows RSS Feed" label="Windows RSS Feed" alt="Windows RSS Feed" /></a>
+      <form action="/category/Windows" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Windows" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+  </div>
+</div>
+        
+      </div>
+    </div>
+    
+  </div>
+  <div id="footer">
+    
+    <p>&copy; 2012-<script type="text/javascript">document.write(new Date().getFullYear());</script> by Miguel Grinberg. All rights reserved. <a href="mailto:webmaster _at_ miguelgrinberg _dot_ com">Questions?</a></p>
+  </div>
+</div>
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="/static/prettify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js" integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg==" crossorigin="anonymous"></script>
+
+<script>
+moment.locale("en");
+function flask_moment_render(elem) {{
+    const timestamp = moment(elem.dataset.timestamp);
+    const func = elem.dataset.function;
+    const format = elem.dataset.format;
+    const timestamp2 = elem.dataset.timestamp2;
+    const no_suffix = elem.dataset.nosuffix;
+    const units = elem.dataset.units;
+    let args = [];
+    if (format)
+        args.push(format);
+    if (timestamp2)
+        args.push(moment(timestamp2));
+    if (no_suffix)
+        args.push(no_suffix);
+    if (units)
+        args.push(units);
+    elem.textContent = timestamp[func].apply(timestamp, args);
+    elem.classList.remove('flask-moment');
+    elem.style.display = "";
+}}
+function flask_moment_render_all() {{
+    const moments = document.querySelectorAll('.flask-moment');
+    moments.forEach(function(moment) {{
+        flask_moment_render(moment);
+        const refresh = moment.dataset.refresh;
+        if (refresh && refresh > 0) {{
+            (function(elem, interval) {{
+                setInterval(function() {{
+                    flask_moment_render(elem);
+                }}, interval);
+            }})(moment, refresh);
+        }}
+    }})
+}}
+document.addEventListener("DOMContentLoaded", flask_moment_render_all);
+</script>
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-20EHZP9GRZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-20EHZP9GRZ');
+  </script>
+  
+  <script type="text/javascript">
+    function setThemeUI() {
+      document.getElementById('select-theme-auto').classList.remove('active');
+      document.getElementById('select-theme-light').classList.remove('active');
+      document.getElementById('select-theme-dark').classList.remove('active');
+      const theme = getPreferredTheme();
+      const actualTheme = document.documentElement.getAttribute('data-bs-theme', 'light');
+      document.getElementById('select-theme-' + theme).classList.add('active');
+      document.getElementById('current-theme').href.baseVal = `#icon-theme-${actualTheme}`;
+    };
+
+    function updateTheme(theme) {
+      if (theme === 'auto') {
+        localStorage.removeItem('theme')
+      }
+      else {
+        localStorage.setItem('theme', theme)
+      }
+      setTheme(getPreferredTheme());
+    }
+
+    setThemeUI();
+
+    const darkModePreference = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModePreference.addEventListener("change", e => {
+      if (getPreferredTheme() === 'auto') {
+        setTheme('auto');
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // add prettyprint class to all <pre><code></code></pre> blocks
+      let prettify = false;
+      document.querySelectorAll('div.post-body pre code').forEach((code) => {
+        code.parentNode.classList.add('prettyprint');
+        prettify = true;
+      });
+      prettyPrint();
+    });
+  </script>
+
+  </body>
+</html>

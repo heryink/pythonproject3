@@ -1,0 +1,1374 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    
+  <script type="text/javascript">
+    function getPreferredTheme() {
+      const storedTheme = localStorage.getItem('theme')
+      if (storedTheme) {
+        return storedTheme
+      }
+      return 'auto';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    };
+
+    setTheme(getPreferredTheme());
+  </script>
+  
+    <title>
+  
+    The Flask Mega-Tutorial, Part XI: Facelift - miguelgrinberg.com
+  
+</title>
+  
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="miguelgrinberg.com">
+  <meta name="copyright" content="Copyright (c) 2012-2024 Miguel Grinberg">
+  <meta name="author" content="Miguel Grinberg">
+  
+  <meta name="keywords" content="python, flask, programming, bootstrap, ui">
+  
+  
+  <link rel="canonical" href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xi-facelift">
+  
+
+  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+
+  <link href="/static/tomorrow.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/tomorrow-night.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/social.css" rel="stylesheet" type="text/css" />
+  <link href="/static/style_20260305.css" rel="stylesheet" type="text/css" />
+
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  <link rel="alternate" type="application/rss+xml" href="/feed" title="miguelgrinberg.com RSS feed">
+
+    <meta property="og:title" content="The Flask Mega-Tutorial, Part XI: Facelift">
+    <meta property="og:description" content="This is the eleventh installment of the Flask Mega-Tutorial series, in which I&#39;m going to tell you how to replace the basic HTML templates with a new set that is based on the Bootstrap user interface…">
+    <meta property="og:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xi-facelift.jpg">
+    <meta property="og:url" content="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xi-facelift">
+    <meta name="twitter:title" content="The Flask Mega-Tutorial, Part XI: Facelift">
+    <meta name="twitter:description" content="This is the eleventh installment of the Flask Mega-Tutorial series, in which I&#39;m going to tell you how to replace the basic HTML templates with a new set that is based on the Bootstrap user interface…">
+    <meta name="twitter:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xi-facelift.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@miguelgrinberg">
+
+  </head>
+  <body>
+    <svg style="display: none" version="2.0">
+      <defs>
+        <symbol id="icon-theme-auto" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-circle-half" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/>
+        </symbol>
+        <symbol id="icon-theme-light" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </symbol>
+        <symbol id="icon-theme-dark" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-moon-stars-fill" viewBox="0 0 16 16">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+        </symbol>
+      </defs>
+    </svg>
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/index">miguelgrinberg.com</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/index">Home</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/my-courses-and-books">My Courses and Books</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/hire-me">Consulting</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/about-me">About Me</a></li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <svg width="20" height="20" version="2.0"><use id="current-theme" href="#icon-theme-light"></svg>
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a id="select-theme-light" class="dropdown-item" href="javascript:updateTheme('light'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-light"></svg>&nbsp; Light Mode
+              </a>
+            </li>
+            <li>
+              <a id="select-theme-dark" class="dropdown-item" href="javascript:updateTheme('dark'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-dark"></svg>&nbsp; Dark Mode
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a id="select-theme-auto" class="dropdown-item" href="javascript:updateTheme('auto'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-auto"></svg>&nbsp; System Default
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item social-icons">
+          <a href="http://github.com/miguelgrinberg"><img src="/static/social/github.png" alt="GitHub" title="GitHub" /></a>
+          <a href="http://www.linkedin.com/in/miguelgrinberg"><img src="/static/social/linkedin.png" alt="LinkedIn" title="LinkedIn" /></a>
+          <a href="https://bsky.app/profile/miguelgrinberg.com"><img src="/static/social/bluesky.png" alt="Bluesky" title="Bluesky" /></a>
+          <a rel="me" href="https://mstdn.social/@miguelgrinberg"><img src="/static/social/mastodon.png" alt="Mastodon" title="Mastodon" /></a>
+          <a href="https://twitter.com/miguelgrinberg"><img src="/static/social/twitter.png" alt="Twitter" title="Twitter" /></a>
+          <a href="https://youtube.com/miguelgrinberg"><img src="/static/social/youtube.png" alt="YouTube" title="YouTube" /></a>
+          <a href="https://www.buymeacoffee.com/miguelgrinberg"><img src="/static/social/buymeacoffee.png" alt="Buy Me a Coffee" title="Buy Me a Coffee" /></a>
+          <a href="https://patreon.com/miguelgrinberg"><img src="/static/social/patreon.png" alt="Patreon" title="Patreon" /></a>
+          <a type="application/rss+xml" href="/feed"><img src="/static/social/rss.png" alt="RSS Feed" title="RSS Feed" /></a>
+          <!--<a href="https://www.facebook.com/miguelgrinbergblog"><img src="/static/social/facebook.png" alt="Facebook" title="Facebook" /></a>-->
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <div id="main">
+        
+        
+        
+        
+        
+
+<div class="post">
+
+<div class="post-header">
+  <h1><a href="/post/the-flask-mega-tutorial-part-xi-facelift">The Flask Mega-Tutorial, Part XI: Facelift</a></h1>
+  <h2>
+    Posted by
+    <form action="/author/Miguel%20Grinberg" method="POST">
+      <input type="submit" class="btn btn-danger btn-sm" value="Miguel Grinberg" />
+    </form>
+    on
+    <button class="btn btn-secondary btn-sm" disabled><span class="flask-moment" data-timestamp="2023-12-03T10:40:20Z" data-function="format" data-format="LL" data-refresh="0" style="display: none">2023-12-03T10:40:20Z</span></button>
+    under
+    
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" />
+      </form>
+    
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" />
+      </form>
+    
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" />
+      </form>
+    
+    
+  </h2>
+</div>
+<div class="post-body"><p>This is the eleventh installment of the Flask Mega-Tutorial series, in which I'm going to tell you how to replace the basic HTML templates with a new set that is based on the Bootstrap user interface framework.</p>
+<p>You are reading the 2024 edition of the Flask Mega-Tutorial. The complete course is also available to order in e-book and paperback formats from <a href="https://amzn.to/3ahVnPN">Amazon</a>. Thank you for your support!</p>
+<p>If you are looking for the 2018 edition of this course, you can find it <a href="/post/the-flask-mega-tutorial-part-i-hello-world-2018">here</a>.</p>
+<p>For your reference, here is the complete list of articles in this series:</p>
+<ul>
+<li><a href="/post/the-flask-mega-tutorial-part-i-hello-world">Chapter 1:  Hello, World!</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ii-templates">Chapter 2:  Templates</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iii-web-forms">Chapter 3:  Web Forms</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iv-database">Chapter 4:  Database</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5:  User Logins</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vi-profile-page-and-avatars">Chapter 6:  Profile Page and Avatars</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7:  Error Handling</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-viii-followers">Chapter 8:  Followers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ix-pagination">Chapter 9:  Pagination</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-x-email-support">Chapter 10:  Email Support</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xi-facelift">Chapter 11:  Facelift</a> (this article)</li>
+<li><a href="/post/the-flask-mega-tutorial-part-xii-dates-and-times">Chapter 12:  Dates and Times</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiii-i18n-and-l10n">Chapter 13:  I18n and L10n</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiv-ajax">Chapter 14:  Ajax</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15:  A Better Application Structure</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16:  Full-Text Search</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17:  Deployment on Linux</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18:  Deployment on Heroku</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">Chapter 19:  Deployment on Docker Containers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">Chapter 20:  Some JavaScript Magic</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21:  User Notifications</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">Chapter 22:  Background Jobs</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">Chapter 23:  Application Programming Interfaces (APIs)</a></li>
+</ul>
+<p>You have been playing with my Microblog application for a while now, so I'm sure you noticed that I haven't spent too much time making it look good, or better said, I haven't spent any time on that. The templates that I put together are pretty basic, with absolutely no custom styling. It was useful for me to concentrate on the actual logic of the application without having the distraction of also writing good-looking HTML and CSS.</p>
+<p>But I've focused on the backend part of this application for a while now. So in this chapter I'm taking a break from that and will spend some time showing you what can be done to make the application look a bit more polished and professional.</p>
+<p>This chapter is going to be a bit different from previous ones, because I'm not going to be as detailed as I normally am with the Python side, which after all, is the main topic of this tutorial. Creating great looking web pages is a vast topic that is largely unrelated to Python web development, but I will discuss some basic guidelines and ideas on how to approach the task, and you will also have the application with the redesigned looks to study and learn from.</p>
+<p><em>The GitHub links for this chapter are: <a href="https://github.com/miguelgrinberg/microblog/tree/v0.11">Browse</a>, <a href="https://github.com/miguelgrinberg/microblog/archive/v0.11.zip">Zip</a>, <a href="https://github.com/miguelgrinberg/microblog/compare/v0.10...v0.11">Diff</a>.</em></p>
+<h2>CSS Frameworks</h2>
+<p>While we can argue that coding is hard, our pains are nothing compared to those of web designers, who have to create web pages that have a nice and consistent look on a list of web browsers. It has gotten better in recent years, but there are still obscure bugs or quirks in some browsers that make the task of designing web pages that look nice everywhere very hard. This is even harder if you also need to target resource and screen limited browsers of tablets and smartphones.</p>
+<p>If you, like me, are a developer who just wants to create decent looking web pages, but do not have the time or interest to learn the low level mechanisms to achieve this effectively by writing raw HTML and CSS, then the only practical solution is to use a <em>CSS framework</em> to simplify the task. You will be losing some creative freedom by taking this path, but on the other side, your web pages will look good in all browsers without a lot of effort. A CSS framework provides a collection of high-level CSS classes with pre-made styles for common types of user interface elements. Most of these frameworks also provide JavaScript add-ons for things that cannot be done strictly with HTML and CSS.</p>
+<h2>Introducing Bootstrap</h2>
+<p>One of the most popular CSS frameworks is <a href="http://getbootstrap.com/">Bootstrap</a>. If you want to see the kind of pages that can be designed with this framework, the documentation has some <a href="https://getbootstrap.com/docs/5.3/examples/">examples</a>.</p>
+<p>These are some benefits you get when using Bootstrap to style your web pages:</p>
+<ul>
+<li>Similar look in all major web browsers</li>
+<li>Handling of desktop, tablet and phone screen sizes</li>
+<li>Customizable layouts</li>
+<li>Nicely styled navigation bars, forms, buttons, alerts, popups, etc.</li>
+</ul>
+<p>The most direct way to use Bootstrap is to simply import the <em>bootstrap.min.css</em> file in your base template. You can either download a copy of this file and add it to your project, or import it directly from a <a href="https://en.wikipedia.org/wiki/Content_delivery_network">CDN</a>. Then you can start using the general purpose CSS classes it provides, according to the <a href="https://getbootstrap.com/docs/5.3/getting-started/introduction/">documentation</a>, which is pretty good. You may also want to import the framework's JavaScript code, so that you can also use the most advanced features.</p>
+<p>As most open source projects, Bootstrap is constantly evolving. The original version of the Flask Mega-Tutorial was built for Bootstrap 3. The revision that you are currently reading is built for Bootstrap 5.3. The current approach to integrate Bootstrap is fairly generic and can be adapted to newer versions of Bootstrap.</p>
+<h2>Using Bootstrap</h2>
+<p>The first step in integrating Bootstrap with Microblog is to add its CSS and JavaScript files to the base template. The <a href="https://getbootstrap.com/docs/5.3/getting-started/introduction/">Bootstrap's Quick Start</a> page provides a short, yet complete HTML page as an example, which I copy below for your convenience:</p>
+<pre><code class="language-html">&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+  &lt;head&gt;
+    &lt;meta charset=&quot;utf-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+    &lt;title&gt;Bootstrap demo&lt;/title&gt;
+    &lt;link
+        href=&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css&quot;
+        rel=&quot;stylesheet&quot;
+        integrity=&quot;sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN&quot;
+        crossorigin=&quot;anonymous&quot;&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;h1&gt;Hello, world!&lt;/h1&gt;
+    &lt;script
+        src=&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js&quot;
+        integrity=&quot;sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL&quot;
+        crossorigin=&quot;anonymous&quot;&gt;
+    &lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>The approach that I can take to combine this with my <em>base.html</em> template is to take the above as my new base template, replacing the <code>&lt;title&gt;</code> and <code>&lt;h1&gt;</code> tags with the title and body content of the original base template respectively.</p>
+<p>The next step is to replace the basic navigation bar with the much nicer one from Bootstrap. Bootstrap's <a href="https://getbootstrap.com/docs/5.3/components/navbar/">Navbar documentation</a> page shows a nice example near the top. With this example as guidance, I have created a navigation bar that has the index, explore, profile, log in and log out links from Microblog. For a nice touch, I configured the profile and log in and out links to appear on the far right.</p>
+<p>When using Bootstrap, there are some basic layout primitives that are good to be aware of. One of the most important ones is the <a href="https://getbootstrap.com/docs/5.3/layout/containers/">container</a>, which defines what is the content area of the page. The two main containers are called <code>container</code> and <code>container-fluid</code>. The former configures the page to use one of a list of five predefined page widths, and centers the content on the browser window. The fluid container, on the other side, gives you access to the entire width of the page. For this application I've decided to use the default container, because it prevents the page from ever going too wide, regardless of screen size. This is the one I'm going to use, so the content portion of the page will be wrapped in one of these containers, as follows:</p>
+<pre><code class="language-html">&lt;div class=&quot;container&quot;&gt;
+    ... page contents here ...
+&lt;/div&gt;
+</code></pre>
+<p>The last piece of HTML markup in the <em>base.html</em> template that needs to be adapted is the section that displays the flashed messages. Bootstrap's <a href="https://getbootstrap.com/docs/5.3/components/alerts/">Alert</a> component nicely fits this need.</p>
+<p>You can obtain the completely redesigned <em>base.html</em> template from the Github repository for this chapter. Below you can see a simplified structure if you want to have an idea of how it looks:</p>
+<p class="code_title"><em>app/templates/base.html</em>: Redesigned base template.</p>
+
+<pre><code class="language-html">&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+  &lt;head&gt;
+    &lt;meta charset=&quot;utf-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+    {% if title %}
+    &lt;title&gt;{{ title }} - Microblog&lt;/title&gt;
+    {% else %}
+    &lt;title&gt;Welcome to Microblog&lt;/title&gt;
+    {% endif %}
+    &lt;link ... bootstrap CSS ...&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;nav&gt;
+      ... navigation bar (see complete code on GitHub) ...
+    &lt;/nav&gt;
+    &lt;div class=&quot;container mt-3&quot;&gt;
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+        &lt;div class=&quot;alert alert-info&quot; role=&quot;alert&quot;&gt;{{ message }}&lt;/div&gt;
+        {% endfor %}
+      {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    &lt;/div&gt;
+    &lt;script ... bootstrap JavaScript ...&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>With the redesigned base template in place, there is already a noticeable improvement in how the application looks, without having to change a single line of Python code. If you want to see for yourself, download a copy of <em>base.html</em> from the GitHub repository using the links shown at the start of this chapter.</p>
+<h2>Rendering Bootstrap Forms</h2>
+<p>An area where Bootstrap does a fantastic job is in rendering of form fields, which have a much nicer and cleaner look than the default fields provided by the browser. The Bootstrap documentation also has a section on <a href="https://getbootstrap.com/docs/5.3/forms/overview/">Forms</a>. Near the start of this section there is an example of a login form that shows the basic HTML structure.</p>
+<p>The HTML code required for each field is somewhat long. Below you can see one of the text fields from the example form in the documentation:</p>
+<pre><code class="language-html">  &lt;div class=&quot;mb-3&quot;&gt;
+    &lt;label for=&quot;exampleInputPassword1&quot; class=&quot;form-label&quot;&gt;Password&lt;/label&gt;
+    &lt;input type=&quot;password&quot; class=&quot;form-control&quot; id=&quot;exampleInputPassword1&quot;&gt;
+  &lt;/div&gt;
+</code></pre>
+<p>But this is too simple for the needs of Microblog, which includes field validation and may need to show validation errors to the user. The documentation page has a section on server-side validation that shows how to style fields with an error message. Here is an example:</p>
+<pre><code class="language-html">  &lt;div class=&quot;col-md-3&quot;&gt;
+    &lt;label for=&quot;validationServer05&quot; class=&quot;form-label&quot;&gt;Zip&lt;/label&gt;
+    &lt;input type=&quot;text&quot; class=&quot;form-control is-invalid&quot; id=&quot;validationServer05&quot; aria-describedby=&quot;validationServer05Feedback&quot; required&gt;
+    &lt;div id=&quot;validationServer05Feedback&quot; class=&quot;invalid-feedback&quot;&gt;
+      Please provide a valid zip.
+    &lt;/div&gt;
+  &lt;/div&gt;
+</code></pre>
+<p>Unfortunately having to type such an amount of boilerplate for every form field in every form is out of the question. It would be too time-consuming and error-prone. One solution is to take advantage of Jinja <em>macros</em>, which allow you to define reusable snippets of HTML and then call them from your templates as if they were functions.</p>
+<p>For example, a Jinja macro for a text field such as those shown above would be:</p>
+<pre><code class="language-html">{% macro form_field(field) %}
+  &lt;div class=&quot;mb-3&quot;&gt;
+    {{ field.label(class='form-label') }}
+    {{ field(class='form-control' + (' is-invalid' if field.errors else '')) }}
+    {%- for error in field.errors %}
+    &lt;div class=&quot;invalid-feedback&quot;&gt;{{ error }}&lt;/div&gt;
+    {%- endfor %}
+  &lt;/div&gt;
+{% endmacro %}
+</code></pre>
+<p>Note how conditionals are used to selectively add the error style if the field includes one or more error messages.</p>
+<p>Having the macro defined in a file called <em>bootstrap_wtf.html</em> located in the <em>templates</em> directory, when a field needs to be rendered the macro can be called. For example:</p>
+<pre><code class="language-html">{% import &quot;bootstrap_wtf.html&quot; as wtf %}
+...
+{{ wtf.form_field(form.username) }}
+</code></pre>
+<p>The field rendering macro can be extended to also support rendering of check boxes, selection drop-downs, submit buttons and other field types. It can also accept a second argument with a boolean indicating if the field should be automatically given focus on the page, which should be done on the first field of the form. For even more convenience, another macro can be created to render an entire form, just by iterating over the form fields and calling the <code>form_field()</code> macro for each one.</p>
+<p>The complete <em>bootstrap_wtf.html</em> file is available on the GitHub repository linked at the start of this chapter. It includes a more complete version of the <code>form_field()</code> macro shown above, and a second macro called <code>quick_form()</code> which takes a form object and renders all of its fields using the first macro.</p>
+<p>How does this look when implemented on an actual application form? Below you can see a redesigned <em>register.html</em> template as an example:</p>
+<p class="code_title"><em>app/templates/register.html</em>: User registration template.</p>
+
+<pre><code class="language-html">{% extends &quot;base.html&quot; %}
+{% import 'bootstrap_wtf.html' as wtf %}
+
+{% block content %}
+    &lt;h1&gt;Register&lt;/h1&gt;
+    {{ wtf.quick_form(form) }}
+{% endblock %}
+</code></pre>
+<p>Isn't this great? The <code>import</code> statement near the top works similarly to a Python import on the template side. That adds a <code>wtf.quick_form()</code> macro that in a single line of code renders the complete form, including validation errors, and all styled as appropriate for the Bootstrap framework.</p>
+<p>Once again, I'm not going to show you all the changes that I've done for the other forms in the application, but these changes are all made in the templates that you can download or inspect on GitHub.</p>
+<h2>Rendering of Blog Posts</h2>
+<p>The presentation logic that renders a single blog posts was abstracted into a sub-template called <em>_post.html</em>. All I need to do with this template is to make some minor adjustments so that it looks good under Bootstrap.</p>
+<p class="code_title"><em>app/templates/_post.html</em>: Redesigned post sub-template.</p>
+
+<pre><code class="language-html">    &lt;table class=&quot;table table-hover&quot;&gt;
+        &lt;tr&gt;
+            &lt;td width=&quot;70px&quot;&gt;
+                &lt;a href=&quot;{{ url_for('user', username=post.author.username) }}&quot;&gt;
+                    &lt;img src=&quot;{{ post.author.avatar(70) }}&quot; /&gt;
+                &lt;/a&gt;
+            &lt;/td&gt;
+            &lt;td&gt;
+                &lt;a href=&quot;{{ url_for('user', username=post.author.username) }}&quot;&gt;
+                    {{ post.author.username }}
+                &lt;/a&gt;
+                says:
+                &lt;br&gt;
+                {{ post.body }}
+            &lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/table&gt;
+</code></pre>
+<h2>Rendering Pagination Links</h2>
+<p>Pagination links is another area where Bootstrap provides support. For this I just went one more time to the Bootstrap <a href="https://getbootstrap.com/docs/5.3/components/pagination/">documentation</a> and adapted one of their examples. Here is how these look in the <em>index.html</em> page:</p>
+<p class="code_title"><em>app/templates/index.html</em>: Redesigned pagination links.</p>
+
+<pre><code class="language-html">    ...
+    &lt;nav aria-label=&quot;Post navigation&quot;&gt;
+        &lt;ul class=&quot;pagination&quot;&gt;
+            &lt;li class=&quot;page-item{% if not prev_url %} disabled{% endif %}&quot;&gt;
+                &lt;a class=&quot;page-link&quot; href=&quot;{{ prev_url }}&quot;&gt;
+                    &lt;span aria-hidden=&quot;true&quot;&gt;&amp;larr;&lt;/span&gt; Newer posts
+                &lt;/a&gt;
+            &lt;/li&gt;
+            &lt;li class=&quot;page-item{% if not next_url %} disabled{% endif %}&quot;&gt;
+                &lt;a class=&quot;page-link&quot; href=&quot;{{ next_url }}&quot;&gt;
+                    Older posts &lt;span aria-hidden=&quot;true&quot;&gt;&amp;rarr;&lt;/span&gt;
+                &lt;/a&gt;
+            &lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/nav&gt;
+</code></pre>
+<p>Note that in this implementation, instead of hiding the next or previous link when that direction does not have any more content, I'm applying a disabled state, which will make the link appear grayed out.</p>
+<p>I'm not going to show it here, but a similar change needs to be applied to <em>user.html</em>. The download package for this chapter includes these changes.</p>
+<h2>Before And After</h2>
+<p>To update your application with these changes, please download the zip file for this chapter and update your templates accordingly.</p>
+<p>Below you can see a few before and after pictures to see the transformation. Keep in mind that this change was achieved without changing a single line of application logic!</p>
+<p><img alt="Login" src="/static/images/mega-tutorial/ch12-login.png" /><br />
+<img alt="Home Page" src="/static/images/mega-tutorial/ch12-index.png" /></p>
+<p>Continue on to the <a href="/post/the-flask-mega-tutorial-part-xii-dates-and-times">next chapter</a>.</p></div>
+
+<h2>Buy me a coffee?</h2>
+<p class="card-text">Thank you for visiting my blog! If you enjoyed this article, please consider supporting my work and keeping me caffeinated with a small one-time donation through <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy me a coffee</a>. Thanks!</p>
+<a href="https://www.buymeacoffee.com/miguelgrinberg" target="_blank"><img src="/static/buymeacoffee-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+
+<h2>Share this post</h2>
+<!-- Sharingbutton Hacker News -->
+<a class="resp-sharing-button__link" href="https://news.ycombinator.com/submitlink?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xi-facelift&amp;t=The%20Flask%20Mega-Tutorial%2C%20Part%20XI%3A%20Facelift" target="_blank" rel="noopener" aria-label="Hacker News">
+  <div class="resp-sharing-button resp-sharing-button--hackernews resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><path fill-rule="evenodd" d="M60.94 82.314L17 0h20.08l25.85 52.093c.397.927.86 1.888 1.39 2.883.53.994.995 2.02 1.393 3.08.265.4.463.764.596 1.095.13.334.262.63.395.898.662 1.325 1.26 2.618 1.79 3.877.53 1.26.993 2.42 1.39 3.48 1.06-2.254 2.22-4.673 3.48-7.258 1.26-2.585 2.552-5.27 3.877-8.052L103.49 0h18.69L77.84 83.308v53.087h-16.9v-54.08z"></path></svg></div>Hacker News</div>
+</a>
+
+<!-- Sharingbutton Reddit -->
+<a class="resp-sharing-button__link" href="https://reddit.com/submit/?url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xi-facelift&amp;resubmit=true&amp;title=The Flask Mega-Tutorial, Part XI: Facelift" target="_blank" rel="noopener" aria-label="Reddit">
+  <div class="resp-sharing-button resp-sharing-button--reddit resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-6.07-1.72.08-1.1.4-3.05 1.52-3.7.72-.4 1.73-.24 3 .5C17.2 6.3 18.46 7.5 20 7.5c1.65 0 3-1.35 3-3s-1.35-3-3-3c-1.38 0-2.54.94-2.88 2.22-1.43-.72-2.64-.8-3.6-.25-1.64.94-1.95 3.47-2 4.55-2.33.08-4.45.7-6.1 1.72C4.86 8.98 3.96 8.5 3 8.5c-1.65 0-3 1.35-3 3 0 1.32.84 2.44 2.05 2.84-.03.22-.05.44-.05.66 0 3.86 4.5 7 10 7s10-3.14 10-7c0-.22-.02-.44-.05-.66 1.2-.4 2.05-1.54 2.05-2.84zM2.3 13.37C1.5 13.07 1 12.35 1 11.5c0-1.1.9-2 2-2 .64 0 1.22.32 1.6.82-1.1.85-1.92 1.9-2.3 3.05zm3.7.13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9.8 4.8c-1.08.63-2.42.96-3.8.96-1.4 0-2.74-.34-3.8-.95-.24-.13-.32-.44-.2-.68.15-.24.46-.32.7-.18 1.83 1.06 4.76 1.06 6.6 0 .23-.13.53-.05.67.2.14.23.06.54-.18.67zm.2-2.8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm5.7-2.13c-.38-1.16-1.2-2.2-2.3-3.05.38-.5.97-.82 1.6-.82 1.1 0 2 .9 2 2 0 .84-.53 1.57-1.3 1.87z"/></svg></div>Reddit</div>
+</a>
+
+<!-- Sharingbutton Twitter -->
+<a class="resp-sharing-button__link" href="https://twitter.com/intent/tweet/?text=The%20Flask%20Mega-Tutorial%2C%20Part%20XI%3A%20Facelift&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xi-facelift" target="_blank" rel="noopener" aria-label="Twitter">
+  <div class="resp-sharing-button resp-sharing-button--twitter resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/></svg></div>Twitter</div>
+</a>
+
+<!-- Sharingbutton LinkedIn -->
+<a class="resp-sharing-button__link" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xi-facelift&amp;title=The%20Flask%20Mega-Tutorial%2C%20Part%20XI%3A%20Facelift&amp;summary=The%20Flask%20Mega-Tutorial%2C%20Part%20XI%3A%20Facelift&amp;source=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xi-facelift" target="_blank" rel="noopener" aria-label="LinkedIn">
+  <div class="resp-sharing-button resp-sharing-button--linkedin resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.5 21.5h-5v-13h5v13zM4 6.5C2.5 6.5 1.5 5.3 1.5 4s1-2.4 2.5-2.4c1.6 0 2.5 1 2.6 2.5 0 1.4-1 2.5-2.6 2.5zm11.5 6c-1 0-2 1-2 2v7h-5v-13h5V10s1.6-1.5 4-1.5c3 0 5 2.2 5 6.3v6.7h-5v-7c0-1-1-2-2-2z"/></svg></div>LinkedIn</div>
+</a>
+
+<!-- Sharingbutton Facebook -->
+<a class="resp-sharing-button__link" href="https://facebook.com/sharer/sharer.php?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xi-facelift" target="_blank" rel="noopener" aria-label="Facebook">
+  <div class="resp-sharing-button resp-sharing-button--facebook resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/></svg></div>Facebook</div>
+</a>
+
+<!-- Sharingbutton E-Mail -->
+<a class="resp-sharing-button__link" href="mailto:?subject=The%20Flask%20Mega-Tutorial%2C%20Part%20XI%3A%20Facelift&amp;body=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xi-facelift" target="_self" rel="noopener" aria-label="E-Mail">
+  <div class="resp-sharing-button resp-sharing-button--email resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 4H2C.9 4 0 4.9 0 6v12c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7.25 14.43l-3.5 2c-.08.05-.17.07-.25.07-.17 0-.34-.1-.43-.25-.14-.24-.06-.55.18-.68l3.5-2c.24-.14.55-.06.68.18.14.24.06.55-.18.68zm4.75.07c-.1 0-.2-.03-.27-.08l-8.5-5.5c-.23-.15-.3-.46-.15-.7.15-.22.46-.3.7-.14L12 13.4l8.23-5.32c.23-.15.54-.08.7.15.14.23.07.54-.16.7l-8.5 5.5c-.08.04-.17.07-.27.07zm8.93 1.75c-.1.16-.26.25-.43.25-.08 0-.17-.02-.25-.07l-3.5-2c-.24-.13-.32-.44-.18-.68s.44-.32.68-.18l3.5 2c.24.13.32.44.18.68z"/></svg></div>E-Mail</div>
+</a>
+
+<div id="comments" class="post-comment-count">
+  
+  <a class="btn btn-outline-secondary" href="/post/the-flask-mega-tutorial-part-xi-facelift#comments">26 comments</a>
+  
+</div>
+
+
+<div class="comments">
+  <ul>
+    
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/cdc865d56ffac36d73a963fa81b96f37?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#1</span> <span class="badge text-bg-warning">Anggoro Dhanumurti</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-06T01:23:07Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-06T01:23:07Z</span>
+  </p>
+  <div>
+    <p>is your website here based on microblog template?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#2</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-06T09:58:27Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-06T09:58:27Z</span>
+  </p>
+  <div>
+    <p>@Anggoro: No. I created microblog separately from this blog, they are not the same project.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/a57bb7e8a9d2a8f7893122a27e25a490?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#3</span> <span class="badge text-bg-warning">Andre</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-07T13:01:22Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-07T13:01:22Z</span>
+  </p>
+  <div>
+    <p>You're adding bootstrap directly to your templates. Which works of course, but did you consider bootstrap-flask [0] instead? You're probably aware of it, so I wonder what your reasons to not use it are.</p>
+<p>[0] <a href="https://bootstrap-flask.readthedocs.io/en/stable/" rel="nofollow">https://bootstrap-flask.readthedocs.io/en/stable/</a></p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#4</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-07T18:10:23Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-07T18:10:23Z</span>
+  </p>
+  <div>
+    <p>@Andre: Bootstrap-Flask is already behind, using Bootstrap 5.1. This is always going to be the case when you depend on a developer updating the Flask extension to add support for new versions of Bootstrap. I prefer to show you how to work with Bootstrap directly, and then you have full control of your upgrades. Basically a teaching you to fish instead of giving you the fish directly.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/a57bb7e8a9d2a8f7893122a27e25a490?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#5</span> <span class="badge text-bg-warning">Andre</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-10T05:32:00Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-10T05:32:00Z</span>
+  </p>
+  <div>
+    <p>5.1 is linked from their online docs, but they're actually up to date atm.<br>
+But anyway, what I'd like to avoid is to fiddle with jinja templates for bootstrap directly, as that can get rather messy.<br>
+Do you know of a nice set of such templates?<br>
+bootstrap-flask is just one option, but in the end it doesn't even have to be a flask extension.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#6</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-10T14:44:36Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-10T14:44:36Z</span>
+  </p>
+  <div>
+    <p>@Andre: Flask is not opinionated. If anything that I show in this tutorial is not something you like, you are more than welcome to use your own approach. I'm not trying to force anyone to follow what I do, my goal is to give you the basic knowledge so that you can then build a solution that works for you.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/a57bb7e8a9d2a8f7893122a27e25a490?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#7</span> <span class="badge text-bg-warning">Andre</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-10T16:16:11Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-10T16:16:11Z</span>
+  </p>
+  <div>
+    <p>Sorry, that probably came out wrong. The not-opinionated fact is what I like about flask. And the fact that I comment here really means that I like how you're writing about and teaching flask ;)</p>
+<p>I'm not actually convinced yet that bootstrap-flask is the right fit for what I'm tying to do (it's likely not now that I took a closer look). But similar to your bootstrap_wtf macros it abstracts away some of the messier parts one has to deal with. So I was merely trying to ask if you know about a ready to use set of jinja templates specifically for bootstrap to take that pain away.</p>
+<p>I any case, thanks alot for your work and time, much appreciated!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#8</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-10T16:26:04Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-10T16:26:04Z</span>
+  </p>
+  <div>
+    <p>@Andre: Any attempts to wrap Bootstrap that existed in the past got out of date pretty quickly, so I do not know of any projects that are current, except maybe Bootstrap-Flask, though it seemed it is already a bit out of date. For that reason I have decided to implement the smallest possible interface to render a form. The more you rely on dependencies that hardest it is to keep your project up to date. My approach is to try to limit dependencies to the strictly necessary.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/47d323a2a937fc829f832b5755f06591?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#9</span> <span class="badge text-bg-warning">TheBlack</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-30T18:24:13Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-30T18:24:13Z</span>
+  </p>
+  <div>
+    <p>Is there anything in further tutorial chapters relying on changes made in this chapter? I wondering if it is good idea to skip for now all bootstrap cosmetics and keep focus on learning backend, postponing all the job on beauty to the very end of this project.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#10</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-30T22:54:57Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-30T22:54:57Z</span>
+  </p>
+  <div>
+    <p>@TheBlack: up to you, really. All HTML improvements from now on are based on Bootstrap. You can just copy the HTML and keep going if you have no interest in learning this topic.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/e86fa0e13c457219a571783f4f6e6d9e?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#11</span> <span class="badge text-bg-warning">Ashish M</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-22T22:32:25Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-22T22:32:25Z</span>
+  </p>
+  <div>
+    <p>Due to gmail constraints, the email chapter was challenging to fully implement and test. </p>
+<p>I really appreciate how you provide the links for a "reset" at the start of every chapter! It is a huge help, and very thoughtful.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/6e6dc0876cf53d08df98795d7bf58abb?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#12</span> <span class="badge text-bg-warning">Evan S</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-25T07:21:04Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-25T07:21:04Z</span>
+  </p>
+  <div>
+    <p>Thank you greatly for the tutorial, it's layout and structure has been greatly intuitive, and I've started reaching that stage where I'm comfortable diverging in little way to make minute adjustments.</p>
+<p>In the interest of avoiding code repetition where possible, would be best practice to have a "_pagination.html" file that we can include in index.html, user.html, and any other potential sites the application might use it? It seemed intuitive to me to have that feature in a discrete location, especially if we're planning for the future and would like to easily adjust the pagination functionality/design.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#13</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-25T18:36:07Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-25T18:36:07Z</span>
+  </p>
+  <div>
+    <p>@Evan: Sure, creating a pagination partial template should be possible. I would probably do it as a Jinja macro, however, so that arguments can be passed. You'll probably want some level of customization, such as providing the text to show in the next/prev buttons.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/4bd444f7496e78a11c9b43b459f0d49a?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#14</span> <span class="badge text-bg-warning">Elizabeth</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-08-14T10:55:38Z" data-function="fromNow" data-refresh="0" style="display: none">2024-08-14T10:55:38Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel!!! I'm using your blog and github as a starting point for my project, thank you so much for creating them. Do you have any examples of Insert and Update forms inside a modal with bootstrap? And how can server-site validation be managed there? I'm having trouble collecting server-side error validation and displaying them in modal without redirecting the page. Best</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#15</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-08-14T14:19:55Z" data-function="fromNow" data-refresh="0" style="display: none">2024-08-14T14:19:55Z</span>
+  </p>
+  <div>
+    <p>@Elizabeth: updating a modal window with validation results is tricky, it can only be done through JavaScript. The server will have to post the form using an asynchronous request. You can still process the form through Flask-WTF, but the resulting list of validation errors will have to be returned to the client as a JSON response. The client will have to use JavaScript logic to insert the error messages in the proper places of the form.</p>
+<p>One "thinking outside of the box" option is to use my Turbo-Flask extension and the turbo.js library on the client, which basically convert all synchronous requests issued by the browser into asynchronous.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7b1a885f5a31babbae5ce6a942397b38?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#16</span> <span class="badge text-bg-warning">Sahaj</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-08-27T12:00:27Z" data-function="fromNow" data-refresh="0" style="display: none">2024-08-27T12:00:27Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel Thanks for updating the tutorial,<br>
+I am looking at chapter 11 Facelift in the github repo in bootstrap_wtf.html file.</p>
+<p>In macro quick_form you are passing a form field with autofocus and rendering field in form_field macro with 1 same class in all the fields,<br>
+I have a question here, what if I want to have different class for my fields some might use more than 1 class in some I just want to add my-2 <br>
+And how can I pass placeholder attribute in those fields?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#17</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-08-27T22:53:39Z" data-function="fromNow" data-refresh="0" style="display: none">2024-08-27T22:53:39Z</span>
+  </p>
+  <div>
+    <p>@Sahaj: the quick_form macro is a convenience macro that makes a lot of assumptions. If you need to render your fields in a different way, you can always use the render_field macro to render each field individually.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/79cec8cdba7564646dd3ec00f5587fd6?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#18</span> <span class="badge text-bg-warning">Ben</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-03-20T13:41:24Z" data-function="fromNow" data-refresh="0" style="display: none">2025-03-20T13:41:24Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, you mention a render_field macro in your previous answer. Where can I find that?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#19</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-03-20T15:02:53Z" data-function="fromNow" data-refresh="0" style="display: none">2025-03-20T15:02:53Z</span>
+  </p>
+  <div>
+    <p>@Ben: the macro is actually called <code>form_field</code>, made a mistake with the name. It is <a href="https://github.com/miguelgrinberg/microblog/blob/7076bcd61d93308b52bb756de4d4e559e39c6398/app/templates/bootstrap_wtf.html#L1" rel="nofollow">here</a>.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/4a0c0ebf61dd9437af7f1cdec79ef03f?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#20</span> <span class="badge text-bg-warning">Haroon</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-07-08T19:47:52Z" data-function="fromNow" data-refresh="0" style="display: none">2025-07-08T19:47:52Z</span>
+  </p>
+  <div>
+    <p>Hey Miguel, <br>
+I am currently learning flask, but don't know where I am going with career or even life. with the rise of Ai and everything. Please give me a career advise? what's the best option for someone who is already learning this python and flask. Also have a good background in mathematics.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#21</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-07-08T23:08:57Z" data-function="fromNow" data-refresh="0" style="display: none">2025-07-08T23:08:57Z</span>
+  </p>
+  <div>
+    <p>@Haroon: the options aren't there right now, unfortunately. It's not a great time to enter the industry, there are very few options for newcomers due to the (false) idea that AI can replace entry level software engineers. Unfortunately I don't have advise to provide other than waiting. At some point the AI bubble is going to pop, and hopefully after that we'll start to see more hiring.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/4a0c0ebf61dd9437af7f1cdec79ef03f?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#22</span> <span class="badge text-bg-warning">Haroon</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-07-14T15:37:37Z" data-function="fromNow" data-refresh="0" style="display: none">2025-07-14T15:37:37Z</span>
+  </p>
+  <div>
+    <p>{%- for field, errors in form.errors.items() %}<br>
+  {%- if form[field].widget.input_type == 'hidden' %}<br>
+      {%- for error in errors %}<br>
+        &lt;div class="invalid-feedback"&gt;{{ error }}&lt;/div&gt;<br>
+      {%- endfor %}<br>
+  {%- endif %}<br>
+{%- endfor %}</p>
+<p>why are we displaying errors of hidden fields ? e.g. why would we want to display to the user errors found in csrf_token.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/4a0c0ebf61dd9437af7f1cdec79ef03f?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#23</span> <span class="badge text-bg-warning">Haroon</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-07-14T15:46:54Z" data-function="fromNow" data-refresh="0" style="display: none">2025-07-14T15:46:54Z</span>
+  </p>
+  <div>
+    <p>why are all you forms action attribute empty ?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#24</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-07-14T18:43:55Z" data-function="fromNow" data-refresh="0" style="display: none">2025-07-14T18:43:55Z</span>
+  </p>
+  <div>
+    <p>@Haroon: it's really up to you, but failing silently is not a good idea. When the user sees the error message they'll report it and you'll know how to fix it at least.</p>
+<p>An empty action means that the form should be submitted to the same URL.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7037ddd66efb20d641fceb63bacec721?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#25</span> <span class="badge text-bg-warning">Pirity Tamás Gábor</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-03-07T10:01:37Z" data-function="fromNow" data-refresh="0" style="display: none">2026-03-07T10:01:37Z</span>
+  </p>
+  <div>
+    <p>Hello Miguel!</p>
+<p>I think I'm sucsessfully upgraded my old project.</p>
+<p>But one question:</p>
+<p>In 2016 version you used in base.html:</p>
+<p>(% extends "bootstrap/base.html" %}<br>
+and for example:<br>
+{% block title %}<br>
+....<br>
+{% endblock %}</p>
+<p>In 2024 version that base.html is totally  other, lookes like base.html  is ain almost html file, for example:<br>
+&lt;head&gt;<br>
+&lt;title&gt;<br>
+....<br>
+&lt;/title&gt;<br>
+&lt;/head&gt;</p>
+<p>Is there any reason to change, which one better, or it is a question of taste?</p>
+<p>Tom</p>
+  </div>
+</div>
+    </li>
+    
+  </ul>
+</div>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xi-facelift/page/1#comments">&laquo;&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xi-facelift/page/0#comments">&laquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xi-facelift/page/2#comments">&raquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xi-facelift/page/0#comments">&raquo;&raquo;</a></li>
+  </ul>
+</nav>
+
+
+
+<div id="comment-form">
+  <h3>Leave a Comment</h3>
+
+  
+  
+  
+
+  
+<form action="#comment-form" method="post">
+  <input id="url" name="url" type="hidden" value="">
+<input id="csrf_token" name="csrf_token" type="hidden" value="IjBhMTFlYmFlMmIzNjE4YzE1NzlmMDJhZGRkZDQ2ZWNhNDE4OWU1ZjUi.ajz8dg.PnXrl3y9Qb4NYmh3rohSnLvcQGM">
+    
+  <div class="mb-3">
+    <label class="form-label" for="name">Name</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="name" name="name" required type="text" value="">
+    </div>
+  </div>
+
+    
+    
+  <div class="mb-3">
+    <label class="form-label" for="email">Email</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="email" name="email" required type="text" value="">
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="comment">Comment</label>
+    <div class="input-group has-validation">
+      <textarea class="form-control" id="comment" name="comment" required>
+</textarea>
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="captcha">Captcha</label>
+    <div class="input-group has-validation">
+      
+<script src='https://www.google.com/recaptcha/api.js' async defer></script>
+<div class="g-recaptcha" data-sitekey="6Ld5Zs4SAAAAAOY0DOi4r18bgHlEaz41qAoRf__S"></div>
+
+    </div>
+  </div>
+
+    
+  <input class="btn btn-primary mb-3" id="submit" name="submit" type="submit" value="Submit">
+
+      
+</form>
+
+</div>
+
+
+</div>
+
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div id="sidebar">
+        
+          
+  
+
+
+
+<div class="card">
+  
+  
+  
+  
+  <div class="card-header">
+    <div class="row">
+      <div class="col">The Flask Mega-Tutorial</div>
+      <div class="col text-end">
+        <a href="/post/announcing-the-flask-mega-tutorial-2024-edition">
+          <h5 style="margin-bottom: 0px"><span class="badge text-bg-warning">2024 Edition!</span></h5>
+        </a>
+      </div>
+    </div>
+  </div>
+  <a class="card-book-cover" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">
+    <img src="/static/mega-tutorial-2024-small.png" alt="The New Flask Mega-Tutorial">
+  </a>
+  <div class="card-body">
+    <p class="card-text">If you would you like to support my work on my <a href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world">Flask Mega-Tutorial series</a> on this blog and as a reward have access to the complete tutorial in book format, you can now order it directly from my <a href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Courses</a> site or from <a href="https://amzn.to/3MQffrm">Amazon</a>.</p>
+  </div>
+  <div class="card-body">
+    <a class="card-link" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Click here to get this Book!</a><br />
+  </div>
+
+  
+</div>
+        
+        <div class="card">
+  <div class="card-header">About Miguel</div>
+  <div class="card-body">
+    <img style="float: right; margin: 0px 8px 8px 0px; padding: 4px; border: 1px solid #ccc;" src="/static/miguel.jpg" />
+    <p class="card-text">Welcome to my blog!</p>
+    <p class="card-text">I'm a software engineer and technical writer, currently living in Drogheda, Ireland.</p>
+    <p><u>Generative AI notice:</u> I do not use LLMs, agents or any other generative AI tools for help with writing, coding, image creation or any other tasks related to this blog or my open source work.</p>
+    <p class="card-text">You can also find me on
+      <a href="https://github.com/miguelgrinberg">Github</a>,
+      <a href="http://www.linkedin.com/in/miguelgrinberg">LinkedIn</a>,
+      <a href="https://bsky.app/profile/miguelgrinberg.com">Bluesky</a>,
+      <a href="https://mstdn.social/@miguelgrinberg">Mastodon</a>,
+      <a href="https://twitter.com/miguelgrinberg">Twitter</a>,
+      <a href="https://youtube.com/miguelgrinberg">YouTube</a>,
+      <!--<a href="https://www.facebook.com/miguelgrinbergblog">Facebook</a>,-->
+      <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy Me a Coffee</a>,
+      and <a href="https://patreon.com/miguelgrinberg">Patreon</a>.</p>
+    <p class="card-text">Thank you for visiting!</p>
+  </div>
+</div>
+        
+        <div class="card" id="categories">
+  <div class="card-header">Categories</div>
+  <div class="card-body">
+    
+    <div class="category">
+      <a href="/category/AI/feed"><img src="/static/rss-small.png" title="AI RSS Feed" label="AI RSS Feed" alt="AI RSS Feed" /></a>
+      <form action="/category/AI" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="AI" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Arduino/feed"><img src="/static/rss-small.png" title="Arduino RSS Feed" label="Arduino RSS Feed" alt="Arduino RSS Feed" /></a>
+      <form action="/category/Arduino" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Arduino" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Authentication/feed"><img src="/static/rss-small.png" title="Authentication RSS Feed" label="Authentication RSS Feed" alt="Authentication RSS Feed" /></a>
+      <form action="/category/Authentication" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Authentication" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Blog/feed"><img src="/static/rss-small.png" title="Blog RSS Feed" label="Blog RSS Feed" alt="Blog RSS Feed" /></a>
+      <form action="/category/Blog" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Blog" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/C++/feed"><img src="/static/rss-small.png" title="C++ RSS Feed" label="C++ RSS Feed" alt="C++ RSS Feed" /></a>
+      <form action="/category/C++" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="C++" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/CSS/feed"><img src="/static/rss-small.png" title="CSS RSS Feed" label="CSS RSS Feed" alt="CSS RSS Feed" /></a>
+      <form action="/category/CSS" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="CSS" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Cloud/feed"><img src="/static/rss-small.png" title="Cloud RSS Feed" label="Cloud RSS Feed" alt="Cloud RSS Feed" /></a>
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" /> <small><em>12</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Database/feed"><img src="/static/rss-small.png" title="Database RSS Feed" label="Database RSS Feed" alt="Database RSS Feed" /></a>
+      <form action="/category/Database" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Database" /> <small><em>33</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Docker/feed"><img src="/static/rss-small.png" title="Docker RSS Feed" label="Docker RSS Feed" alt="Docker RSS Feed" /></a>
+      <form action="/category/Docker" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Docker" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Filmmaking/feed"><img src="/static/rss-small.png" title="Filmmaking RSS Feed" label="Filmmaking RSS Feed" alt="Filmmaking RSS Feed" /></a>
+      <form action="/category/Filmmaking" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Filmmaking" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Flask/feed"><img src="/static/rss-small.png" title="Flask RSS Feed" label="Flask RSS Feed" alt="Flask RSS Feed" /></a>
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" /> <small><em>130</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Games/feed"><img src="/static/rss-small.png" title="Games RSS Feed" label="Games RSS Feed" alt="Games RSS Feed" /></a>
+      <form action="/category/Games" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Games" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Infra/feed"><img src="/static/rss-small.png" title="Infra RSS Feed" label="Infra RSS Feed" alt="Infra RSS Feed" /></a>
+      <form action="/category/Infra" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Infra" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/IoT/feed"><img src="/static/rss-small.png" title="IoT RSS Feed" label="IoT RSS Feed" alt="IoT RSS Feed" /></a>
+      <form action="/category/IoT" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="IoT" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/JavaScript/feed"><img src="/static/rss-small.png" title="JavaScript RSS Feed" label="JavaScript RSS Feed" alt="JavaScript RSS Feed" /></a>
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" /> <small><em>37</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/MicroPython/feed"><img src="/static/rss-small.png" title="MicroPython RSS Feed" label="MicroPython RSS Feed" alt="MicroPython RSS Feed" /></a>
+      <form action="/category/MicroPython" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="MicroPython" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microdot/feed"><img src="/static/rss-small.png" title="Microdot RSS Feed" label="Microdot RSS Feed" alt="Microdot RSS Feed" /></a>
+      <form action="/category/Microdot" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microdot" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microservices/feed"><img src="/static/rss-small.png" title="Microservices RSS Feed" label="Microservices RSS Feed" alt="Microservices RSS Feed" /></a>
+      <form action="/category/Microservices" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microservices" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Movie Reviews/feed"><img src="/static/rss-small.png" title="Movie Reviews RSS Feed" label="Movie Reviews RSS Feed" alt="Movie Reviews RSS Feed" /></a>
+      <form action="/category/Movie%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Movie Reviews" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Personal/feed"><img src="/static/rss-small.png" title="Personal RSS Feed" label="Personal RSS Feed" alt="Personal RSS Feed" /></a>
+      <form action="/category/Personal" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Personal" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Photography/feed"><img src="/static/rss-small.png" title="Photography RSS Feed" label="Photography RSS Feed" alt="Photography RSS Feed" /></a>
+      <form action="/category/Photography" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Photography" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Product Reviews/feed"><img src="/static/rss-small.png" title="Product Reviews RSS Feed" label="Product Reviews RSS Feed" alt="Product Reviews RSS Feed" /></a>
+      <form action="/category/Product%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Product Reviews" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Programming/feed"><img src="/static/rss-small.png" title="Programming RSS Feed" label="Programming RSS Feed" alt="Programming RSS Feed" /></a>
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" /> <small><em>198</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Project Management/feed"><img src="/static/rss-small.png" title="Project Management RSS Feed" label="Project Management RSS Feed" alt="Project Management RSS Feed" /></a>
+      <form action="/category/Project%20Management" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Project Management" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Python/feed"><img src="/static/rss-small.png" title="Python RSS Feed" label="Python RSS Feed" alt="Python RSS Feed" /></a>
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" /> <small><em>187</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/REST/feed"><img src="/static/rss-small.png" title="REST RSS Feed" label="REST RSS Feed" alt="REST RSS Feed" /></a>
+      <form action="/category/REST" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="REST" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Raspberry Pi/feed"><img src="/static/rss-small.png" title="Raspberry Pi RSS Feed" label="Raspberry Pi RSS Feed" alt="Raspberry Pi RSS Feed" /></a>
+      <form action="/category/Raspberry%20Pi" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Raspberry Pi" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/React/feed"><img src="/static/rss-small.png" title="React RSS Feed" label="React RSS Feed" alt="React RSS Feed" /></a>
+      <form action="/category/React" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="React" /> <small><em>19</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Reviews/feed"><img src="/static/rss-small.png" title="Reviews RSS Feed" label="Reviews RSS Feed" alt="Reviews RSS Feed" /></a>
+      <form action="/category/Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Reviews" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Robotics/feed"><img src="/static/rss-small.png" title="Robotics RSS Feed" label="Robotics RSS Feed" alt="Robotics RSS Feed" /></a>
+      <form action="/category/Robotics" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Robotics" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Security/feed"><img src="/static/rss-small.png" title="Security RSS Feed" label="Security RSS Feed" alt="Security RSS Feed" /></a>
+      <form action="/category/Security" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Security" /> <small><em>14</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Video/feed"><img src="/static/rss-small.png" title="Video RSS Feed" label="Video RSS Feed" alt="Video RSS Feed" /></a>
+      <form action="/category/Video" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Video" /> <small><em>22</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/WebSocket/feed"><img src="/static/rss-small.png" title="WebSocket RSS Feed" label="WebSocket RSS Feed" alt="WebSocket RSS Feed" /></a>
+      <form action="/category/WebSocket" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="WebSocket" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Webcast/feed"><img src="/static/rss-small.png" title="Webcast RSS Feed" label="Webcast RSS Feed" alt="Webcast RSS Feed" /></a>
+      <form action="/category/Webcast" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Webcast" /> <small><em>3</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Windows/feed"><img src="/static/rss-small.png" title="Windows RSS Feed" label="Windows RSS Feed" alt="Windows RSS Feed" /></a>
+      <form action="/category/Windows" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Windows" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+  </div>
+</div>
+        
+      </div>
+    </div>
+    
+  </div>
+  <div id="footer">
+    
+    <p>&copy; 2012-<script type="text/javascript">document.write(new Date().getFullYear());</script> by Miguel Grinberg. All rights reserved. <a href="mailto:webmaster _at_ miguelgrinberg _dot_ com">Questions?</a></p>
+  </div>
+</div>
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="/static/prettify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js" integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg==" crossorigin="anonymous"></script>
+
+<script>
+moment.locale("en");
+function flask_moment_render(elem) {{
+    const timestamp = moment(elem.dataset.timestamp);
+    const func = elem.dataset.function;
+    const format = elem.dataset.format;
+    const timestamp2 = elem.dataset.timestamp2;
+    const no_suffix = elem.dataset.nosuffix;
+    const units = elem.dataset.units;
+    let args = [];
+    if (format)
+        args.push(format);
+    if (timestamp2)
+        args.push(moment(timestamp2));
+    if (no_suffix)
+        args.push(no_suffix);
+    if (units)
+        args.push(units);
+    elem.textContent = timestamp[func].apply(timestamp, args);
+    elem.classList.remove('flask-moment');
+    elem.style.display = "";
+}}
+function flask_moment_render_all() {{
+    const moments = document.querySelectorAll('.flask-moment');
+    moments.forEach(function(moment) {{
+        flask_moment_render(moment);
+        const refresh = moment.dataset.refresh;
+        if (refresh && refresh > 0) {{
+            (function(elem, interval) {{
+                setInterval(function() {{
+                    flask_moment_render(elem);
+                }}, interval);
+            }})(moment, refresh);
+        }}
+    }})
+}}
+document.addEventListener("DOMContentLoaded", flask_moment_render_all);
+</script>
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-20EHZP9GRZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-20EHZP9GRZ');
+  </script>
+  
+  <script type="text/javascript">
+    function setThemeUI() {
+      document.getElementById('select-theme-auto').classList.remove('active');
+      document.getElementById('select-theme-light').classList.remove('active');
+      document.getElementById('select-theme-dark').classList.remove('active');
+      const theme = getPreferredTheme();
+      const actualTheme = document.documentElement.getAttribute('data-bs-theme', 'light');
+      document.getElementById('select-theme-' + theme).classList.add('active');
+      document.getElementById('current-theme').href.baseVal = `#icon-theme-${actualTheme}`;
+    };
+
+    function updateTheme(theme) {
+      if (theme === 'auto') {
+        localStorage.removeItem('theme')
+      }
+      else {
+        localStorage.setItem('theme', theme)
+      }
+      setTheme(getPreferredTheme());
+    }
+
+    setThemeUI();
+
+    const darkModePreference = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModePreference.addEventListener("change", e => {
+      if (getPreferredTheme() === 'auto') {
+        setTheme('auto');
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // add prettyprint class to all <pre><code></code></pre> blocks
+      let prettify = false;
+      document.querySelectorAll('div.post-body pre code').forEach((code) => {
+        code.parentNode.classList.add('prettyprint');
+        prettify = true;
+      });
+      prettyPrint();
+    });
+  </script>
+
+  </body>
+</html>

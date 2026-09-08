@@ -1,0 +1,1527 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    
+  <script type="text/javascript">
+    function getPreferredTheme() {
+      const storedTheme = localStorage.getItem('theme')
+      if (storedTheme) {
+        return storedTheme
+      }
+      return 'auto';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    };
+
+    setTheme(getPreferredTheme());
+  </script>
+  
+    <title>
+  
+    The Flask Mega-Tutorial, Part XVII: Deployment on Linux - miguelgrinberg.com
+  
+</title>
+  
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="miguelgrinberg.com">
+  <meta name="copyright" content="Copyright (c) 2012-2024 Miguel Grinberg">
+  <meta name="author" content="Miguel Grinberg">
+  
+  
+  <link rel="canonical" href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">
+  
+
+  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+
+  <link href="/static/tomorrow.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/tomorrow-night.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/social.css" rel="stylesheet" type="text/css" />
+  <link href="/static/style_20260305.css" rel="stylesheet" type="text/css" />
+
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  <link rel="alternate" type="application/rss+xml" href="/feed" title="miguelgrinberg.com RSS feed">
+
+    <meta property="og:title" content="The Flask Mega-Tutorial, Part XVII: Deployment on Linux">
+    <meta property="og:description" content="This is the seventeenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to deploy Microblog to a Linux server.You are reading the 2024 edition of the Flask Mega-Tutorial. The…">
+    <meta property="og:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xvii-deployment-on-linux.jpg">
+    <meta property="og:url" content="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">
+    <meta name="twitter:title" content="The Flask Mega-Tutorial, Part XVII: Deployment on Linux">
+    <meta name="twitter:description" content="This is the seventeenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to deploy Microblog to a Linux server.You are reading the 2024 edition of the Flask Mega-Tutorial. The…">
+    <meta name="twitter:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xvii-deployment-on-linux.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@miguelgrinberg">
+
+  </head>
+  <body>
+    <svg style="display: none" version="2.0">
+      <defs>
+        <symbol id="icon-theme-auto" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-circle-half" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/>
+        </symbol>
+        <symbol id="icon-theme-light" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </symbol>
+        <symbol id="icon-theme-dark" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-moon-stars-fill" viewBox="0 0 16 16">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+        </symbol>
+      </defs>
+    </svg>
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/index">miguelgrinberg.com</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/index">Home</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/my-courses-and-books">My Courses and Books</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/hire-me">Consulting</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/about-me">About Me</a></li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <svg width="20" height="20" version="2.0"><use id="current-theme" href="#icon-theme-light"></svg>
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a id="select-theme-light" class="dropdown-item" href="javascript:updateTheme('light'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-light"></svg>&nbsp; Light Mode
+              </a>
+            </li>
+            <li>
+              <a id="select-theme-dark" class="dropdown-item" href="javascript:updateTheme('dark'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-dark"></svg>&nbsp; Dark Mode
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a id="select-theme-auto" class="dropdown-item" href="javascript:updateTheme('auto'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-auto"></svg>&nbsp; System Default
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item social-icons">
+          <a href="http://github.com/miguelgrinberg"><img src="/static/social/github.png" alt="GitHub" title="GitHub" /></a>
+          <a href="http://www.linkedin.com/in/miguelgrinberg"><img src="/static/social/linkedin.png" alt="LinkedIn" title="LinkedIn" /></a>
+          <a href="https://bsky.app/profile/miguelgrinberg.com"><img src="/static/social/bluesky.png" alt="Bluesky" title="Bluesky" /></a>
+          <a rel="me" href="https://mstdn.social/@miguelgrinberg"><img src="/static/social/mastodon.png" alt="Mastodon" title="Mastodon" /></a>
+          <a href="https://twitter.com/miguelgrinberg"><img src="/static/social/twitter.png" alt="Twitter" title="Twitter" /></a>
+          <a href="https://youtube.com/miguelgrinberg"><img src="/static/social/youtube.png" alt="YouTube" title="YouTube" /></a>
+          <a href="https://www.buymeacoffee.com/miguelgrinberg"><img src="/static/social/buymeacoffee.png" alt="Buy Me a Coffee" title="Buy Me a Coffee" /></a>
+          <a href="https://patreon.com/miguelgrinberg"><img src="/static/social/patreon.png" alt="Patreon" title="Patreon" /></a>
+          <a type="application/rss+xml" href="/feed"><img src="/static/social/rss.png" alt="RSS Feed" title="RSS Feed" /></a>
+          <!--<a href="https://www.facebook.com/miguelgrinbergblog"><img src="/static/social/facebook.png" alt="Facebook" title="Facebook" /></a>-->
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <div id="main">
+        
+        
+        
+        
+        
+
+<div class="post">
+
+<div class="post-header">
+  <h1><a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">The Flask Mega-Tutorial, Part XVII: Deployment on Linux</a></h1>
+  <h2>
+    Posted by
+    <form action="/author/Miguel%20Grinberg" method="POST">
+      <input type="submit" class="btn btn-danger btn-sm" value="Miguel Grinberg" />
+    </form>
+    on
+    <button class="btn btn-secondary btn-sm" disabled><span class="flask-moment" data-timestamp="2023-12-03T10:40:20Z" data-function="format" data-format="LL" data-refresh="0" style="display: none">2023-12-03T10:40:20Z</span></button>
+    under
+    
+      <form action="/category/Raspberry%20Pi" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Raspberry Pi" />
+      </form>
+    
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" />
+      </form>
+    
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" />
+      </form>
+    
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" />
+      </form>
+    
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" />
+      </form>
+    
+    
+  </h2>
+</div>
+<div class="post-body"><p>This is the seventeenth installment of the Flask Mega-Tutorial series, in which I'm going to deploy Microblog to a Linux server.</p>
+<p>You are reading the 2024 edition of the Flask Mega-Tutorial. The complete course is also available to order in e-book and paperback formats from <a href="https://amzn.to/3ahVnPN">Amazon</a>. Thank you for your support!</p>
+<p>If you are looking for the 2018 edition of this course, you can find it <a href="/post/the-flask-mega-tutorial-part-i-hello-world-2018">here</a>.</p>
+<p>For your reference, here is the complete list of articles in this series:</p>
+<ul>
+<li><a href="/post/the-flask-mega-tutorial-part-i-hello-world">Chapter 1:  Hello, World!</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ii-templates">Chapter 2:  Templates</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iii-web-forms">Chapter 3:  Web Forms</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iv-database">Chapter 4:  Database</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5:  User Logins</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vi-profile-page-and-avatars">Chapter 6:  Profile Page and Avatars</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7:  Error Handling</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-viii-followers">Chapter 8:  Followers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ix-pagination">Chapter 9:  Pagination</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-x-email-support">Chapter 10:  Email Support</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xi-facelift">Chapter 11:  Facelift</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xii-dates-and-times">Chapter 12:  Dates and Times</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiii-i18n-and-l10n">Chapter 13:  I18n and L10n</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiv-ajax">Chapter 14:  Ajax</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15:  A Better Application Structure</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16:  Full-Text Search</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17:  Deployment on Linux</a> (this article)</li>
+<li><a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18:  Deployment on Heroku</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">Chapter 19:  Deployment on Docker Containers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">Chapter 20:  Some JavaScript Magic</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21:  User Notifications</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">Chapter 22:  Background Jobs</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">Chapter 23:  Application Programming Interfaces (APIs)</a></li>
+</ul>
+<p>In this chapter I'm reaching a milestone in the life of my Microblog application, as I'm going to discuss ways in which the application can be deployed on a production server so that it is accessible to real users.</p>
+<p>The topic of deployment is extensive, and for that reason it is impossible to cover all the possible options here. This chapter is dedicated to explore traditional hosting options, and as subjects I'm going to use a dedicated Linux server running Ubuntu, and also the widely popular Raspberry Pi mini-computer. I will cover other options such as cloud and container deployments in later chapters.</p>
+<p><em>The GitHub links for this chapter are: <a href="https://github.com/miguelgrinberg/microblog/tree/v0.17">Browse</a>, <a href="https://github.com/miguelgrinberg/microblog/archive/v0.17.zip">Zip</a>, <a href="https://github.com/miguelgrinberg/microblog/compare/v0.16...v0.17">Diff</a>.</em></p>
+<h2>Traditional Hosting</h2>
+<p>When I refer to "traditional hosting", what I mean is that the application is installed manually or through a scripted installer on a stock server machine. The process involves installing the application, its dependencies and a production scale web server and configure the system so that it is secure.</p>
+<p>The first question you need to ask when you are about to deploy your own project is where to find a server. These days there are many economic hosting services. For example, for $5 per month, <a href="https://www.digitalocean.com/">Digital Ocean</a>, <a href="https://www.linode.com/">Linode</a>, or <a href="https://amazonlightsail.com/">Amazon Lightsail</a> will rent you a virtualized Linux server in which to run your deployment experiments (Linode and Digital Ocean provision their entry level servers with 1GB of RAM, while Amazon provides only 512MB). If you prefer to practice deployments without spending any money, then <a href="https://www.vagrantup.com/">Vagrant</a> and <a href="https://www.virtualbox.org/">VirtualBox</a> are two tools that combined allow you to create a virtual server similar to the paid ones on your own computer.</p>
+<p>As far as operating system choices, from a technical point of view, this application can be deployed on any of the major operating systems, a list which includes a large variety of open-source Linux and BSD distributions, and the commercial macOS and Microsoft Windows (macOS is a hybrid open-source/commercial option as it is based on Darwin, an open-source BSD derivative).</p>
+<p>Since macOS and Windows are desktop operating systems that are not optimized to work as servers, I'm going to discard those as candidates. The choice between a Linux or a BSD operating system is largely based on preference, so I'm going to pick the most popular of the two, which is Linux. As far as Linux distributions, once again I'm going to choose by popularity and go with Ubuntu.</p>
+<h2>Creating an Ubuntu Server</h2>
+<p>If you are interested in doing this deployment along with me, you obviously need a server to work on. I'm going to recommend two options for you to acquire a server, one paid and one free. If you are willing to spend a bit of money, you can get an account at Digital Ocean, Linode or Amazon Lightsail and create an Ubuntu virtual server with the current long-term support (LTS) release, which is 22.04 at the time I'm writing this. You should use the smallest server option, the one that costs around $5 per month. The cost is prorated to the number of hours that you have the server up, so if you create the server, play with it for a few hours and then delete it, you would be paying just cents.</p>
+<p>The free alternative is based on a virtual machine that you can run on your own computer. To use this option, install <a href="https://www.vagrantup.com/">Vagrant</a> and <a href="https://www.virtualbox.org/">VirtualBox</a> on your machine, and then create a file named <em>Vagrantfile</em> to describe the specs of your VM with the following contents:</p>
+<p class="code_title"><em>Vagrantfile</em>: Vagrant configuration.</p>
+
+<pre><code class="language-ruby">Vagrant.configure(&quot;2&quot;) do |config|
+  config.vm.box = &quot;ubuntu/jammy64&quot;
+  config.vm.network &quot;private_network&quot;, ip: &quot;192.168.56.10&quot;
+  config.vm.provider &quot;virtualbox&quot; do |vb|
+    vb.memory = &quot;2048&quot;
+  end
+end
+</code></pre>
+<p>This file configures a Ubuntu 22.04 server with 2GB of RAM, which you will be able to access from the host computer at IP address 192.168.56.10. To create the server, run the following command:</p>
+<pre><code>$ vagrant up
+</code></pre>
+<p>Consult the Vagrant <a href="https://www.vagrantup.com/docs/cli/">command-line documentation</a> to learn about other options to manage your virtual server.</p>
+<h2>Using an SSH Client</h2>
+<p>Your server is headless, so you are not going to have a desktop on it like you have on your own computer. You are going to connect to your server through a SSH client and work on it through the command-line. If you are using Linux or Mac OS X, you likely have <a href="http://www.openssh.org/">OpenSSH</a> already installed. If you are using Microsoft Windows, <a href="https://www.cygwin.com/">Cygwin</a>, <a href="https://git-scm.com/">Git</a>, and the <a href="https://msdn.microsoft.com/en-us/commandline/wsl/about">Windows Subsystem for Linux</a> provide OpenSSH, so you can install any of these options.</p>
+<p>When using a virtual server from a third-party provider, you were given an IP address for it. You can open a terminal session with your brand-new server with the following command:</p>
+<pre><code>$ ssh root@&lt;server-ip-address&gt;
+</code></pre>
+<p>You will be prompted to enter a password. Depending on the service, the password may have been automatically generated and shown to you after you created the server, or you may have given the option to choose your own password.</p>
+<p>If you are using a Vagrant VM, you can open a terminal session using the command:</p>
+<pre><code>$ vagrant ssh
+</code></pre>
+<p>If you are using Windows and have a Vagrant VM, note that you will need to run the above command from a shell that can invoke the <code>ssh</code> command from OpenSSH.</p>
+<h2>Password-less Logins</h2>
+<p>If you are using a Vagrant VM, you can skip this section, since your VM is properly configured to use a non-root account named <code>vagrant</code> or <code>ubuntu</code>, without password automatically by Vagrant.</p>
+<p>When using a virtual server, it is recommended that you create a regular user account to do your deployment work, and configure this account to log you in without using a password, which at first may seem like a bad idea, but you'll see that it is not only more convenient but also more secure.</p>
+<p>I'm going to create a user account named <code>ubuntu</code> (you can use a different name if you prefer). To create this user account, log in to your server's root account using the <code>ssh</code> instructions from the previous section, and then type the following commands to create the user, give it <code>sudo</code> powers, and finally switch to it:</p>
+<pre><code>$ adduser --gecos &quot;&quot; ubuntu
+$ usermod -aG sudo ubuntu
+$ su ubuntu
+</code></pre>
+<p>Now I'm going to configure this new <code>ubuntu</code> account to use <a href="http://en.wikipedia.org/wiki/Public-key_cryptography">public key</a> authentication so that you can log in without having to type a password.</p>
+<p>Leave the terminal session you have open on your server for a moment, and start a second terminal on your local machine. If you are using Windows, this needs to be the terminal from where you have access to the <code>ssh</code> command, so it will probably be a <code>bash</code> or similar prompt and not a native Windows terminal. In that terminal session, check the contents of the <em>~/.ssh</em> directory:</p>
+<pre><code>$ ls ~/.ssh
+id_rsa  id_rsa.pub
+</code></pre>
+<p>If the directory listing shows files named <em>id_rsa</em> and <em>id_rsa.pub</em> like above, then you already have a key. If you don't have these two files, or if you don't have the <em>~/.ssh</em> directory at all, then you need to create your SSH keypair by running the following command, also part of the OpenSSH toolset:</p>
+<pre><code>$ ssh-keygen
+</code></pre>
+<p>This application will prompt you to enter a few things, for which I recommend you accept the defaults by pressing Enter on all the prompts. If you know what you are doing and want to do otherwise, you certainly can.</p>
+<p>After this command runs, you should have the two files listed above. The file <em>id_rsa.pub</em> is your <em>public key</em>, which is a file that you will provide to third parties as a way to identify you. The <em>id_rsa</em> file is your <em>private key</em>, which should not be shared with anyone.</p>
+<p>You now need to configure your public key as an <em>authorized host</em> in your server. On the terminal that you opened on your own computer, print your public key to the screen:</p>
+<pre><code>$ cat ~/.ssh/id_rsa.pub
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCjw....F8Xv4f/0+7WT miguel@miguelspc
+</code></pre>
+<p>This is going to be a very long sequence of characters, possibly spanning multiple lines. You need to copy this data to the clipboard, and then switch back to the terminal on your remote server, where you will issue these commands to store the public key:</p>
+<pre><code>$ echo &lt;paste-your-key-here&gt; &gt;&gt; ~/.ssh/authorized_keys
+$ chmod 600 ~/.ssh/authorized_keys
+</code></pre>
+<p>The password-less login should now be working. The idea is that <code>ssh</code> on your machine will identify itself to the server by performing a cryptographic operation that requires the private key. The server then verifies that the operation is valid using your public key.</p>
+<p>You can now log out of your <code>ubuntu</code> session, and then from your <code>root</code> session, and then try to log in directly to the <code>ubuntu</code> account with:</p>
+<pre><code>$ ssh ubuntu@&lt;server-ip-address&gt;
+</code></pre>
+<p>This time you should not have to enter a password!</p>
+<h2>Securing Your Server</h2>
+<p>To minimize the risk of your server being compromised, there are a few steps that you can take, directed at closing a number of potential doors through which an attacker may gain access.</p>
+<p>The first change I'm going to make is to disable root logins via SSH. You now have password-less access into the <code>ubuntu</code> account, and you can run administrator commands from this account via <code>sudo</code>, so there is really no need to expose the root account. To disable root logins, you need to edit the <em>/etc/ssh/sshd_config</em> file on your server. You probably have the <code>vi</code> and <code>nano</code> text editors installed in your server that you can use to edit files (if you are not familiar with either one, try <code>nano</code> first). You will need to prefix your editor with <code>sudo</code>, because the SSH configuration is not accessible to regular users (i.e. <code>sudo vi /etc/ssh/sshd_config</code>). You need to change a single line in this file:</p>
+<p class="code_title"><em>/etc/ssh/sshd_config</em>: Disable root logins.</p>
+
+<pre><code>PermitRootLogin no
+</code></pre>
+<p>Note that to make this change you need to locate the line that starts with <code>PermitRootLogin</code> and change the value, whatever that might be in your server, to <code>no</code>.</p>
+<p>The next change is in the same file. Now I'm going to disable password logins for all accounts. You have a password-less login set up, so there is no need to allow passwords at all. If you feel nervous about disabling passwords altogether you can skip this change, but for a production server it is a good idea, since attackers are constantly trying random account names and passwords on all servers hoping to get lucky. To disable password logins, change the following line in <em>/etc/ssh/sshd_config</em>:</p>
+<p class="code_title"><em>/etc/ssh/sshd_config</em>: Disable password logins.</p>
+
+<pre><code>PasswordAuthentication no
+</code></pre>
+<p>After you are done editing the SSH configuration, the service needs to be restarted for the changes to take effect:</p>
+<pre><code>$ sudo service ssh restart
+</code></pre>
+<p>The third change I'm going to make is to install a <em>firewall</em>. This is a software that blocks accesses to the server on any ports that are not explicitly enabled:</p>
+<pre><code>$ sudo apt-get install -y ufw
+$ sudo ufw allow ssh
+$ sudo ufw allow http
+$ sudo ufw allow 443/tcp
+$ sudo ufw --force enable
+$ sudo ufw status
+</code></pre>
+<p>These commands install <a href="https://wiki.ubuntu.com/UncomplicatedFirewall">ufw</a>, the Uncomplicated Firewall, and configure it to only allow external traffic on port 22 (ssh), 80 (http) and 443 (https). Any other ports will not be allowed.</p>
+<h2>Installing Base Dependencies</h2>
+<p>If you followed my advice and provisioned your server with the Ubuntu 20.04 release, then you have a system that comes with full support for Python 3.8, so this is the release that I'm going to use for the deployment.</p>
+<p>The base Python interpreter is probably pre-installed on your server, but there are some extra packages that are likely not, and there are also a few other packages outside of Python that are going to be useful in creating a robust, production-ready deployment. For a database server, I'm going to switch from SQLite to MySQL. The postfix package is a mail transfer agent that I will use to send out emails. The supervisor tool will monitor the Flask server process and automatically restart it if it ever crashes, or also if the server is rebooted. The nginx server is going to accept all requests that come from the outside world, and forward them to the application. Finally, I'm going to use git as my tool of choice to download the application directly from its git repository.</p>
+<pre><code>$ sudo apt-get -y update
+$ sudo apt-get -y install python3 python3-venv python3-dev
+$ sudo apt-get -y install mysql-server postfix supervisor nginx git
+</code></pre>
+<p>These installations run mostly unattended. Depending on the Ubuntu version you are installing, you may get a prompt asking for services to restart, which you can accept with the default selections. While you run the third install statement you will be asked a couple of questions regarding the installation of the postfix package which you can also accept with their default answers.</p>
+<p>Note that for this deployment I'm choosing not to install Elasticsearch. This service requires a large amount of RAM, so it is only viable if you have a large server with more than 2GB of RAM. To avoid problems with the server running out of memory I will leave the search functionality out. If you have a big enough server, you can download the official .deb package from the <a href="https://elastic.co">Elasticsearch site</a> and follow their installation instructions to add it to your server.</p>
+<p>I should also note that the default installation of postfix is likely insufficient for sending email in a production environment. To avoid spam and malicious emails, many servers require the sender server to identify itself through security extensions, which means at the very least you have to have a domain name associated with your server. If you want to learn how to fully configure an email server so that it passes standard security tests, see the following Digital Ocean guides:</p>
+<ul>
+<li><a href="http://bit.ly/3Rpa4n3">Postfix Configuration</a></li>
+<li><a href="http://do.co/2Ff8ksk">Adding an SPF Record</a></li>
+<li><a href="http://do.co/2HW2oTD">DKIM Installation and Configuration</a></li>
+</ul>
+<h2>Installing the Application</h2>
+<p>Now I'm going to use <code>git</code> to download the Microblog source code from my GitHub repository. I recommend that you read <a href="http://ryanflorence.com/git-for-beginners/">git for beginners</a> if you are not familiar with git source control.</p>
+<p>To download the application to the server, make sure you are in the <code>ubuntu</code> user's home directory and then run:</p>
+<pre><code>$ git clone https://github.com/miguelgrinberg/microblog
+$ cd microblog
+$ git checkout v0.17
+</code></pre>
+<p>This installs the code on your server, and syncs it to this chapter. If you are keeping your version of this tutorial's code on your own git repository, you can change the repository URL to yours, and in that case you can skip the <code>git checkout</code> command.</p>
+<p>Now I need to create a virtual environment and populate it with all the package dependencies, which I conveniently saved to the <em>requirements.txt</em> file in <a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15</a>:</p>
+<pre><code>$ python3 -m venv venv
+$ source venv/bin/activate
+(venv) $ pip install -r requirements.txt
+</code></pre>
+<p>In addition to the common requirements in <em>requirements.txt</em>, I'm going to use three packages that are specific to this production deployment, so they are not included in the common requirements file. The <code>gunicorn</code> package is a production web server for Python applications. The <code>pymysql</code> package contains the MySQL driver that enables SQLAlchemy to work with MySQL databases. The <code>cryptography</code> package is used by <code>pymsql</code> to authenticate against the MySQL database server.</p>
+<pre><code>(venv) $ pip install gunicorn pymysql cryptography
+</code></pre>
+<p>I need to create a <em>.env</em> file, with all the needed environment variables:</p>
+<p class="code_title"><em>/home/ubuntu/microblog/.env</em>: Environment configuration.</p>
+
+<pre><code>SECRET_KEY=52cb883e323b48d78a0a36e8e951ba4a
+MAIL_SERVER=localhost
+MAIL_PORT=25
+DATABASE_URL=mysql+pymysql://microblog:&lt;db-password&gt;@localhost:3306/microblog
+MS_TRANSLATOR_KEY=&lt;your-translator-key-here&gt;
+</code></pre>
+<p>This <em>.env</em> file is mostly similar to the example I shown in <a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15</a>, but I have used a random string for <code>SECRET_KEY</code>. You should generate your own secret key here. You can use the following command:</p>
+<pre><code>python3 -c &quot;import uuid; print(uuid.uuid4().hex)&quot;
+</code></pre>
+<p>For the <code>DATABASE_URL</code> variable I defined a MySQL URL. I will show you how to configure the database in the next section.</p>
+<p>I need to set the <code>FLASK_APP</code> environment variable to the entry point of the application to enable the <code>flask</code> command to work. If you do not have a <em>.flaskenv</em> file in your project's repository, then it is time to add one. You can confirm that the <code>FLASK_APP</code> variable is configured by running <code>flask --help</code>. If the help message shows the <code>translate</code> command added by the application, then you know the application was found.</p>
+<p>And now that the <code>flask</code> command is functional, I can compile the language translations:</p>
+<pre><code>(venv) $ flask translate compile
+</code></pre>
+<h2>Setting Up MySQL</h2>
+<p>The SQLite database that I've used during development is great for simple applications, but when deploying a full-blown web server that can potentially need to handle multiple requests at a time, it is better to use a more robust database. For that reason I'm going to set up a MySQL database that I will call <code>microblog</code>.</p>
+<p>To manage the database server I'm going to use the <code>mysql</code> command, which should be already installed on your server:</p>
+<pre><code>$ sudo mysql -u root
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 8
+Server version: 8.0.25-0ubuntu0.20.04.1 (Ubuntu)
+
+Copyright (c) 2000, 2021, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql&gt;
+</code></pre>
+<p>Note that you will need to use <code>sudo</code> to access the MySQL root user from the administrator account.</p>
+<p>These are the commands that create a new database called <code>microblog</code>, and a user with the same name that has full access to it:</p>
+<pre><code>mysql&gt; create database microblog character set utf8 collate utf8_bin;
+mysql&gt; create user 'microblog'@'localhost' identified by '&lt;db-password&gt;';
+mysql&gt; grant all privileges on microblog.* to 'microblog'@'localhost';
+mysql&gt; flush privileges;
+mysql&gt; quit;
+</code></pre>
+<p>You will need to replace <code>&lt;db-password&gt;</code> with a password of your choice. The password that you select here needs to match the password that you included in the <code>DATABASE_URL</code> variable in the <em>.env</em> file.</p>
+<p>If your database configuration is correct, you should now be able to run the database migrations that create all the tables:</p>
+<pre><code>(venv) $ flask db upgrade
+</code></pre>
+<p>Make sure the above command completes without producing any errors before you continue.</p>
+<h2>Setting Up Gunicorn and Supervisor</h2>
+<p>When you run the server with <code>flask run</code>, you are using a web server that comes with Flask. This server is very useful during development, but it isn't a good choice to use for a production server because it wasn't built with performance and robustness in mind. Instead of the Flask development server, for this deployment I decided to use <a href="http://gunicorn.org/">Gunicorn</a>, which is also a pure Python web server, but unlike Flask's, it is a robust production server that is used by a lot of people, while at the same time being very easy to configure.</p>
+<p>To start Microblog under Gunicorn you can use the following command:</p>
+<pre><code>(venv) $ gunicorn -b localhost:8000 -w 4 microblog:app
+</code></pre>
+<p>The <code>-b</code> option tells Gunicorn where to listen for requests, which I set to the internal network interface at port 8000. It is usually a good idea to run Python web applications without external access, and then have a very fast web server that is optimized to serve static files accepting all requests from clients. This fast web server will serve static files directly, and forward any requests intended for the application to the internal server. I will show you how to set up nginx as the public facing server in the next section.</p>
+<p>The <code>-w</code> option configures how many <em>workers</em> Gunicorn will run. Having four workers allows the application to handle up to four clients concurrently, which for a web application is usually enough to handle a decent amount of clients, since not all of them are constantly requesting content. Depending on the amount of RAM your server has, you may need to adjust the number of workers so that you don't run out of memory.</p>
+<p>The <code>microblog:app</code> argument tells Gunicorn how to load the application instance. The name before the colon is the module that contains the application, which for this application is <em>microblog.py</em>. The name after the colon is the name of the application instance.</p>
+<p>While Gunicorn is very simple to set up, running the server from the command-line is actually not a good solution for a production server. What I want to do is have the server running in the background, and have it under constant monitoring, because if for any reason the server crashes and exits, I want to make sure a new server is automatically started to take its place. And I also want to make sure that if the machine is rebooted, the server runs automatically upon startup, without me having to log in and start things up myself. I'm going to use the <a href="http://supervisord.org/">supervisor</a> package that I installed above to do this.</p>
+<p>The supervisor utility uses configuration files that tell it what programs to monitor and how to restart them when necessary. Configuration files must be stored in <em>/etc/supervisor/conf.d</em>. Here is a configuration file for Microblog, which I'm going to call <em>microblog.conf</em>:</p>
+<p class="code_title"><em>/etc/supervisor/conf.d/microblog.conf</em>: Supervisor configuration.</p>
+
+<pre><code>[program:microblog]
+command=/home/ubuntu/microblog/venv/bin/gunicorn -b localhost:8000 -w 4 microblog:app
+directory=/home/ubuntu/microblog
+user=ubuntu
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+</code></pre>
+<p>The <code>command</code>, <code>directory</code> and <code>user</code> settings tell supervisor how to run the application. The <code>autostart</code> and <code>autorestart</code> set up automatic restarts due to the computer starting up, or crashes. The <code>stopasgroup</code> and <code>killasgroup</code> options ensure that when supervisor needs to stop the application to restart it, it also reaches the child processes of the top-level Gunicorn process.</p>
+<p>After you write this configuration file, you have to reload the supervisor service for it to be imported:</p>
+<pre><code>$ sudo supervisorctl reload
+</code></pre>
+<p>And just like that, the Gunicorn web server should be up and running and monitored!</p>
+<h2>Setting Up Nginx</h2>
+<p>The microblog application server powered by Gunicorn is now running privately on port 8000. What I need to do now to expose the application to the outside world is to enable my public facing web server on ports 80 and 443, the two ports that I opened on the firewall to handle the web traffic of the application.</p>
+<p>I want this to be a secure deployment, so I'm going to configure port 80 to forward all traffic to port 443, which is going to be encrypted. So I'm going to start by creating an SSL certificate. For now, I'm going to create a <em>self-signed SSL certificate</em>, which is okay for testing everything but not good for a real deployment because web browsers will warn users that the certificate was not issued by a trusted certificate authority. The command to create the SSL certificate for microblog is:</p>
+<pre><code>$ mkdir certs
+$ openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
+  -keyout certs/key.pem -out certs/cert.pem
+</code></pre>
+<p>The command is going to ask you for some information about your application and yourself. This is information that will be included in the SSL certificate, and that web browsers will show to users if they request to see it. The result of the command above is going to be two files called <em>key.pem</em> and <em>cert.pem</em>, which I placed in a <em>certs</em> subdirectory of the Microblog root directory.</p>
+<p>To have a website served by nginx, you need to write a configuration file for it. In most nginx installations this file needs to be in the <em>/etc/nginx/sites-available</em> directory. Below you can see the nginx configuration file for Microblog, which goes in <em>/etc/nginx/sites-available/microblog</em>:</p>
+<p class="code_title"><em>/etc/nginx/sites-available/microblog</em>: Nginx configuration.</p>
+
+<pre><code>server {
+    # listen on port 80 (http)
+    listen 80;
+    server_name _;
+    location / {
+        # redirect any requests to the same URL but on https
+        return 301 https://$host$request_uri;
+    }
+}
+server {
+    # listen on port 443 (https)
+    listen 443 ssl;
+    server_name _;
+
+    # location of the self-signed SSL certificate
+    ssl_certificate /home/ubuntu/microblog/certs/cert.pem;
+    ssl_certificate_key /home/ubuntu/microblog/certs/key.pem;
+
+    # write access and error logs to /var/log
+    access_log /var/log/microblog_access.log;
+    error_log /var/log/microblog_error.log;
+
+    location / {
+        # forward application requests to the gunicorn server
+        proxy_pass http://localhost:8000;
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /static {
+        # handle static files directly, without forwarding to the application
+        alias /home/ubuntu/microblog/app/static;
+        expires 30d;
+    }
+}
+</code></pre>
+<p>The nginx configuration is far from trivial, but I've added some comments so that at least you know what each section does. If you want to have information about a specific directive, consult the <a href="https://nginx.org/en/docs/">nginx official documentation</a>.</p>
+<p>The website is now configured, but it isn't enabled yet. To enable it, a link to this file must be created in the <em>/etc/nginx/sites-enabled</em> directory. Nginx comes with a test site that is enabled that I don't really need, so I'm going to start by removing it:</p>
+<pre><code>$ sudo rm /etc/nginx/sites-enabled/default
+</code></pre>
+<p>Now I can create a link to the microblog configuration:</p>
+<pre><code>sudo ln -s /etc/nginx/sites-available/microblog /etc/nginx/sites-enabled/microblog
+</code></pre>
+<p>After you add this file, you need to tell nginx to reload the configuration:</p>
+<pre><code>$ sudo service nginx reload
+</code></pre>
+<p>And now the application should be deployed. In your web browser, you can type the IP address of your server (or 192.168.56.10 if you are using a Vagrant VM) and that will connect to the application. Because you are using a self-signed certificate, you will get a warning from the web browser, which you will have to dismiss.</p>
+<p>After you complete a deployment with the above instructions for your own projects, I strongly suggest that you replace the self-signed certificate with a real one, so that the browser does not warn your users about your site. For this you will first need to purchase a domain name and configure it to point to your server's IP address. Once you have a domain, you can request a free <a href="https://letsencrypt.org/">Let's Encrypt</a> SSL certificate. I have written a detailed article on my blog on how to <a href="https://blog.miguelgrinberg.com/post/running-your-flask-application-over-https">Run your Flask application over HTTPS</a>.</p>
+<h2>Deploying Application Updates</h2>
+<p>The last topic I want to discuss regarding the Linux based deployment is how to handle application upgrades. The application source code is installed in the server through <code>git</code>, so whenever you want to upgrade your application to the latest version, you can just run <code>git pull</code> to download the new commits that were made since the previous deployment.</p>
+<p>But of course, downloading the new version of the code is not going to cause an upgrade. The server processes that are currently running will continue to run with the old code, which was already read and stored in memory. To trigger an upgrade you have to stop the current server and start a new one, to force all the code to be read again.</p>
+<p>Doing an upgrade is in general more complicated than just restarting the server. You may need to apply database migrations, or compile new language translations, so in reality, the process to perform an upgrade involves a sequence of commands:</p>
+<pre><code>(venv) $ git pull                              # download the new version
+(venv) $ sudo supervisorctl stop microblog     # stop the current server
+(venv) $ flask db upgrade                      # upgrade the database
+(venv) $ flask translate compile               # upgrade the translations
+(venv) $ sudo supervisorctl start microblog    # start a new server
+</code></pre>
+<h2>Raspberry Pi Hosting</h2>
+<p>The <a href="http://www.raspberrypi.org/">Raspberry Pi</a> is a low-cost revolutionary little Linux computer that has very low power consumption, so it is the perfect device to host a home based web server that can be online 24/7 without tying up your desktop computer or laptop. There are several Linux distributions that run on the Raspberry Pi. My choice is Raspberry Pi OS, which is the official distribution from the Raspberry Pi Foundation.</p>
+<p>To prepare the Raspberry Pi, I'm going to install a fresh Raspberry Pi OS release. I will be using the Lite version, because I do not need the desktop user interface. You can find the latest release of the Raspberry Pi OS on their <a href="https://www.raspberrypi.org/software/operating-systems/">operating systems page</a>.</p>
+<p>The Raspberry Pi OS image needs to be installed on an SD card, which you then plug into the Raspberry Pi so that it can boot with it. Instructions to copy the Raspberry Pi OS image to an SD card from Windows, Mac OS X and Linux are available on the <a href="https://www.raspberrypi.org/documentation/installation/installing-images/">Raspberry Pi site</a>.</p>
+<p>When you boot your Raspberry Pi for the first time, do it while connected to a keyboard and a monitor, so that you can do the setup. At the very least you should enable SSH, so that you can log in from your computer to perform the deployment tasks more comfortably.</p>
+<p>Like Ubuntu, Raspberry Pi OS is a derivative of Debian, so the instructions above for Ubuntu Linux for the most part work just as well for the Raspberry Pi. However, you may decide to skip some steps if you are planning on running a small application on your home network, without external access. For example, you may not need the firewall, or the password-less logins. And you may want to use SQLite instead of MySQL in such a small computer. You may opt to not use nginx, and just have the Gunicorn server listening directly for requests from clients. You will probably want just one or two Gunicorn workers. The supervisor service is useful in ensuring the application is always up, so my recommendation is that you also use it on the Raspberry Pi.</p>
+<p>Continue on to the <a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">next chapter</a>.</p></div>
+
+<h2>Buy me a coffee?</h2>
+<p class="card-text">Thank you for visiting my blog! If you enjoyed this article, please consider supporting my work and keeping me caffeinated with a small one-time donation through <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy me a coffee</a>. Thanks!</p>
+<a href="https://www.buymeacoffee.com/miguelgrinberg" target="_blank"><img src="/static/buymeacoffee-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+
+<h2>Share this post</h2>
+<!-- Sharingbutton Hacker News -->
+<a class="resp-sharing-button__link" href="https://news.ycombinator.com/submitlink?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux&amp;t=The%20Flask%20Mega-Tutorial%2C%20Part%20XVII%3A%20Deployment%20on%20Linux" target="_blank" rel="noopener" aria-label="Hacker News">
+  <div class="resp-sharing-button resp-sharing-button--hackernews resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><path fill-rule="evenodd" d="M60.94 82.314L17 0h20.08l25.85 52.093c.397.927.86 1.888 1.39 2.883.53.994.995 2.02 1.393 3.08.265.4.463.764.596 1.095.13.334.262.63.395.898.662 1.325 1.26 2.618 1.79 3.877.53 1.26.993 2.42 1.39 3.48 1.06-2.254 2.22-4.673 3.48-7.258 1.26-2.585 2.552-5.27 3.877-8.052L103.49 0h18.69L77.84 83.308v53.087h-16.9v-54.08z"></path></svg></div>Hacker News</div>
+</a>
+
+<!-- Sharingbutton Reddit -->
+<a class="resp-sharing-button__link" href="https://reddit.com/submit/?url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux&amp;resubmit=true&amp;title=The Flask Mega-Tutorial, Part XVII: Deployment on Linux" target="_blank" rel="noopener" aria-label="Reddit">
+  <div class="resp-sharing-button resp-sharing-button--reddit resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-6.07-1.72.08-1.1.4-3.05 1.52-3.7.72-.4 1.73-.24 3 .5C17.2 6.3 18.46 7.5 20 7.5c1.65 0 3-1.35 3-3s-1.35-3-3-3c-1.38 0-2.54.94-2.88 2.22-1.43-.72-2.64-.8-3.6-.25-1.64.94-1.95 3.47-2 4.55-2.33.08-4.45.7-6.1 1.72C4.86 8.98 3.96 8.5 3 8.5c-1.65 0-3 1.35-3 3 0 1.32.84 2.44 2.05 2.84-.03.22-.05.44-.05.66 0 3.86 4.5 7 10 7s10-3.14 10-7c0-.22-.02-.44-.05-.66 1.2-.4 2.05-1.54 2.05-2.84zM2.3 13.37C1.5 13.07 1 12.35 1 11.5c0-1.1.9-2 2-2 .64 0 1.22.32 1.6.82-1.1.85-1.92 1.9-2.3 3.05zm3.7.13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9.8 4.8c-1.08.63-2.42.96-3.8.96-1.4 0-2.74-.34-3.8-.95-.24-.13-.32-.44-.2-.68.15-.24.46-.32.7-.18 1.83 1.06 4.76 1.06 6.6 0 .23-.13.53-.05.67.2.14.23.06.54-.18.67zm.2-2.8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm5.7-2.13c-.38-1.16-1.2-2.2-2.3-3.05.38-.5.97-.82 1.6-.82 1.1 0 2 .9 2 2 0 .84-.53 1.57-1.3 1.87z"/></svg></div>Reddit</div>
+</a>
+
+<!-- Sharingbutton Twitter -->
+<a class="resp-sharing-button__link" href="https://twitter.com/intent/tweet/?text=The%20Flask%20Mega-Tutorial%2C%20Part%20XVII%3A%20Deployment%20on%20Linux&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux" target="_blank" rel="noopener" aria-label="Twitter">
+  <div class="resp-sharing-button resp-sharing-button--twitter resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/></svg></div>Twitter</div>
+</a>
+
+<!-- Sharingbutton LinkedIn -->
+<a class="resp-sharing-button__link" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux&amp;title=The%20Flask%20Mega-Tutorial%2C%20Part%20XVII%3A%20Deployment%20on%20Linux&amp;summary=The%20Flask%20Mega-Tutorial%2C%20Part%20XVII%3A%20Deployment%20on%20Linux&amp;source=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux" target="_blank" rel="noopener" aria-label="LinkedIn">
+  <div class="resp-sharing-button resp-sharing-button--linkedin resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.5 21.5h-5v-13h5v13zM4 6.5C2.5 6.5 1.5 5.3 1.5 4s1-2.4 2.5-2.4c1.6 0 2.5 1 2.6 2.5 0 1.4-1 2.5-2.6 2.5zm11.5 6c-1 0-2 1-2 2v7h-5v-13h5V10s1.6-1.5 4-1.5c3 0 5 2.2 5 6.3v6.7h-5v-7c0-1-1-2-2-2z"/></svg></div>LinkedIn</div>
+</a>
+
+<!-- Sharingbutton Facebook -->
+<a class="resp-sharing-button__link" href="https://facebook.com/sharer/sharer.php?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux" target="_blank" rel="noopener" aria-label="Facebook">
+  <div class="resp-sharing-button resp-sharing-button--facebook resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/></svg></div>Facebook</div>
+</a>
+
+<!-- Sharingbutton E-Mail -->
+<a class="resp-sharing-button__link" href="mailto:?subject=The%20Flask%20Mega-Tutorial%2C%20Part%20XVII%3A%20Deployment%20on%20Linux&amp;body=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux" target="_self" rel="noopener" aria-label="E-Mail">
+  <div class="resp-sharing-button resp-sharing-button--email resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 4H2C.9 4 0 4.9 0 6v12c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7.25 14.43l-3.5 2c-.08.05-.17.07-.25.07-.17 0-.34-.1-.43-.25-.14-.24-.06-.55.18-.68l3.5-2c.24-.14.55-.06.68.18.14.24.06.55-.18.68zm4.75.07c-.1 0-.2-.03-.27-.08l-8.5-5.5c-.23-.15-.3-.46-.15-.7.15-.22.46-.3.7-.14L12 13.4l8.23-5.32c.23-.15.54-.08.7.15.14.23.07.54-.16.7l-8.5 5.5c-.08.04-.17.07-.27.07zm8.93 1.75c-.1.16-.26.25-.43.25-.08 0-.17-.02-.25-.07l-3.5-2c-.24-.13-.32-.44-.18-.68s.44-.32.68-.18l3.5 2c.24.13.32.44.18.68z"/></svg></div>E-Mail</div>
+</a>
+
+<div id="comments" class="post-comment-count">
+  
+  <a class="btn btn-outline-secondary" href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux#comments">60 comments</a>
+  
+</div>
+
+
+<div class="comments">
+  <ul>
+    
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/eee9933fce7b958480aaecab63b216cb?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#1</span> <span class="badge text-bg-warning">Michael Gutierrez</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-28T18:48:37Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-28T18:48:37Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, Thanks for sharing this guide, it's been really helpful. One issue I came across when setting up a linux host, was url_for serving http links after following your guide. <br>
+Wrapping app w/ werkzeug's proxy_fix <a href="https://werkzeug.palletsprojects.com/en/2.3.x/middleware/proxy_fix/" rel="nofollow">https://werkzeug.palletsprojects.com/en/2.3.x/middleware/proxy_fix/</a><br>
+and adding X-Forwarded-Proto $schema to the nginx server block fixed the issue.<br>
+Have you encountered this as well and Is there another solution I should be considering?</p>
+<p>Thanks again!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#2</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-28T20:40:15Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-28T20:40:15Z</span>
+  </p>
+  <div>
+    <p>@Michael: What you are doing is the correct way to handle this problem. But not that url_for() in its normal usage returns relative URLs, which only have the path component of the URL. These should work fine for both http:// and https:// deployments. Your problem only exists when you request absolute URLs.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/3fb029cd5ea676207da3632dbb10cc9e?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#3</span> <span class="badge text-bg-warning">jimbo_jones_ii</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-03-08T15:36:04Z" data-function="fromNow" data-refresh="0" style="display: none">2024-03-08T15:36:04Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, great chapter. I'm a Linux newbie so I found it tough. One issue I struggled with but resolved was the passwordless access. Using Windows and DO I created a ubuntu droplet and then the ubuntu user and switched to it in WIndows command prompt. when I tried echoing the SSH public key I got error "/home/ubuntu/.ssh/authorized_keys: No such file or directory". After lots of trial and error I ended up exiting out of the ubuntu shell (ubuntu@ubuntu:/root$ and ubuntu@ubuntu:/~$) which I had switched to per the tutorial instructions after creating that ubuntu user. I was now at the root user prompt (root@ubuntu:~#) and was able to navigate to hidden directory /.ssh and then run the echo command with the SSH pub key successfully. I logged out of the DO droplet and SSH logged back in passwordlessly. If its helpful to update the chapter with these steps for other please do. thanks again!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#4</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-03-10T00:21:52Z" data-function="fromNow" data-refresh="0" style="display: none">2024-03-10T00:21:52Z</span>
+  </p>
+  <div>
+    <p>@jimbo: this is explained in the tutorial. If the files in the <code>.ssh</code> directory do not exist, or if the whole directory is missing, then you have to use the <code>ssh-keygen</code> command to create your keypair. Dropping into the root account is not the correct solution, you do not want to use the root account to log in to your server.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/119e056d0deaf7b5f2718f29cd49fd19?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#5</span> <span class="badge text-bg-warning">Alex</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-13T12:07:45Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-13T12:07:45Z</span>
+  </p>
+  <div>
+    <p>I did everything according to your instructions... but the statics are not loaded (403) I checked all the paths. everything is fine... but it doesn’t load static at all....</p>
+<p>User<br>
+2024/05/13 03:46:42 [notice] 63903#63903: using inherited sockets from "6;7;"<br>
+2024/05/13 09:45:19 [notice] 74763#74763: signal process started<br>
+2024/05/13 11:46:21 [alert] 77972#77972: <em>28 open socket #20 left in connection 6<br>
+2024/05/13 11:46:21 [alert] 77972#77972: </em>26 open socket #19 left in connection 7<br>
+2024/05/13 11:46:21 [alert] 77973#77973: *27 open socket #17 left in connection 3<br>
+2024/05/13 11:46:21 [alert] 77972#77972: aborting<br>
+2024/05/13 11:46:21 [alert] 77973#77973: aborting</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#6</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-17T22:25:40Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-17T22:25:40Z</span>
+  </p>
+  <div>
+    <p>@Alex: make sure that all the directories leading up to the static folder have permissions that allow access by everyone. Typically you want 755 on /home, /home/ubuntu, /home/ubuntu/microblog and so on.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/ceae8f1de034f4682a0161e3a8cefc86?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#7</span> <span class="badge text-bg-warning">Jeff</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-27T16:23:53Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-27T16:23:53Z</span>
+  </p>
+  <div>
+    <p>I feel like I'm in the deep end on this tutorial to begin with and this chapter is eating my lunch.  I've only been using Python for 6 months.  At Nginx step I get to sudo rm /etc/nginx/sites-enabled/default.  When I try it I get</p>
+<pre><code>(venv) vagrant@ubuntu-jammy:~/microblog$ sudo rm /etc/nginx/sites-enabled/default
+rm: cannot remove '/etc/nginx/sites-enabled/default': No such file or directory
+</code></pre>
+<p>then</p>
+<pre><code>(venv) vagrant@ubuntu-jammy:~/microblog$ sudo ln -s /etc/nginx/sites-available/microblog /etc/nginx/sites-enabled/microblog
+ln: failed to create symbolic link '/etc/nginx/sites-enabled/microblog': File exists
+</code></pre>
+<p>Then</p>
+<pre><code>(venv) vagrant@ubuntu-jammy:~/microblog$ ls -l /home/ubuntu/microblog/certs/cert.pem
+ls: cannot access '/home/ubuntu/microblog/certs/cert.pem': Permission denied
+</code></pre>
+<p>then</p>
+<pre><code>(venv) vagrant@ubuntu-jammy:~/microblog$ ls -l /home/ubuntu/microblog/certs/
+ls: cannot access '/home/ubuntu/microblog/certs/': Permission denied
+</code></pre>
+<p>I'm on Windows 11 with Oracle VM VirtualBox Manager and Vagrant 2.4.1 amd64.</p>
+<pre><code>(venv) vagrant@ubuntu-jammy:~/microblog$ sudo service nginx restart
+Job for nginx.service failed because the control process exited with error code.
+</code></pre>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#8</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-27T22:11:10Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-27T22:11:10Z</span>
+  </p>
+  <div>
+    <p>@Jeff: some comments about your issues:</p>
+<p>For the first issue, you are trying to delete a file and the system is telling the file does not exist. This happens probably because you already deleted the file. Once you do the delete, if you run this command again you will receive an error, since obviously you can only delete a file once.</p>
+<p>Second issue is related. You are trying to create a symbolic link, and the system is telling you there is a file with the name you want to use for this symbolic link. This is likely because you have already created the link and now are re-running the command, which is also expected to fail once you've done it once.</p>
+<p>For the third one you may need to use <code>sudo</code>. This is because the certificate files are owned by the root user.</p>
+<p>For the fourth one you likely have a mistake in the nginx configuration file. This prevents nginx from restarting.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/ceae8f1de034f4682a0161e3a8cefc86?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#9</span> <span class="badge text-bg-warning">Jeff</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-06-01T20:25:25Z" data-function="fromNow" data-refresh="0" style="display: none">2024-06-01T20:25:25Z</span>
+  </p>
+  <div>
+    <p>@Miguel:<br>
+I finally successfully completed this chapter!  A few things of note.<br>
+Because I was using Vagrant VM I needed to change ubuntu to vagrant in the microblog file for nginx server configuration.<br>
+Additionally, my versions did not match on Vagrant and vbguest.<br>
+$ vagrant plugin install vagrant-vbguest<br>
+$vagrant halt<br>
+$vagrant up<br>
+$vagrant halt<br>
+$vagrant up<br>
+Now Guest Additionas showed updated version.<br>
+I do not know if it matters but on Oracle VM VirtualBox Manager I went to Devices&gt;Upgrade Guest Additions before executing the remainder of the chapter.<br>
+Either way ended up with microblog running from my VM.  Thank you again for your reply that got me back on track. Maybe this comment will help someone else.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#10</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-06-02T10:42:56Z" data-function="fromNow" data-refresh="0" style="display: none">2024-06-02T10:42:56Z</span>
+  </p>
+  <div>
+    <p>@Jeff: Congratulations! The guest additions are optional, there is no need to set that up when you are creating a test VM that you do not intend to keep for long so you can ignore any warnings about guest additions missing or having mismatched versions.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/a2b1b71524ac3104ed0666f84864c168?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#11</span> <span class="badge text-bg-warning">William</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-05T09:22:54Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-05T09:22:54Z</span>
+  </p>
+  <div>
+    <p>Hello Miguel, incredible tutorial, as someone who only knew HTML CSS, JavaScript and a bit of Docker, I feel like I have a deeper understanding of web development as a whole thanks to you.</p>
+<p>I have a question for this chapter. I am using the docker version of ElasticSearch, however, this container is completely removed after I'm done, meaning that the ElasticSearch index is also removed. This means that, as of right now, I have to manually go into the python console to use <code>&gt;&gt;&gt; Post.reindex()</code> to recreate the index each time I launch the container. Now, I know that, if I deploy the app with docker, I won't have to completely remove the ElasticSearch container, but would you know of a way to use <code>&gt;&gt;&gt; Post.reindex()</code> each time the container is initialized, maybe through a dockerfile ?</p>
+<p>And again, thank you for the incredible tutorial.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#12</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-05T14:53:41Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-05T14:53:41Z</span>
+  </p>
+  <div>
+    <p>@William: the Docker installation instructions I used in this tutorial are only good for local use. For a production deployment of Elasticsearch that has proper data persistance you will need to consult their official documentation, or use a hosted solution.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/dd2a6089f80e164713e8f270631d44ef?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#13</span> <span class="badge text-bg-warning">Pascal</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-27T19:09:16Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-27T19:09:16Z</span>
+  </p>
+  <div>
+    <p>Hi, great blog and tutorial which helped me a lot! I have problems configuring Nginx to serve static files. I configured everything as described but it’s not working. I suspect that the Nginx user has no permissions to access the files within my users home directory. How did you manage to solve this problem?</p>
+<p>Thx again for all your work!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#14</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-27T22:30:27Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-27T22:30:27Z</span>
+  </p>
+  <div>
+    <p>@Pascal: I don't recall having this problem myself. What permissions do you have on your static files? It should be fairly easy to check if this is the problem.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/dd2a6089f80e164713e8f270631d44ef?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#15</span> <span class="badge text-bg-warning">Pascal</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-29T13:56:27Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-29T13:56:27Z</span>
+  </p>
+  <div>
+    <p>@Miguel: I needed to grant ‚Others‘ permission to read/ list to my users home directory. After that Nginx could load the static files. But that approach seems to be a bit insecure?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#16</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-29T14:57:55Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-29T14:57:55Z</span>
+  </p>
+  <div>
+    <p>@Pascal: "others" in this context means other users on the same machine. I believe it is pretty standard to have "755" permissions, which gives group and other users read and execute access, but if you prefer not to, then you can either add your <code>ubuntu</code> account to the <code>www-data</code> group, so then the permissions that control access will be the group permissions, or else you can also change the ownership of the files to <code>www-data</code> and then the nginx process will see them as its own files. Really up to you how you want to configure the file access.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/b03d3bb47ec3ac2aaff88bb8716be3a2?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#17</span> <span class="badge text-bg-warning">Skibity</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-08-10T23:38:04Z" data-function="fromNow" data-refresh="0" style="display: none">2024-08-10T23:38:04Z</span>
+  </p>
+  <div>
+    <p>@Miguel: Thanks so much for taking the time to produce and maintain such a wonderful tutorial.</p>
+<p>I just wanted to share that I too experienced an issue that a couple of others had mentioned above regarding static files not being properly served (error 403 - forbidden). As far as I know, I followed the tutorial step-by-step, but the loading image that displays during translation was failing to load. I am using a Linode server.</p>
+<p>I followed your advice in the comments above and gave 755 permissions to /home, /home/ubuntu, etc. all the way up to the static directory and this fixed the issue, but also created a new one. When I attempted to pull the changes, I received the following warning:</p>
+<p>Permissions 0755 for '/home/ubuntu/.ssh/id_ed25519' are too open.<br>
+It is required that your private key files are NOT accessible by others.<br>
+This private key will be ignored.</p>
+<p>I then had to run sudo chmod 600 ~/.ssh/id_ed25519 in order to be able to pull. Just wanted to share in case others experienced this issue. Thanks again!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/1804ad8b087906b18ff4d9606aa55d8e?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#18</span> <span class="badge text-bg-warning">Kenneth</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-09-03T21:03:58Z" data-function="fromNow" data-refresh="0" style="display: none">2024-09-03T21:03:58Z</span>
+  </p>
+  <div>
+    <p>@ Miguel: Thanks for the tutorial.</p>
+<p>I tried running gunicorn and it failed to find the attribute app.</p>
+<p>(myvenv) ubuntu@ubuntu-2cpu-2gb-sg-sin1:~$ gunicorn -b localhost:8000 -w 4 kaixin:app<br>
+[2024-09-03 20:49:20 +0000] [11575] [INFO] Starting gunicorn 23.0.0<br>
+[2024-09-03 20:49:20 +0000] [11575] [INFO] Listening at: http://127.0.0.1:8000 (11575)<br>
+[2024-09-03 20:49:20 +0000] [11575] [INFO] Using worker: sync<br>
+[2024-09-03 20:49:20 +0000] [11578] [INFO] Booting worker with pid: 11578<br>
+Failed to find attribute 'app' in 'kaixin'.</p>
+<p>What could I have missed?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#19</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-09-04T18:48:16Z" data-function="fromNow" data-refresh="0" style="display: none">2024-09-04T18:48:16Z</span>
+  </p>
+  <div>
+    <p>@Kenneth: Do you have a "<a href="http://kaixin.py" rel="nofollow">kaixin.py</a>" file? The error is saying that there is no "app" variable in this file.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/1804ad8b087906b18ff4d9606aa55d8e?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#20</span> <span class="badge text-bg-warning">Kenneth</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-09-04T20:50:41Z" data-function="fromNow" data-refresh="0" style="display: none">2024-09-04T20:50:41Z</span>
+  </p>
+  <div>
+    <p>@ Miguel: I have the <a href="http://kaixin.py" rel="nofollow">kaixin.py</a> file. It was a rather silly mistake that I made. Earlier, I forgot to import the models for the shell context processor. After importing the models, as shown below, I was able to get Gunicorn to run.</p>
+<pre><code>from app import create_app, db, socketio
+
+from app.cart.models import Cart, CartItem
+from app.country.models import Country
+from app.currency.models import Currency
+from app.product.models import Product
+from app.user.models import User
+
+app = create_app()
+
+@app.shell_context_processor
+def make_shell_context():
+    return {'db': db,
+            'Cart': Cart,
+            'CartItem': CartItem,
+            'Country': Country,
+            'Currency': Currency,
+            'Product': Product,
+            'User': User}
+
+if __name__ == '__main__':
+    socketio.run(app)
+</code></pre>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/77db94327171854458a28f2b9083fb19?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#21</span> <span class="badge text-bg-warning">Ponniah</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-10-15T07:03:08Z" data-function="fromNow" data-refresh="0" style="display: none">2024-10-15T07:03:08Z</span>
+  </p>
+  <div>
+    <p>@Miguel: Thank you for sharing the in-depth tutorials. They helped me to learn the concepts and build apps. For my use case, I have built a Flask based API and I am hosting it on a server on just a single port. I am using Gunicorn with Uvicorn workers and I have set the number of worker processes as per the formula provided in Gunicorn documentation - based on number of CPU cores (2* CPU Cores + 1). I read in a StackOverflow post that Gunicorn relies on OS to do load balancing. However, in practice, I am noticing that the distribution is highly skewed and one worker process is loaded with a significantly larger number of requests. Can you please share your experiences about load distribution in Gunicorn servers and whether this skewed distribution is a common trend? Can you please suggest ways to overcome this issue?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#22</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-10-16T09:43:07Z" data-function="fromNow" data-refresh="0" style="display: none">2024-10-16T09:43:07Z</span>
+  </p>
+  <div>
+    <p>@Ponniah: what you read is correct, Gunicorn does not offer any options to configure load balancing, it relies on the OS for this. If you need to have more flexible load balancing you should use a load balancer such as Nginx or HAProxy.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/ea179d3719bb4aa3bb1e9415cb48d8ee?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#23</span> <span class="badge text-bg-warning">John</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-12-03T23:35:37Z" data-function="fromNow" data-refresh="0" style="display: none">2024-12-03T23:35:37Z</span>
+  </p>
+  <div>
+    <p>@Miguel: Your book has been uniformly excellent, but now in section 17.2 I've hit a problem with getting Vagrant to run Linux virtually on my Apple silicon Mac.  Do you have expanded instructions for that?  Today I've installed the current versions of Vagrant (v2.4.3) and VirtualBox (v7.1.4, which supposedly supports Apple silicon).  But despite trying multiple guest operating systems in my Vagrantfile, the \vagrant up\ command yields an error: "The box you're attempting to add doesn't support the provider you requested."  For guests I've tried bento/ubuntu-22.04-arm64, bento/ubuntu-24.04, and perk/ubuntu-2204-arm64. When I tried ubuntu/jammy64 a VirtualBox error resulted (no surprise): code NS_ERROR_FAILURE (0x80004005), component SessionMachine, interface ISession.  Thanks for any suggestions.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#24</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-12-04T15:56:50Z" data-function="fromNow" data-refresh="0" style="display: none">2024-12-04T15:56:50Z</span>
+  </p>
+  <div>
+    <p>@John: I'm not sure if there are ubuntu/arm boxes that you can use on Apple silicon. Another option that you have is to replace vagrant and virtualbox with <a href="https://multipass.run/install" rel="nofollow">multipass</a>, which is Ubuntu's own virtualization solution.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/b052863d55c0476bd00d97b91b17d3b3?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#25</span> <span class="badge text-bg-warning">cafeconhielo</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-12-08T04:45:37Z" data-function="fromNow" data-refresh="0" style="display: none">2024-12-08T04:45:37Z</span>
+  </p>
+  <div>
+    <p>Fantastic, comprehensive instructions! However, for some reason I cannot get NGINX to work. I followed the instructions twice on two separate linodes. Both times, when I check  <code>service nginx status</code></p>
+<p>I get the following error:<br>
+nginx.service - A high performance web server and a reverse proxy server<br>
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: enabled)<br>
+     Active: failed (Result: exit-code) since Sun 2024-12-08 04:28:40 UTC; 7min ago<br>
+   Duration: 38min 7.459s<br>
+       Docs: man:nginx(8)<br>
+    Process: 7350 ExecStartPre=/usr/sbin/nginx -t -q -g daemon on; master_process on; (code=exited, status=1/FAILURE)<br>
+        CPU: 5ms</p>
+<p>Do you have any suggestions what could be causing this? Or tips on how to debug? I have successfully hosted static websites, and even a super simple Flask site on NGINX and it worked. For some reason, when I follow the instructions here I get this error. Any tips would be very appreciated. I love your tutorial and don't want to get stuck now that I have reached this point!</p>
+  </div>
+</div>
+    </li>
+    
+  </ul>
+</div>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux/page/1#comments">&laquo;&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux/page/0#comments">&laquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux/page/2#comments">&raquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux/page/0#comments">&raquo;&raquo;</a></li>
+  </ul>
+</nav>
+
+
+
+<div id="comment-form">
+  <h3>Leave a Comment</h3>
+
+  
+  
+  
+
+  
+<form action="#comment-form" method="post">
+  <input id="url" name="url" type="hidden" value="">
+<input id="csrf_token" name="csrf_token" type="hidden" value="ImMxNWQyMDZjYjUwMTE2ODBkODFiNTlkNjM5NDliMzg1MzJiNzMwZTUi.ajz8iQ.2CFJsre0Kt4CiPGkSl15XorICoQ">
+    
+  <div class="mb-3">
+    <label class="form-label" for="name">Name</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="name" name="name" required type="text" value="">
+    </div>
+  </div>
+
+    
+    
+  <div class="mb-3">
+    <label class="form-label" for="email">Email</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="email" name="email" required type="text" value="">
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="comment">Comment</label>
+    <div class="input-group has-validation">
+      <textarea class="form-control" id="comment" name="comment" required>
+</textarea>
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="captcha">Captcha</label>
+    <div class="input-group has-validation">
+      
+<script src='https://www.google.com/recaptcha/api.js' async defer></script>
+<div class="g-recaptcha" data-sitekey="6Ld5Zs4SAAAAAOY0DOi4r18bgHlEaz41qAoRf__S"></div>
+
+    </div>
+  </div>
+
+    
+  <input class="btn btn-primary mb-3" id="submit" name="submit" type="submit" value="Submit">
+
+      
+</form>
+
+</div>
+
+
+</div>
+
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div id="sidebar">
+        
+          
+  
+
+
+
+<div class="card">
+  
+  
+  
+  
+  <div class="card-header">
+    <div class="row">
+      <div class="col">The Flask Mega-Tutorial</div>
+      <div class="col text-end">
+        <a href="/post/announcing-the-flask-mega-tutorial-2024-edition">
+          <h5 style="margin-bottom: 0px"><span class="badge text-bg-warning">2024 Edition!</span></h5>
+        </a>
+      </div>
+    </div>
+  </div>
+  <a class="card-book-cover" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">
+    <img src="/static/mega-tutorial-2024-small.png" alt="The New Flask Mega-Tutorial">
+  </a>
+  <div class="card-body">
+    <p class="card-text">If you would you like to support my work on my <a href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world">Flask Mega-Tutorial series</a> on this blog and as a reward have access to the complete tutorial in book format, you can now order it directly from my <a href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Courses</a> site or from <a href="https://amzn.to/3MQffrm">Amazon</a>.</p>
+  </div>
+  <div class="card-body">
+    <a class="card-link" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Click here to get this Book!</a><br />
+  </div>
+
+  
+</div>
+        
+        <div class="card">
+  <div class="card-header">About Miguel</div>
+  <div class="card-body">
+    <img style="float: right; margin: 0px 8px 8px 0px; padding: 4px; border: 1px solid #ccc;" src="/static/miguel.jpg" />
+    <p class="card-text">Welcome to my blog!</p>
+    <p class="card-text">I'm a software engineer and technical writer, currently living in Drogheda, Ireland.</p>
+    <p><u>Generative AI notice:</u> I do not use LLMs, agents or any other generative AI tools for help with writing, coding, image creation or any other tasks related to this blog or my open source work.</p>
+    <p class="card-text">You can also find me on
+      <a href="https://github.com/miguelgrinberg">Github</a>,
+      <a href="http://www.linkedin.com/in/miguelgrinberg">LinkedIn</a>,
+      <a href="https://bsky.app/profile/miguelgrinberg.com">Bluesky</a>,
+      <a href="https://mstdn.social/@miguelgrinberg">Mastodon</a>,
+      <a href="https://twitter.com/miguelgrinberg">Twitter</a>,
+      <a href="https://youtube.com/miguelgrinberg">YouTube</a>,
+      <!--<a href="https://www.facebook.com/miguelgrinbergblog">Facebook</a>,-->
+      <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy Me a Coffee</a>,
+      and <a href="https://patreon.com/miguelgrinberg">Patreon</a>.</p>
+    <p class="card-text">Thank you for visiting!</p>
+  </div>
+</div>
+        
+        <div class="card" id="categories">
+  <div class="card-header">Categories</div>
+  <div class="card-body">
+    
+    <div class="category">
+      <a href="/category/AI/feed"><img src="/static/rss-small.png" title="AI RSS Feed" label="AI RSS Feed" alt="AI RSS Feed" /></a>
+      <form action="/category/AI" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="AI" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Arduino/feed"><img src="/static/rss-small.png" title="Arduino RSS Feed" label="Arduino RSS Feed" alt="Arduino RSS Feed" /></a>
+      <form action="/category/Arduino" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Arduino" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Authentication/feed"><img src="/static/rss-small.png" title="Authentication RSS Feed" label="Authentication RSS Feed" alt="Authentication RSS Feed" /></a>
+      <form action="/category/Authentication" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Authentication" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Blog/feed"><img src="/static/rss-small.png" title="Blog RSS Feed" label="Blog RSS Feed" alt="Blog RSS Feed" /></a>
+      <form action="/category/Blog" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Blog" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/C++/feed"><img src="/static/rss-small.png" title="C++ RSS Feed" label="C++ RSS Feed" alt="C++ RSS Feed" /></a>
+      <form action="/category/C++" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="C++" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/CSS/feed"><img src="/static/rss-small.png" title="CSS RSS Feed" label="CSS RSS Feed" alt="CSS RSS Feed" /></a>
+      <form action="/category/CSS" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="CSS" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Cloud/feed"><img src="/static/rss-small.png" title="Cloud RSS Feed" label="Cloud RSS Feed" alt="Cloud RSS Feed" /></a>
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" /> <small><em>12</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Database/feed"><img src="/static/rss-small.png" title="Database RSS Feed" label="Database RSS Feed" alt="Database RSS Feed" /></a>
+      <form action="/category/Database" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Database" /> <small><em>33</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Docker/feed"><img src="/static/rss-small.png" title="Docker RSS Feed" label="Docker RSS Feed" alt="Docker RSS Feed" /></a>
+      <form action="/category/Docker" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Docker" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Filmmaking/feed"><img src="/static/rss-small.png" title="Filmmaking RSS Feed" label="Filmmaking RSS Feed" alt="Filmmaking RSS Feed" /></a>
+      <form action="/category/Filmmaking" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Filmmaking" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Flask/feed"><img src="/static/rss-small.png" title="Flask RSS Feed" label="Flask RSS Feed" alt="Flask RSS Feed" /></a>
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" /> <small><em>130</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Games/feed"><img src="/static/rss-small.png" title="Games RSS Feed" label="Games RSS Feed" alt="Games RSS Feed" /></a>
+      <form action="/category/Games" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Games" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Infra/feed"><img src="/static/rss-small.png" title="Infra RSS Feed" label="Infra RSS Feed" alt="Infra RSS Feed" /></a>
+      <form action="/category/Infra" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Infra" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/IoT/feed"><img src="/static/rss-small.png" title="IoT RSS Feed" label="IoT RSS Feed" alt="IoT RSS Feed" /></a>
+      <form action="/category/IoT" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="IoT" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/JavaScript/feed"><img src="/static/rss-small.png" title="JavaScript RSS Feed" label="JavaScript RSS Feed" alt="JavaScript RSS Feed" /></a>
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" /> <small><em>37</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/MicroPython/feed"><img src="/static/rss-small.png" title="MicroPython RSS Feed" label="MicroPython RSS Feed" alt="MicroPython RSS Feed" /></a>
+      <form action="/category/MicroPython" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="MicroPython" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microdot/feed"><img src="/static/rss-small.png" title="Microdot RSS Feed" label="Microdot RSS Feed" alt="Microdot RSS Feed" /></a>
+      <form action="/category/Microdot" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microdot" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microservices/feed"><img src="/static/rss-small.png" title="Microservices RSS Feed" label="Microservices RSS Feed" alt="Microservices RSS Feed" /></a>
+      <form action="/category/Microservices" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microservices" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Movie Reviews/feed"><img src="/static/rss-small.png" title="Movie Reviews RSS Feed" label="Movie Reviews RSS Feed" alt="Movie Reviews RSS Feed" /></a>
+      <form action="/category/Movie%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Movie Reviews" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Personal/feed"><img src="/static/rss-small.png" title="Personal RSS Feed" label="Personal RSS Feed" alt="Personal RSS Feed" /></a>
+      <form action="/category/Personal" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Personal" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Photography/feed"><img src="/static/rss-small.png" title="Photography RSS Feed" label="Photography RSS Feed" alt="Photography RSS Feed" /></a>
+      <form action="/category/Photography" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Photography" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Product Reviews/feed"><img src="/static/rss-small.png" title="Product Reviews RSS Feed" label="Product Reviews RSS Feed" alt="Product Reviews RSS Feed" /></a>
+      <form action="/category/Product%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Product Reviews" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Programming/feed"><img src="/static/rss-small.png" title="Programming RSS Feed" label="Programming RSS Feed" alt="Programming RSS Feed" /></a>
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" /> <small><em>198</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Project Management/feed"><img src="/static/rss-small.png" title="Project Management RSS Feed" label="Project Management RSS Feed" alt="Project Management RSS Feed" /></a>
+      <form action="/category/Project%20Management" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Project Management" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Python/feed"><img src="/static/rss-small.png" title="Python RSS Feed" label="Python RSS Feed" alt="Python RSS Feed" /></a>
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" /> <small><em>187</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/REST/feed"><img src="/static/rss-small.png" title="REST RSS Feed" label="REST RSS Feed" alt="REST RSS Feed" /></a>
+      <form action="/category/REST" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="REST" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Raspberry Pi/feed"><img src="/static/rss-small.png" title="Raspberry Pi RSS Feed" label="Raspberry Pi RSS Feed" alt="Raspberry Pi RSS Feed" /></a>
+      <form action="/category/Raspberry%20Pi" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Raspberry Pi" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/React/feed"><img src="/static/rss-small.png" title="React RSS Feed" label="React RSS Feed" alt="React RSS Feed" /></a>
+      <form action="/category/React" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="React" /> <small><em>19</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Reviews/feed"><img src="/static/rss-small.png" title="Reviews RSS Feed" label="Reviews RSS Feed" alt="Reviews RSS Feed" /></a>
+      <form action="/category/Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Reviews" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Robotics/feed"><img src="/static/rss-small.png" title="Robotics RSS Feed" label="Robotics RSS Feed" alt="Robotics RSS Feed" /></a>
+      <form action="/category/Robotics" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Robotics" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Security/feed"><img src="/static/rss-small.png" title="Security RSS Feed" label="Security RSS Feed" alt="Security RSS Feed" /></a>
+      <form action="/category/Security" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Security" /> <small><em>14</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Video/feed"><img src="/static/rss-small.png" title="Video RSS Feed" label="Video RSS Feed" alt="Video RSS Feed" /></a>
+      <form action="/category/Video" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Video" /> <small><em>22</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/WebSocket/feed"><img src="/static/rss-small.png" title="WebSocket RSS Feed" label="WebSocket RSS Feed" alt="WebSocket RSS Feed" /></a>
+      <form action="/category/WebSocket" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="WebSocket" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Webcast/feed"><img src="/static/rss-small.png" title="Webcast RSS Feed" label="Webcast RSS Feed" alt="Webcast RSS Feed" /></a>
+      <form action="/category/Webcast" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Webcast" /> <small><em>3</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Windows/feed"><img src="/static/rss-small.png" title="Windows RSS Feed" label="Windows RSS Feed" alt="Windows RSS Feed" /></a>
+      <form action="/category/Windows" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Windows" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+  </div>
+</div>
+        
+      </div>
+    </div>
+    
+  </div>
+  <div id="footer">
+    
+    <p>&copy; 2012-<script type="text/javascript">document.write(new Date().getFullYear());</script> by Miguel Grinberg. All rights reserved. <a href="mailto:webmaster _at_ miguelgrinberg _dot_ com">Questions?</a></p>
+  </div>
+</div>
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="/static/prettify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js" integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg==" crossorigin="anonymous"></script>
+
+<script>
+moment.locale("en");
+function flask_moment_render(elem) {{
+    const timestamp = moment(elem.dataset.timestamp);
+    const func = elem.dataset.function;
+    const format = elem.dataset.format;
+    const timestamp2 = elem.dataset.timestamp2;
+    const no_suffix = elem.dataset.nosuffix;
+    const units = elem.dataset.units;
+    let args = [];
+    if (format)
+        args.push(format);
+    if (timestamp2)
+        args.push(moment(timestamp2));
+    if (no_suffix)
+        args.push(no_suffix);
+    if (units)
+        args.push(units);
+    elem.textContent = timestamp[func].apply(timestamp, args);
+    elem.classList.remove('flask-moment');
+    elem.style.display = "";
+}}
+function flask_moment_render_all() {{
+    const moments = document.querySelectorAll('.flask-moment');
+    moments.forEach(function(moment) {{
+        flask_moment_render(moment);
+        const refresh = moment.dataset.refresh;
+        if (refresh && refresh > 0) {{
+            (function(elem, interval) {{
+                setInterval(function() {{
+                    flask_moment_render(elem);
+                }}, interval);
+            }})(moment, refresh);
+        }}
+    }})
+}}
+document.addEventListener("DOMContentLoaded", flask_moment_render_all);
+</script>
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-20EHZP9GRZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-20EHZP9GRZ');
+  </script>
+  
+  <script type="text/javascript">
+    function setThemeUI() {
+      document.getElementById('select-theme-auto').classList.remove('active');
+      document.getElementById('select-theme-light').classList.remove('active');
+      document.getElementById('select-theme-dark').classList.remove('active');
+      const theme = getPreferredTheme();
+      const actualTheme = document.documentElement.getAttribute('data-bs-theme', 'light');
+      document.getElementById('select-theme-' + theme).classList.add('active');
+      document.getElementById('current-theme').href.baseVal = `#icon-theme-${actualTheme}`;
+    };
+
+    function updateTheme(theme) {
+      if (theme === 'auto') {
+        localStorage.removeItem('theme')
+      }
+      else {
+        localStorage.setItem('theme', theme)
+      }
+      setTheme(getPreferredTheme());
+    }
+
+    setThemeUI();
+
+    const darkModePreference = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModePreference.addEventListener("change", e => {
+      if (getPreferredTheme() === 'auto') {
+        setTheme('auto');
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // add prettyprint class to all <pre><code></code></pre> blocks
+      let prettify = false;
+      document.querySelectorAll('div.post-body pre code').forEach((code) => {
+        code.parentNode.classList.add('prettyprint');
+        prettify = true;
+      });
+      prettyPrint();
+    });
+  </script>
+
+  </body>
+</html>

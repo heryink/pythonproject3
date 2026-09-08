@@ -1,0 +1,1704 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    
+  <script type="text/javascript">
+    function getPreferredTheme() {
+      const storedTheme = localStorage.getItem('theme')
+      if (storedTheme) {
+        return storedTheme
+      }
+      return 'auto';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    };
+
+    setTheme(getPreferredTheme());
+  </script>
+  
+    <title>
+  
+    The Flask Mega-Tutorial, Part XXI: User Notifications - miguelgrinberg.com
+  
+</title>
+  
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="miguelgrinberg.com">
+  <meta name="copyright" content="Copyright (c) 2012-2024 Miguel Grinberg">
+  <meta name="author" content="Miguel Grinberg">
+  
+  <meta name="keywords" content="flask, python, programming, javascript, notifications">
+  
+  
+  <link rel="canonical" href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxi-user-notifications">
+  
+
+  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+
+  <link href="/static/tomorrow.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/tomorrow-night.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/social.css" rel="stylesheet" type="text/css" />
+  <link href="/static/style_20260305.css" rel="stylesheet" type="text/css" />
+
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  <link rel="alternate" type="application/rss+xml" href="/feed" title="miguelgrinberg.com RSS feed">
+
+    <meta property="og:title" content="The Flask Mega-Tutorial, Part XXI: User Notifications">
+    <meta property="og:description" content="This is the twenty first installment of the Flask Mega-Tutorial series, in which I&#39;m going to add a private message feature, along with user notifications that appear in the navigation bar without…">
+    <meta property="og:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xxi-user-notifications.jpg">
+    <meta property="og:url" content="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxi-user-notifications">
+    <meta name="twitter:title" content="The Flask Mega-Tutorial, Part XXI: User Notifications">
+    <meta name="twitter:description" content="This is the twenty first installment of the Flask Mega-Tutorial series, in which I&#39;m going to add a private message feature, along with user notifications that appear in the navigation bar without…">
+    <meta name="twitter:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xxi-user-notifications.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@miguelgrinberg">
+
+  </head>
+  <body>
+    <svg style="display: none" version="2.0">
+      <defs>
+        <symbol id="icon-theme-auto" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-circle-half" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/>
+        </symbol>
+        <symbol id="icon-theme-light" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </symbol>
+        <symbol id="icon-theme-dark" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-moon-stars-fill" viewBox="0 0 16 16">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+        </symbol>
+      </defs>
+    </svg>
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/index">miguelgrinberg.com</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/index">Home</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/my-courses-and-books">My Courses and Books</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/hire-me">Consulting</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/about-me">About Me</a></li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <svg width="20" height="20" version="2.0"><use id="current-theme" href="#icon-theme-light"></svg>
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a id="select-theme-light" class="dropdown-item" href="javascript:updateTheme('light'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-light"></svg>&nbsp; Light Mode
+              </a>
+            </li>
+            <li>
+              <a id="select-theme-dark" class="dropdown-item" href="javascript:updateTheme('dark'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-dark"></svg>&nbsp; Dark Mode
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a id="select-theme-auto" class="dropdown-item" href="javascript:updateTheme('auto'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-auto"></svg>&nbsp; System Default
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item social-icons">
+          <a href="http://github.com/miguelgrinberg"><img src="/static/social/github.png" alt="GitHub" title="GitHub" /></a>
+          <a href="http://www.linkedin.com/in/miguelgrinberg"><img src="/static/social/linkedin.png" alt="LinkedIn" title="LinkedIn" /></a>
+          <a href="https://bsky.app/profile/miguelgrinberg.com"><img src="/static/social/bluesky.png" alt="Bluesky" title="Bluesky" /></a>
+          <a rel="me" href="https://mstdn.social/@miguelgrinberg"><img src="/static/social/mastodon.png" alt="Mastodon" title="Mastodon" /></a>
+          <a href="https://twitter.com/miguelgrinberg"><img src="/static/social/twitter.png" alt="Twitter" title="Twitter" /></a>
+          <a href="https://youtube.com/miguelgrinberg"><img src="/static/social/youtube.png" alt="YouTube" title="YouTube" /></a>
+          <a href="https://www.buymeacoffee.com/miguelgrinberg"><img src="/static/social/buymeacoffee.png" alt="Buy Me a Coffee" title="Buy Me a Coffee" /></a>
+          <a href="https://patreon.com/miguelgrinberg"><img src="/static/social/patreon.png" alt="Patreon" title="Patreon" /></a>
+          <a type="application/rss+xml" href="/feed"><img src="/static/social/rss.png" alt="RSS Feed" title="RSS Feed" /></a>
+          <!--<a href="https://www.facebook.com/miguelgrinbergblog"><img src="/static/social/facebook.png" alt="Facebook" title="Facebook" /></a>-->
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <div id="main">
+        
+        
+        
+        
+        
+
+<div class="post">
+
+<div class="post-header">
+  <h1><a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">The Flask Mega-Tutorial, Part XXI: User Notifications</a></h1>
+  <h2>
+    Posted by
+    <form action="/author/Miguel%20Grinberg" method="POST">
+      <input type="submit" class="btn btn-danger btn-sm" value="Miguel Grinberg" />
+    </form>
+    on
+    <button class="btn btn-secondary btn-sm" disabled><span class="flask-moment" data-timestamp="2023-12-03T10:40:21Z" data-function="format" data-format="LL" data-refresh="0" style="display: none">2023-12-03T10:40:21Z</span></button>
+    under
+    
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" />
+      </form>
+    
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" />
+      </form>
+    
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" />
+      </form>
+    
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" />
+      </form>
+    
+    
+  </h2>
+</div>
+<div class="post-body"><p>This is the twenty first installment of the Flask Mega-Tutorial series, in which I'm going to add a private message feature, along with user notifications that appear in the navigation bar without the need to refresh the page.</p>
+<p>You are reading the 2024 edition of the Flask Mega-Tutorial. The complete course is also available to order in e-book and paperback formats from <a href="https://amzn.to/3ahVnPN">Amazon</a>. Thank you for your support!</p>
+<p>If you are looking for the 2018 edition of this course, you can find it <a href="/post/the-flask-mega-tutorial-part-i-hello-world-2018">here</a>.</p>
+<p>For your reference, here is the complete list of articles in this series:</p>
+<ul>
+<li><a href="/post/the-flask-mega-tutorial-part-i-hello-world">Chapter 1:  Hello, World!</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ii-templates">Chapter 2:  Templates</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iii-web-forms">Chapter 3:  Web Forms</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iv-database">Chapter 4:  Database</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5:  User Logins</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vi-profile-page-and-avatars">Chapter 6:  Profile Page and Avatars</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7:  Error Handling</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-viii-followers">Chapter 8:  Followers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ix-pagination">Chapter 9:  Pagination</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-x-email-support">Chapter 10:  Email Support</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xi-facelift">Chapter 11:  Facelift</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xii-dates-and-times">Chapter 12:  Dates and Times</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiii-i18n-and-l10n">Chapter 13:  I18n and L10n</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiv-ajax">Chapter 14:  Ajax</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15:  A Better Application Structure</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16:  Full-Text Search</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17:  Deployment on Linux</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18:  Deployment on Heroku</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">Chapter 19:  Deployment on Docker Containers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">Chapter 20:  Some JavaScript Magic</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21:  User Notifications</a> (this article)</li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">Chapter 22:  Background Jobs</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">Chapter 23:  Application Programming Interfaces (APIs)</a></li>
+</ul>
+<p>In this chapter I want to continue working on improving the user experience of my Microblog application. One aspect that applies to a lot of applications is the presentation of alerts or notifications to the user. Social applications show these notifications to let you know you've got new mentions or private messages, usually by showing a little badge with a number in the top navigation bar. While this is the most obvious usage, the notification pattern can be applied to a lot of other types of applications to inform the user that something requires their attention.</p>
+<p>But to show you the techniques involved in building user notifications, I needed to extend Microblog with a feature that can benefit from them, so in the first part of this chapter I'm going to build a user messaging system that allows any user to send a private message to another user. This is actually simpler than it sounds, and it will be a good refresher on core Flask practices and a reminder of how lean, efficient and fun programming with Flask can be. And once the messaging system is in place, I'm going to discuss some options to implement a notification badge that shows a count of unread messages.</p>
+<p><em>The GitHub links for this chapter are: <a href="https://github.com/miguelgrinberg/microblog/tree/v0.21">Browse</a>, <a href="https://github.com/miguelgrinberg/microblog/archive/v0.21.zip">Zip</a>, <a href="https://github.com/miguelgrinberg/microblog/compare/v0.20...v0.21">Diff</a>.</em></p>
+<h2>Private Messages</h2>
+<p>The private messaging feature that I'm going to implement is going to be very simple. When you visit the profile page of a user, there will be a link to send that user a private message. The link will take you to a new page in which a web form takes the message. To read messages sent to you, the navigation bar at the top of the page will have a new "Messages" link, that will take you to a page that is similar in structure to the index or explore pages, but instead of showing blog posts it will show messages other users sent you.</p>
+<p>The following sections describe the steps I took to implement this feature.</p>
+<h3>Database Support for Private Messages</h3>
+<p>The first task is to extend the database to support private messages. Here is a new <code>Message</code> model:</p>
+<p class="code_title"><em>app/models.py</em>: Message model.</p>
+
+<pre><code class="language-python">class Message(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    sender_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id),
+                                                 index=True)
+    recipient_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id),
+                                                    index=True)
+    body: so.Mapped[str] = so.mapped_column(sa.String(140))
+    timestamp: so.Mapped[datetime] = so.mapped_column(
+        index=True, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return '&lt;Message {}&gt;'.format(self.body)
+</code></pre>
+<p>This model class is similar to the <code>Post</code> model, with the only difference that there are two user foreign keys, one for the sender and one for the recipient. The <code>User</code> model can get two write-only relationships for messages send and received, plus a new field that indicates what was the last time each user read their private messages:</p>
+<p class="code_title"><em>app/models.py</em>: Private messages support in User model.</p>
+
+<pre><code class="language-python">class User(UserMixin, db.Model):
+    # ...
+    last_message_read_time: so.Mapped[Optional[datetime]]
+
+    # ...
+    messages_sent: so.WriteOnlyMapped['Message'] = so.relationship(
+        foreign_keys='Message.sender_id', back_populates='author')
+    messages_received: so.WriteOnlyMapped['Message'] = so.relationship(
+        foreign_keys='Message.recipient_id', back_populates='recipient')
+
+    # ...
+
+    def unread_message_count(self):
+        last_read_time = self.last_message_read_time or datetime(1900, 1, 1)
+        query = sa.select(Message).where(Message.recipient == self,
+                                         Message.timestamp &gt; last_read_time)
+        return db.session.scalar(sa.select(sa.func.count()).select_from(
+            query.subquery()))
+</code></pre>
+<p>The <code>last_message_read_time</code> field will have the last time the user visited the messages page, and will be used to determine if there are unread messages, which will all have a timestamp newer than this field. The <code>unread_message_count()</code> helper method actually uses this field to return how many unread messages the user has. By the end of this chapter I will have this number as a nice badge in the navigation bar at the top of the page.</p>
+<p>The two relationships return messages sent and received for a given user. On the <code>Message</code> side of the relationship I also include the reverse relationships, which I called <code>author</code> and <code>recipient</code>:</p>
+<p class="code_title"><em>app/models.py</em>: Private messages relationships in Message model.</p>
+
+<pre><code class="language-python">class Message(db.Model):
+    # ...
+
+    author: so.Mapped[User] = so.relationship(
+        foreign_keys='Message.sender_id',
+        back_populates='messages_sent')
+    recipient: so.Mapped[User] = so.relationship(
+        foreign_keys='Message.recipient_id',
+        back_populates='messages_received')
+</code></pre>
+<p>The reason why I used the name <code>author</code> as a relationship instead of the more expected <code>sender</code> is that by using <code>author</code> I can then render these messages using the same logic that I use for blog posts, given how similar posts and messages are.</p>
+<p>That completes the database changes, so now it is time to generate a new migration and upgrade the database with it:</p>
+<pre><code>(venv) $ flask db migrate -m &quot;private messages&quot;
+(venv) $ flask db upgrade
+</code></pre>
+<h3>Sending a Private Message</h3>
+<p>Next I'm going to work on sending messages. I'm going to need a simple web form that accepts the message:</p>
+<p class="code_title"><em>app/main/forms.py</em>: Private message form class.</p>
+
+<pre><code class="language-python">class MessageForm(FlaskForm):
+    message = TextAreaField(_l('Message'), validators=[
+        DataRequired(), Length(min=0, max=140)])
+    submit = SubmitField(_l('Submit'))
+</code></pre>
+<p>And I also need the HTML template that renders this form on a web page:</p>
+<p class="code_title"><em>app/templates/send_message.html</em>: Send private message HTML template.</p>
+
+<pre><code class="language-html">{% extends &quot;base.html&quot; %}
+{% import &quot;bootstrap_wtf.html&quot; as wtf %}
+
+{% block content %}
+    &lt;h1&gt;{{ _('Send Message to %(recipient)s', recipient=recipient) }}&lt;/h1&gt;
+    {{ wtf.quick_form(form) }}
+{% endblock %}
+</code></pre>
+<p>Next I'm going to add a new <em>/send_message/&lt;recipient&gt;</em> route to handle the actual sending of the private message:</p>
+<p class="code_title"><em>app/main/routes.py</em>: Send private message route.</p>
+
+<pre><code class="language-python">from app.main.forms import MessageForm
+from app.models import Message
+
+# ...
+
+@bp.route('/send_message/&lt;recipient&gt;', methods=['GET', 'POST'])
+@login_required
+def send_message(recipient):
+    user = db.first_or_404(sa.select(User).where(User.username == recipient))
+    form = MessageForm()
+    if form.validate_on_submit():
+        msg = Message(author=current_user, recipient=user,
+                      body=form.message.data)
+        db.session.add(msg)
+        db.session.commit()
+        flash(_('Your message has been sent.'))
+        return redirect(url_for('main.user', username=recipient))
+    return render_template('send_message.html', title=_('Send Message'),
+                           form=form, recipient=recipient)
+</code></pre>
+<p>I think the logic in this view function should be mostly self-explanatory. The action of sending a private message is simply carried out by adding a new <code>Message</code> instance to the database.</p>
+<p>The last change that ties everything together is the addition of a link to the above route in the user profile page:</p>
+<p class="code_title"><em>app/templates/user.html</em>: Send private message link in user profile page.</p>
+
+<pre><code class="language-html">                {% if user != current_user %}
+                &lt;p&gt;
+                    &lt;a href=&quot;{{ url_for('main.send_message',
+                                        recipient=user.username) }}&quot;&gt;
+                        {{ _('Send private message') }}
+                    &lt;/a&gt;
+                &lt;/p&gt;
+                {% endif %}
+</code></pre>
+<h3>Viewing Private Messages</h3>
+<p>The second big part of this feature is the viewing of private messages. For that I'm going to add another route at <em>/messages</em> that works in a fairly similar way to the index and explore pages, including full support for pagination:</p>
+<p class="code_title"><em>app/main/routes.py</em>: View messages route.</p>
+
+<pre><code class="language-python">@bp.route('/messages')
+@login_required
+def messages():
+    current_user.last_message_read_time = datetime.now(timezone.utc)
+    db.session.commit()
+    page = request.args.get('page', 1, type=int)
+    query = current_user.messages_received.select().order_by(
+        Message.timestamp.desc())
+    messages = db.paginate(query, page=page,
+                           per_page=current_app.config['POSTS_PER_PAGE'],
+                           error_out=False)
+    next_url = url_for('main.messages', page=messages.next_num) \
+        if messages.has_next else None
+    prev_url = url_for('main.messages', page=messages.prev_num) \
+        if messages.has_prev else None
+    return render_template('messages.html', messages=messages.items,
+                           next_url=next_url, prev_url=prev_url)
+</code></pre>
+<p>The first thing I do in this view function is update the <code>User.last_message_read_time</code> field with the current time. This is basically marking all the messages that were sent to this user as read. Then I'm querying the <code>Message</code> model for the list of messages, sorted by timestamp from newer to older. I decided to reuse the <code>POSTS_PER_PAGE</code> configuration item here since the pages with posts and messages are going to look very much alike, but of course if the pages were to diverge, it may make sense to add a separate configuration variable for messages. The pagination logic is identical to what I used for posts, so this should all be familiar to you.</p>
+<p>The view function above ends by rendering a new <em>/app/templates/messages.html</em> template file, which you can see below:</p>
+<p class="code_title"><em>app/templates/messages.html</em>: View messages HTML template.</p>
+
+<pre><code class="language-html">{% extends &quot;base.html&quot; %}
+
+{% block content %}
+    &lt;h1&gt;{{ _('Messages') }}&lt;/h1&gt;
+    {% for post in messages %}
+        {% include '_post.html' %}
+    {% endfor %}
+    &lt;nav aria-label=&quot;...&quot;&gt;
+        &lt;ul class=&quot;pager&quot;&gt;
+            &lt;li class=&quot;previous{% if not prev_url %} disabled{% endif %}&quot;&gt;
+                &lt;a href=&quot;{{ prev_url or '#' }}&quot;&gt;
+                    &lt;span aria-hidden=&quot;true&quot;&gt;&amp;larr;&lt;/span&gt; {{ _('Newer messages') }}
+                &lt;/a&gt;
+            &lt;/li&gt;
+            &lt;li class=&quot;next{% if not next_url %} disabled{% endif %}&quot;&gt;
+                &lt;a href=&quot;{{ next_url or '#' }}&quot;&gt;
+                    {{ _('Older messages') }} &lt;span aria-hidden=&quot;true&quot;&gt;&amp;rarr;&lt;/span&gt;
+                &lt;/a&gt;
+            &lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/nav&gt;
+{% endblock %}
+</code></pre>
+<p>Here I resorted to another little trick. I noticed that <code>Post</code> and <code>Message</code> instances have pretty much the same structure, with the exception that <code>Message</code> gets an extra <code>recipient</code> relationship (that I don't need to show in the messages page, since it is always the current user). So I decided to reuse the <em>app/templates/_post.html</em> sub-template to also render private messages. For this reason, this template uses the strange for-loop <code>for post in messages</code>, so that all the references to <code>post</code> in the sub-template work with messages too.</p>
+<p>To give users access to the new view function, the navigation page gets a new "Messages" link:</p>
+<p class="code_title"><em>app/templates/base.html</em>: Messages link in navigation bar.</p>
+
+<pre><code class="language-html">                    {% if current_user.is_anonymous %}
+                    ...
+                    {% else %}
+                    &lt;li class=&quot;nav-item&quot;&gt;
+                        &lt;a class=&quot;nav-link&quot; aria-current=&quot;page&quot;
+                                href=&quot;{{ url_for('main.messages') }}&quot;&gt;
+                            {{ _('Messages') }}
+                        &lt;/a&gt;
+                    &lt;/li&gt;
+                    ...
+                    {% endif %}
+</code></pre>
+<p>The feature is now complete, but as part of all these changes there were some new texts that were added in a few places, and those need to be incorporated into the language translations. The first step is to update all the language catalogs:</p>
+<pre><code>(venv) $ flask translate update
+</code></pre>
+<p>Then each of the languages in <em>app/translations</em> need to have its <em>messages.po</em> file updated with the new translations. You can find the Spanish translations in the GitHub repository for this project or in the <a href="https://github.com/miguelgrinberg/microblog/archive/version-0.21.zip">download zip file</a>.</p>
+<h2>Static Message Notification Badge</h2>
+<p>Now the private messages feature is implemented, but of course there is nothing that tells a user that there are private messages waiting to be read. The simplest implementation of a navigation bar indicator can be rendered as part of the base template, using a Bootstrap badge widget:</p>
+<p class="code_title"><em>app/templates/base.html</em>: Static message count badge in navigation bar.</p>
+
+<pre><code class="language-html">                    ...
+                    &lt;li class=&quot;nav-item&quot;&gt;
+                        &lt;a class=&quot;nav-link&quot; aria-current=&quot;page&quot;
+                                href=&quot;{{ url_for('main.messages') }}&quot;&gt;
+                            {{ _('Messages') }}
+                            {% set unread_message_count = current_user.unread_message_count() %}
+                            &lt;span class=&quot;badge text-bg-danger&quot;&gt;
+                                {{ unread_message_count }}
+                            &lt;/span&gt;
+                        &lt;/a&gt;
+                    &lt;/li&gt;
+                    ...
+</code></pre>
+<p>Here I'm invoking the <code>unread_message_count()</code> method I added to the <code>User</code> model above directly from the template, and storing that number in a template variable of the same name. Then if that variable is non-zero, I just add the badge with the number next to the Messages link. Here is how this looks on the page:</p>
+<p><img alt="Messages Badge" src="/static/images/mega-tutorial/ch21-badge.png" /></p>
+<h2>Dynamic Message Notification Badge</h2>
+<p>The solution presented in the previous section is a decent and simple way to show a notification, but it has the disadvantage that the badge only appears when a new page is loaded. If the user spends a long time reading the content on one page without clicking on any links, new messages that come during that time will not be shown until the user finally does click on a link and loads a new page.</p>
+<p>To make this application more useful to my users, I want the badge to update the count of unread messages on its own, without the user having to click on links and load new pages. One problem with the solution from the previous section is that the badge is only rendered to the page when the message count at the time the page loaded was non-zero. What's really more convenient is to always include the badge in the navigation bar, and mark it as hidden when the message count is zero. This would make it easy to make the badge visible using JavaScript:</p>
+<p class="code_title"><em>app/templates/base.html</em>: A JavaScript friendly unread messages badge.</p>
+
+<pre><code class="language-html">                    &lt;li class=&quot;nav-item&quot;&gt;
+                        &lt;a class=&quot;nav-link&quot; aria-current=&quot;page&quot;
+                                href=&quot;{{ url_for('main.messages') }}&quot;&gt;
+                            {{ _('Messages') }}
+                            {% set unread_message_count = current_user.unread_message_count() %}
+                            &lt;span id=&quot;message_count&quot; class=&quot;badge text-bg-danger&quot;
+                                style=&quot;visibility: {% if unread_message_count %}visible
+                                                   {% else %}hidden{% endif %};&quot;&gt;
+                                {{ unread_message_count }}
+                            &lt;/span&gt;
+                        &lt;/a&gt;
+                    &lt;/li&gt;
+</code></pre>
+<p>With this version of the badge, I always include it, but the <code>visibility</code> CSS property is set to <code>visible</code> when <code>unread_message_count</code> is non-zero, or <code>hidden</code> if it is zero. I also added an <code>id</code> attribute to the <code>&lt;span&gt;</code> element that represents the badge, to make it easy to address this element using <code>document.getElementById('message_count')</code>.</p>
+<p>Next, I can code a short JavaScript function that updates this badge to a new number:</p>
+<p class="code_title"><em>app/templates/base.html</em>: Static message count badge in navigation bar.</p>
+
+<pre><code class="language-html">...
+{% block scripts %}
+  &lt;script&gt;
+    // ...
+
+    function set_message_count(n) {
+      const count = document.getElementById('message_count');
+      count.innerText = n;
+      count.style.visibility = n ? 'visible' : 'hidden';
+    }
+  &lt;/script&gt;
+{% endblock %}
+</code></pre>
+<p>This new <code>set_message_count()</code> function will set the number of messages in the badge element, and also adjust the visibility so that the badge is hidden when the count is 0 and visible otherwise.</p>
+<h2>Delivering Notifications to Clients</h2>
+<p>What remains now is to add a mechanism by which the client receives periodic updates regarding the number of unread messages the user has. When one of these updates occur, the client will call the <code>set_message_count()</code> function to make the update known to the user.</p>
+<p>There are actually two methods for the server to deliver these updates to the client, and as you can probably guess, both have pros and cons, so which one to choose is largely dependent on the project. In the first approach, the client periodically asks the server for updates by sending an asynchronous request. The response from this request is a list of updates, which the client can use to update different elements of the page such as the unread message count badge. The second approach requires a special type of connection between the client and the server that allows the server to freely push data to the client. Note that regardless of the approach, I want to treat notifications as generic entities, so that I can extend this framework to support other types of events besides the unread messages badge.</p>
+<p>The biggest thing the first solution has is that it is easy to implement. All I need to do is add yet another route to the application, say <em>/notifications</em>, which returns a JSON list of notifications. The client application then goes through the list of notifications and applies the necessary changes to the page for each one. The disadvantage of this solution is that there is going to be a delay between the actual event and the notification for it, because the client is going to request the list of notifications at regular intervals. For example, if the client is asking for notifications every 10 seconds, a notification can be received up to 10 seconds late.</p>
+<p>The second solution requires changes at the protocol level, because HTTP does not have any provisions for a server to send data to the client without the client asking. By far the most common way to implement server initiated messages is by extending the server to support <a href="https://en.wikipedia.org/wiki/WebSocket">WebSocket</a> connections in addition to HTTP. WebSocket is a protocol that unlike HTTP, establishes a permanent connection between the server and the client. The server and the client can both send data to the other party at any time, without the other side asking for it. The advantage of this mechanism is that whenever an event that is of interest to the client occurs, the server can send a notification, without any delays. The disadvantage is that WebSocket requires a more complicated setup than HTTP, because the server needs to maintain a permanent connection with each and every client. Imagine that a server that, for example, has four worker processes can typically serve a few hundred HTTP clients, because connections in HTTP are short lived and are constantly being recycled. The same server would be able to handle just four WebSocket clients, which in the vast majority of cases is going to be insufficient. It is for this limitation that WebSocket applications are typically designed around <em>asynchronous servers</em>, because these servers are more efficient at managing a large number of workers and active connections.</p>
+<p>The good news is that regardless of the method that you use, in the client you will have a callback function that will be invoked with the list of updates. So I could start with the first solution, which is much easier to implement, and later, if I find it insufficient, migrate to a WebSocket server, which can be configured to invoke the same client callback. In my opinion, for this type of application the first solution is actually acceptable. A WebSocket based implementation would be useful for an application that requires updates to be delivered with near zero-latency.</p>
+<p>In case you are curious, Twitter also uses the first approach for their navigation bar notifications. Facebook uses a variation of it called <a href="https://en.wikipedia.org/wiki/Push_technology#Long_polling">long polling</a>, which addresses some of the limitations of straight polling while still using HTTP requests. Stack Overflow and Trello are two sites that implement WebSocket for their notifications. You can find what type of background activity occurs on any site by looking in the Network tab of the browser's debugger.</p>
+<p>So let's go ahead and implement the polling solution. First, I'm going to add a new model to keep track of notifications for all users, along with a relationship in the user model.</p>
+<p class="code_title"><em>app/models.py</em>: Notification model.</p>
+
+<pre><code class="language-python">import json
+from time import time
+
+# ...
+
+class User(UserMixin, db.Model):
+    # ...
+    notifications: so.WriteOnlyMapped['Notification'] = so.relationship(
+        back_populates='user')
+
+    # ...
+
+class Notification(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(128), index=True)
+    user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id),
+                                               index=True)
+    timestamp: so.Mapped[float] = so.mapped_column(index=True, default=time)
+    payload_json: so.Mapped[str] = so.mapped_column(sa.Text)
+
+    user: so.Mapped[User] = so.relationship(back_populates='notifications')
+
+    def get_data(self):
+        return json.loads(str(self.payload_json))
+</code></pre>
+<p>A notification is going to have a name, an associated user, a Unix timestamp and a payload. The timestamp gets its default value from the <code>time.time()</code> function. The payload is going to be different for each type of notification, so I'm writing it as a JSON string, as that will allow me to write lists, dictionaries or single values such as numbers or strings. I added the <code>get_data()</code> method as a convenience, so that the caller doesn't have to worry about the JSON deserialization.</p>
+<p>These changes need to be included in a new database migration:</p>
+<pre><code>(venv) $ flask db migrate -m &quot;notifications&quot;
+(venv) $ flask db upgrade
+</code></pre>
+<p>As a matter of convenience, I'm going to add the new <code>Message</code> and <code>Notification</code> models to the shell context, so that when I start a shell with the <code>flask shell</code> command, the model class is automatically imported for me:</p>
+<p class="code_title"><em>microblog.py</em>: Add Message model to shell context.</p>
+
+<pre><code class="language-python"># ...
+from app.models import User, Post, Message, Notification
+
+# ...
+
+@app.shell_context_processor
+def make_shell_context():
+    return {'sa': sa, 'so': so, 'db': db, 'User': User, 'Post': Post,
+            'Message': Message, 'Notification': Notification}
+</code></pre>
+<p>I'm also going to add a <code>add_notification()</code> helper method in the user model to make it easier to work with these objects:</p>
+<p class="code_title"><em>app/models.py</em>: Notification model.</p>
+
+<pre><code class="language-python">class User(UserMixin, db.Model):
+    # ...
+
+    def add_notification(self, name, data):
+        db.session.execute(self.notifications.delete().where(
+            Notification.name == name))
+        n = Notification(name=name, payload_json=json.dumps(data), user=self)
+        db.session.add(n)
+        return n
+</code></pre>
+<p>This method not only adds a notification for the user to the database, but also ensures that if a notification with the same name already exists, it is removed first. You have seen before that write-only relationships can be queried by calling the <code>select()</code> method. The <code>delete()</code> method returns a delete query for the relationship, which removes all elements without loading them. By adding the <code>where()</code> clause I specify exactly which elements in the relationship I want to delete. The notification I'm going to work with is going to be called <code>unread_message_count</code>. If the database already has a notification with this name with, for example, a value of 3, whenever the user receives a new message and the message count goes to 4 I want to replace the old notification.</p>
+<p>In any place where the unread message count changes, I need to call <code>add_notification()</code> so that I have my notifications for the user updated. There are two places where this changes. First, when the user receives a new private message, in the <code>send_message()</code> view function:</p>
+<p class="code_title"><em>app/main/routes.py</em>: Update user notification.</p>
+
+<pre><code class="language-python">@bp.route('/send_message/&lt;recipient&gt;', methods=['GET', 'POST'])
+@login_required
+def send_message(recipient):
+    # ...
+    if form.validate_on_submit():
+        # ...
+        user.add_notification('unread_message_count',
+                              user.unread_message_count())
+        db.session.commit()
+        # ...
+    # ...
+</code></pre>
+<p>The second place where I need to notify the user is when the user goes to the messages page, at which point the unread count goes back to zero:</p>
+<p class="code_title"><em>app/main/routes.py</em>: View messages route.</p>
+
+<pre><code class="language-python">@bp.route('/messages')
+@login_required
+def messages():
+    current_user.last_message_read_time = datetime.now(timezone.utc)
+    current_user.add_notification('unread_message_count', 0)
+    db.session.commit()
+    # ...
+</code></pre>
+<p>Now that all the notifications for users are maintained in the database, I can add a new route that the client can use to retrieve notifications for the logged in user:</p>
+<p class="code_title"><em>app/main/routes.py</em>: Notifications view function.</p>
+
+<pre><code class="language-python">from app.models import Notification
+
+# ...
+
+@bp.route('/notifications')
+@login_required
+def notifications():
+    since = request.args.get('since', 0.0, type=float)
+    query = current_user.notifications.select().where(
+        Notification.timestamp &gt; since).order_by(Notification.timestamp.asc())
+    notifications = db.session.scalars(query)
+    return [{
+        'name': n.name,
+        'data': n.get_data(),
+        'timestamp': n.timestamp
+    } for n in notifications]
+</code></pre>
+<p>This is a fairly simple function that returns a JSON payload with a list of notifications for the user. Each notification is given as a dictionary with three elements, the notification name, the additional data that pertains to the notification (such as the message count), and the timestamp. The notifications are delivered in the order they were created, from oldest to newest.</p>
+<p>I do not want clients to get repeated notifications, so I'm giving them the option to only request notifications since a given time. The <code>since</code> option can be included in the query string of the request URL, with the unix timestamp of the starting time, as a floating point number. Only notifications that occurred after this time will be returned if this argument is included.</p>
+<p>The final piece to complete this feature is to implement the actual polling in the client. The best place to do this is in the base template, so that all pages automatically inherit the behavior:</p>
+<p class="code_title"><em>app/templates/base.html</em>: Polling for notifications.</p>
+
+<pre><code class="language-html">...
+{% block scripts %}
+  &lt;script&gt;
+    // ...
+
+    {% if current_user.is_authenticated %}
+    function initialize_notifications() {
+      let since = 0;
+      setInterval(async function() {
+        const response = await fetch('{{ url_for('main.notifications') }}?since=' + since);
+        const notifications = await response.json();
+        for (let i = 0; i &lt; notifications.length; i++) {
+          if (notifications[i].name == 'unread_message_count')
+            set_message_count(notifications[i].data);
+          since = notifications[i].timestamp;
+        }
+      }, 10000);
+    }
+    document.addEventListener('DOMContentLoaded', initialize_notifications);
+    {% endif %}
+  &lt;/script&gt;
+</code></pre>
+<p>This function is enclosed in a template conditional, because I want to poll for new messages only when the user is logged in. For users that are not logged in, this function will not be included because they cannot receive notifications.</p>
+<p>You've already seen the <code>DOMContentLoaded</code> event in <a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">Chapter 20</a>. This is how you register a function to execute after the page loads. For this feature, what I need to do on page load is to set up a regular timer that gets the notifications for the user. You've also seen the <code>setTimeout()</code> JavaScript function, which runs the function given as an argument after the specific time passes. The <code>setInterval()</code> function uses the same arguments as <code>setTimeout()</code>, but instead of firing the timer just once, it keeps calling the callback function at regular intervals. In this case my interval is set to 10 seconds (given in milliseconds), so I'm going to see the badge update with a resolution of roughly six times per minute.</p>
+<p>The function associated with the interval timer issues an Ajax request for the new notifications route using <code>fetch()</code>. When this call returns it iterates over the list of notifications. When a notification with name <code>unread_message_count</code> is received, the message count badge is adjusted by calling the function defined above with the count given in the notification.</p>
+<p>The way I'm handling the <code>since</code> argument might be confusing. I start by initializing this argument to 0. The argument is always included in the request URL, but I can't generate the query string using Flask's <code>url_for()</code> like I've done before, because <code>url_for()</code> runs in the server once, and I need the <code>since</code> argument to dynamically update. The first time, the request is going to be sent to <em>/notifications?since=0</em>, but as soon as I receive a notification, I update <code>since</code> to its timestamp. This ensures that I don't receive duplicates, since I'm always asking to receive notifications that occurred since the last notification I've seen. It's also important to note that I declared the <code>since</code> variable outside of the interval function, because I did not want this to be a local variable, I want the same variable to be used in all invocations.</p>
+<p>The easiest way to try this out is to use two different browser. Log in to Microblog on both browsers using different users. Then from one of the browsers send one or more messages to the other user. The other browser's navigation bar should update to show the count of messages that you sent in less than 10 seconds. And when you click on the Messages link the unread message count resets back to zero.</p>
+<p>Continue on to the <a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">next chapter</a>.</p></div>
+
+<h2>Buy me a coffee?</h2>
+<p class="card-text">Thank you for visiting my blog! If you enjoyed this article, please consider supporting my work and keeping me caffeinated with a small one-time donation through <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy me a coffee</a>. Thanks!</p>
+<a href="https://www.buymeacoffee.com/miguelgrinberg" target="_blank"><img src="/static/buymeacoffee-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+
+<h2>Share this post</h2>
+<!-- Sharingbutton Hacker News -->
+<a class="resp-sharing-button__link" href="https://news.ycombinator.com/submitlink?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxi-user-notifications&amp;t=The%20Flask%20Mega-Tutorial%2C%20Part%20XXI%3A%20User%20Notifications" target="_blank" rel="noopener" aria-label="Hacker News">
+  <div class="resp-sharing-button resp-sharing-button--hackernews resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><path fill-rule="evenodd" d="M60.94 82.314L17 0h20.08l25.85 52.093c.397.927.86 1.888 1.39 2.883.53.994.995 2.02 1.393 3.08.265.4.463.764.596 1.095.13.334.262.63.395.898.662 1.325 1.26 2.618 1.79 3.877.53 1.26.993 2.42 1.39 3.48 1.06-2.254 2.22-4.673 3.48-7.258 1.26-2.585 2.552-5.27 3.877-8.052L103.49 0h18.69L77.84 83.308v53.087h-16.9v-54.08z"></path></svg></div>Hacker News</div>
+</a>
+
+<!-- Sharingbutton Reddit -->
+<a class="resp-sharing-button__link" href="https://reddit.com/submit/?url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxi-user-notifications&amp;resubmit=true&amp;title=The Flask Mega-Tutorial, Part XXI: User Notifications" target="_blank" rel="noopener" aria-label="Reddit">
+  <div class="resp-sharing-button resp-sharing-button--reddit resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-6.07-1.72.08-1.1.4-3.05 1.52-3.7.72-.4 1.73-.24 3 .5C17.2 6.3 18.46 7.5 20 7.5c1.65 0 3-1.35 3-3s-1.35-3-3-3c-1.38 0-2.54.94-2.88 2.22-1.43-.72-2.64-.8-3.6-.25-1.64.94-1.95 3.47-2 4.55-2.33.08-4.45.7-6.1 1.72C4.86 8.98 3.96 8.5 3 8.5c-1.65 0-3 1.35-3 3 0 1.32.84 2.44 2.05 2.84-.03.22-.05.44-.05.66 0 3.86 4.5 7 10 7s10-3.14 10-7c0-.22-.02-.44-.05-.66 1.2-.4 2.05-1.54 2.05-2.84zM2.3 13.37C1.5 13.07 1 12.35 1 11.5c0-1.1.9-2 2-2 .64 0 1.22.32 1.6.82-1.1.85-1.92 1.9-2.3 3.05zm3.7.13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9.8 4.8c-1.08.63-2.42.96-3.8.96-1.4 0-2.74-.34-3.8-.95-.24-.13-.32-.44-.2-.68.15-.24.46-.32.7-.18 1.83 1.06 4.76 1.06 6.6 0 .23-.13.53-.05.67.2.14.23.06.54-.18.67zm.2-2.8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm5.7-2.13c-.38-1.16-1.2-2.2-2.3-3.05.38-.5.97-.82 1.6-.82 1.1 0 2 .9 2 2 0 .84-.53 1.57-1.3 1.87z"/></svg></div>Reddit</div>
+</a>
+
+<!-- Sharingbutton Twitter -->
+<a class="resp-sharing-button__link" href="https://twitter.com/intent/tweet/?text=The%20Flask%20Mega-Tutorial%2C%20Part%20XXI%3A%20User%20Notifications&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxi-user-notifications" target="_blank" rel="noopener" aria-label="Twitter">
+  <div class="resp-sharing-button resp-sharing-button--twitter resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/></svg></div>Twitter</div>
+</a>
+
+<!-- Sharingbutton LinkedIn -->
+<a class="resp-sharing-button__link" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxi-user-notifications&amp;title=The%20Flask%20Mega-Tutorial%2C%20Part%20XXI%3A%20User%20Notifications&amp;summary=The%20Flask%20Mega-Tutorial%2C%20Part%20XXI%3A%20User%20Notifications&amp;source=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxi-user-notifications" target="_blank" rel="noopener" aria-label="LinkedIn">
+  <div class="resp-sharing-button resp-sharing-button--linkedin resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.5 21.5h-5v-13h5v13zM4 6.5C2.5 6.5 1.5 5.3 1.5 4s1-2.4 2.5-2.4c1.6 0 2.5 1 2.6 2.5 0 1.4-1 2.5-2.6 2.5zm11.5 6c-1 0-2 1-2 2v7h-5v-13h5V10s1.6-1.5 4-1.5c3 0 5 2.2 5 6.3v6.7h-5v-7c0-1-1-2-2-2z"/></svg></div>LinkedIn</div>
+</a>
+
+<!-- Sharingbutton Facebook -->
+<a class="resp-sharing-button__link" href="https://facebook.com/sharer/sharer.php?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxi-user-notifications" target="_blank" rel="noopener" aria-label="Facebook">
+  <div class="resp-sharing-button resp-sharing-button--facebook resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/></svg></div>Facebook</div>
+</a>
+
+<!-- Sharingbutton E-Mail -->
+<a class="resp-sharing-button__link" href="mailto:?subject=The%20Flask%20Mega-Tutorial%2C%20Part%20XXI%3A%20User%20Notifications&amp;body=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xxi-user-notifications" target="_self" rel="noopener" aria-label="E-Mail">
+  <div class="resp-sharing-button resp-sharing-button--email resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 4H2C.9 4 0 4.9 0 6v12c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7.25 14.43l-3.5 2c-.08.05-.17.07-.25.07-.17 0-.34-.1-.43-.25-.14-.24-.06-.55.18-.68l3.5-2c.24-.14.55-.06.68.18.14.24.06.55-.18.68zm4.75.07c-.1 0-.2-.03-.27-.08l-8.5-5.5c-.23-.15-.3-.46-.15-.7.15-.22.46-.3.7-.14L12 13.4l8.23-5.32c.23-.15.54-.08.7.15.14.23.07.54-.16.7l-8.5 5.5c-.08.04-.17.07-.27.07zm8.93 1.75c-.1.16-.26.25-.43.25-.08 0-.17-.02-.25-.07l-3.5-2c-.24-.13-.32-.44-.18-.68s.44-.32.68-.18l3.5 2c.24.13.32.44.18.68z"/></svg></div>E-Mail</div>
+</a>
+
+<div id="comments" class="post-comment-count">
+  
+  <a class="btn btn-outline-secondary" href="/post/the-flask-mega-tutorial-part-xxi-user-notifications#comments">40 comments</a>
+  
+</div>
+
+
+<div class="comments">
+  <ul>
+    
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/06b7b39e582c094be216c382dc039576?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#1</span> <span class="badge text-bg-warning">Yuming</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-14T21:42:14Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-14T21:42:14Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel,<br>
+Compared with Chapter 21 of your 2018 Edition tutorial, you made some changes in the code listed as "app/templates/base.html: Polling for notifications".  For example, now you call</p>
+<pre><code> await fetch('{{ url_for('main.notifications') }}?since=' + since);
+</code></pre>
+<p>instead of<br>
+     $.ajax('{{ url_for('main.notifications') }}?since=' + since)...</p>
+<p>I know both versions work and maybe they do the same thing behind the scenes, but I am curious if there is any technical reason why you made such changes? Or just your new personal preference? </p>
+<p>Thanks</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#2</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-15T16:17:55Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-15T16:17:55Z</span>
+  </p>
+  <div>
+    <p>@Yuming the purpose was to remove jquery as a dependency.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/f1466592fdc3c253c732f7192ba1a9ae?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#3</span> <span class="badge text-bg-warning">edu</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-17T20:11:13Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-17T20:11:13Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, great tutorial!<br>
+I'm having problems with this chapter. Flask db migrate and db upgrade won't recognize the changes made in models (Error ColumnNotFound) I tried undoing the changes (messages and notifications) and then the error was 'language ColumnNotFound' So it went from not recognizing the new changes in models to actually regressing in the database changes. Up to the previous chapter everything worked fine (this IS a great tutorial) and I even tried using all the files from the github repo (including the migration scripts) from this chapter to see if it worked, it didn't. At this point I figure there's something wring with my configuration but I can't seem to understand what. Any clues?<br>
+desde ya, gracias!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#4</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-17T20:43:54Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-17T20:43:54Z</span>
+  </p>
+  <div>
+    <p>@edu: your database became out of sync for some reason. This is unlikely to be code or configuration, it is just that the database is in a state that Flask-Migrate is unable to make sense of. One option is to delete the entire database and run <code>flask db upgrade</code> to recreate the database from scratch.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/f1466592fdc3c253c732f7192ba1a9ae?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#5</span> <span class="badge text-bg-warning">edu</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-17T21:34:41Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-17T21:34:41Z</span>
+  </p>
+  <div>
+    <p>Thanks for the quick response. I did erase the database via drop_all, re initialized it and the same problem persisted.<br>
+I also tried adding "compare_type=True" to the migrate config but it did not make a difference. Maybe I should start over from the beggining or some point in the middle?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#6</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-17T23:56:27Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-17T23:56:27Z</span>
+  </p>
+  <div>
+    <p>@edu: the <code>drop_all()</code> function deletes your tables only. It does not delete Alembic's own data. You need to properly delete the entire database.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/f1466592fdc3c253c732f7192ba1a9ae?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#7</span> <span class="badge text-bg-warning">edu</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-18T00:38:32Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-18T00:38:32Z</span>
+  </p>
+  <div>
+    <p>Is there a command to delete the database entirely? or a proper way of doing it?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#8</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-18T10:54:48Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-18T10:54:48Z</span>
+  </p>
+  <div>
+    <p>@edu: depends on the database. For SQLite the simplest way is to delete the database file from your terminal.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/1a1736908e5d886e3a1ff8bb77e1330c?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#9</span> <span class="badge text-bg-warning">Rodrigo Delduca</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-05T07:11:34Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-05T07:11:34Z</span>
+  </p>
+  <div>
+    <p>I think you can also make use of Server Side Events (SSE) to delivery the notifications for the client.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#10</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-05T11:43:57Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-05T11:43:57Z</span>
+  </p>
+  <div>
+    <p>@Rodrigo: yes, you can use SSE and you can use WebSocket. Unfortunately both of these options require a different type of web server that can hold a large number of concurrent connections. Definitely possible and recommended in some cases, but it isn't always best.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/37cb4e3f9461fe6541747db8e67e02d9?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#11</span> <span class="badge text-bg-warning">Joey</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-09T16:08:11Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-09T16:08:11Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel,</p>
+<p>How are you. I followed your instruction and I couldn't get anything from the /messages route, even for the headings. I couldn't find the issues, need your help.</p>
+<p>Thanks,<br>
+Joey</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#12</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-05-10T08:30:51Z" data-function="fromNow" data-refresh="0" style="display: none">2024-05-10T08:30:51Z</span>
+  </p>
+  <div>
+    <p>@Joey: the working code is available as a download. Look in the introduction section of this article.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/6adce26cda11917244ac301adffe3f23?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#13</span> <span class="badge text-bg-warning">Oliver</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-08-18T01:53:54Z" data-function="fromNow" data-refresh="0" style="display: none">2024-08-18T01:53:54Z</span>
+  </p>
+  <div>
+    <p>Hello Miguel, can this concept of notifications be applied to comments instead of private messages?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#14</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-08-18T19:37:00Z" data-function="fromNow" data-refresh="0" style="display: none">2024-08-18T19:37:00Z</span>
+  </p>
+  <div>
+    <p>@Oliver: of course. Once you learn the pattern you can apply it to other sources of events.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7037ddd66efb20d641fceb63bacec721?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#15</span> <span class="badge text-bg-warning">Pirity Tamás Gábor</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-10T22:11:49Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-10T22:11:49Z</span>
+  </p>
+  <div>
+    <p>Hello!</p>
+<p>Very thx for your support at sqlalchemy's ont-to-man/many-to-one support. (Chapter 4)<br>
+The standard method -- you suggested -- works like a charm. I rewrite parent registration and<br>
+it looks like OK.</p>
+<p>But I have problem with many-to-many relationships, and I need it.</p>
+<p>I found a working (but I think ugly) solution (j is the association table between A and S):</p>
+<pre><code>j = db.Table('j',
+    db.Column('aid', db.Integer, db.ForeignKey('a.aid')),
+    db.Column('sid', db.Integer, db.ForeignKey('s.sid'))
+)
+class A(db.Model):
+    aid = db.Column(db.Integer, primary_key=True)
+    s = db.relationship('A', secondary=j, backref='a')
+class S(db.Model):
+    sid = db.Column(db.Integer, primary_key=True)
+    a = db.relationship('S', secondary=j, backref='s')
+</code></pre>
+<p>How can I do it much elegant? It's looks like sqlalchemy 1.x code, I think there is better solution.</p>
+<p>Tom</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#16</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-11T00:28:09Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-11T00:28:09Z</span>
+  </p>
+  <div>
+    <p>@Pirity: the many-to-many example in this tutorial (chapter 8) uses the modern style, based on Python type hints and using <code>back_populates</code> instead of <code>backref</code>. Have you considered using that?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7037ddd66efb20d641fceb63bacec721?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#17</span> <span class="badge text-bg-warning">Pirity Tamás Gábor</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-11T11:24:06Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-11T11:24:06Z</span>
+  </p>
+  <div>
+    <p>Hello!</p>
+<p>Yes, I read Chapter 8.</p>
+<p>I tried this:</p>
+<pre><code>ja = sa.Table(
+    'ja',
+    db.metadata,
+    sa.Column('program', sa.Integer, sa.ForeignKey('<a href="http://a.id" rel="nofollow">a.id</a>')),
+    sa.Column('student', sa.Integer, sa.ForeignKey('<a href="http://s.id" rel="nofollow">s.id</a>'))
+)
+
+class A(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+...
+    s: so.WriteOnlyMapped['S'] = so.relationship(
+    secondary = ja, primaryjoin = (ja.c.student == id),
+    secondaryjoin = (ja.c.student == id),
+    back_populates='s')
+
+class S(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    user: so.Mapped[int] = so.mapped_column(sa.ForeignKey('<a href="http://user.id" rel="nofollow">user.id</a>'))
+...
+    a: so.WriteOnlyMapped['A'] = so.relationship(
+    secondary = ja, primaryjoin = (ja.c.program == id),
+    secondaryjoin = (ja.c.program == id),
+    back_populates='a')
+</code></pre>
+<p>What did I wrong? Your example many-to-many connection, but both table/model is User, I'd like to connect two absolutely different tables.</p>
+<p>It worked when I do flask db.migrate; flask db upgrate -- no errors. OK.</p>
+<p>But if I test with flask shell:</p>
+<pre><code>&gt;&gt;&gt; q=sa.select(A)
+&gt;&gt;&gt; a=db.session.scalar(q)
+&gt;&gt;&gt; a
+&lt;A 957&gt;
+
+&gt;&gt;&gt; q=sa.select(S)
+&gt;&gt;&gt; s=db.session.scalar(q)
+&gt;&gt;&gt; s
+&lt;Student 531: Simon János Dániel [72660139484]&gt;
+
+&gt;&gt;&gt; a.s
+&lt;sqlalchemy.orm.writeonly.WriteOnlyCollection object at 0x7f1bd63d7ba0&gt;
+</code></pre>
+<p>I don't understand why, I'd like a.s would be<br>
+&lt;Student 531: Simon János Dániel [72660139484]&gt;</p>
+<p>It is a very boring answer.</p>
+<p>It's worked with the "old" method, I don't understand what I did wrong.</p>
+<p>Tom</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#18</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-11T12:19:49Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-11T12:19:49Z</span>
+  </p>
+  <div>
+    <p>@Pirity: the write-only relationships need to be queried explicitly. The <code>a.s.select()</code> expression gives you the query that you need to run to get the relationship elements.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7037ddd66efb20d641fceb63bacec721?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#19</span> <span class="badge text-bg-warning">Pirity Tamás Gábor</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-11T20:11:55Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-11T20:11:55Z</span>
+  </p>
+  <div>
+    <p>Hello!</p>
+<p>I've read chapter 8, and tried it:</p>
+<pre><code>a = sa.Table(
+    'ja',
+    db.metadata,
+    sa.Column('program', sa.Integer, sa.ForeignKey('<a href="http://a.id" rel="nofollow">a.id</a>'), primary_key = True),
+    sa.Column('diak', sa.Integer, sa.ForeignKey('<a href="http://s.id" rel="nofollow">s.id</a>'), primary_key = True)
+)
+class A(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+...
+    s: so.Mapped['S'] = so.relationship(
+    secondary = ja, primaryjoin = (ja.c.diak == id),
+    secondaryjoin = (ja.c.diak == id),
+    back_populates='a')
+
+class S(User):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    user: so.Mapped[int] = so.mapped_column(sa.ForeignKey('user.uid'))
+    parent: so.Mapped[list['Parent']] = so.relationship('Parent', back_populates = 'student', primaryjoin='<a href="http://S.id" rel="nofollow">S.id</a> == Parent.sid', order_by='asc(Parent.email)')
+...
+    a: so.Mapped['A'] = so.relationship(
+    secondary = ja, primaryjoin = (ja.c.program == id),
+    secondaryjoin = (ja.c.program == id),
+    back_populates='s')
+</code></pre>
+<p>And flask migrate works, but flask shell not:</p>
+<pre><code>&gt;&gt;&gt; q=sa.select(A)
+&gt;&gt;&gt; a=db.session.scalar(q)
+&gt;&gt;&gt; a
+&lt;A 957&gt;
+&gt;&gt;&gt; a.cim
+'Pingpong'
+</code></pre>
+<p>Looks like OK.</p>
+<pre><code>&gt;&gt;&gt; a.s
+&lt;console&gt;:1: SAWarning: SELECT statement has a cartesian product between FROM element(s) &quot;user&quot;, &quot;s&quot; and FROM element &quot;a&quot;.  Apply join condition(s) between each element to resolve.
+
+ja:
+b=# select * from ja;
+ program | diak 
+---------+------
+     957 | 1241
+(1 row)
+</code></pre>
+<p>I think I should see &lt;Student: 1241&gt; when I write a.s and not this ugly error message.<br>
+Probably I used wrongly association table. Or maybe S-Parent connection is the problem.<br>
+:(</p>
+<p>Any idea?</p>
+<p>Tom</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#20</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-12T00:09:10Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-12T00:09:10Z</span>
+  </p>
+  <div>
+    <p>@Pirity: I can't really debug this with partial information, sorry. I think you should read the SQLAlchemy documentation to understand better how the different relationship patterns work. You seem to be copying some code that I wrote and adapting it in ways that are maybe incorrect, or at least unnecessarily complex. For example, most many-to-many relationships do not need the <code>primaryjoin</code> and <code>secondaryjoin</code> arguments, yet you are including them in yours. Did you determine that these were necessary in this specific case, or did you just copy them from my code? Also you seem to have reverted to the less flexible relationships that are not write-only, which only make sense when the list of related objects are very short. Maybe that is the case here, but I want to make sure you understand that <code>Mapped</code> and <code>WriteOnlyMapped</code> are not equivalent and in most cases write-only is the only option. Again, the SQLAlchemy docs can help you understand these considerations.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7037ddd66efb20d641fceb63bacec721?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#21</span> <span class="badge text-bg-warning">Pirity Tamás Gábor</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-12T11:45:37Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-12T11:45:37Z</span>
+  </p>
+  <div>
+    <p>Hello!<br>
+Thx for your advices.<br>
+Yes, I need to read some sqlqlchemy docs.<br>
+Yes, the code was unnecesseryly too complex.<br>
+After I removed primaryjoin and secondaryjoin conditionals,<br>
+it works fine.<br>
+Thx.<br>
+Tom</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7037ddd66efb20d641fceb63bacec721?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#22</span> <span class="badge text-bg-warning">Pirity Tamás Gábor</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-13T16:06:13Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-13T16:06:13Z</span>
+  </p>
+  <div>
+    <p>Hello!</p>
+<p>Thx again for your advices.</p>
+<p>One more thing:<br>
+I have a database model:</p>
+<pre><code>Meet:
+   Teacher (teacher.tid) -&gt; \
+                            user
+   Parent (parent.pid)   -&gt; /
+   Interval(iid) ....
+</code></pre>
+<p>I can get data (list) from this:</p>
+<pre><code>q=sa.select(Meet)
+m=db.session.scalars(q).all()
+l=[]
+for x in m:
+   q=sa.select(Parent).where(Parent.pid == x.pid)
+   p=db.session.scalar(q)
+   q=sa.select(Teacher).where(Teacher.tid == x.tid)
+   t=db.session.scalar(q)
+   q=sa.select(Interval).where(Interval.iid == x.iid)
+   i=db.session.scalar(q)
+   l.append([p.username, t.username, <a href="http://i.name" rel="nofollow">i.name</a>])
+</code></pre>
+<p>I think this list is very OK for me, just I ask you, is there a more elegant solution for connecting 3 tables with one (definitely not association) table?</p>
+<p>Tom</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#23</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-13T16:17:05Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-13T16:17:05Z</span>
+  </p>
+  <div>
+    <p>@Pirity: yes, the standard way to do this in relational databases is with joins. Your solution is okay as long as <code>len(m)</code> is a small number. The more elements you have the more expensive it becomes, because you are issuing <code>3*len(m)+1</code> queries. With joins this would be a single query.</p>
+<p>And before you ask, unfortunately I cannot write queries with joins by memory. In most cases if you set up proper <code>relationship</code> attributes in your models then the joins are automatically added by SQLAlchemy. Worst case you will need to write the join clauses yourself. Either way, I think it is possible to get these results from a single query, if you have the patience to figure out the exact query.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7037ddd66efb20d641fceb63bacec721?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#24</span> <span class="badge text-bg-warning">Pirity Tamás Gábor</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-13T17:29:05Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-13T17:29:05Z</span>
+  </p>
+  <div>
+    <p>Hello!<br>
+1. len(m) &lt; 1000 (&lt; 200), so not problem the efficiency.<br>
+2. If I use pure sql:</p>
+<pre><code>select * from meet, parent, teacher, &quot;interval&quot; where meet.pid=parent.pid and meet.tid=teacher.tid and meet.iid=&quot;interval&quot;.iid;
+</code></pre>
+<p>I can solve this with only one select... but i think (it worked with sqlalchemy 1.x) and i didn't find any solution to execute pure sql code, or connect three tables (parent, teacher, interval) with a fourth (meet) helper, maybe I am too beginner.</p>
+<p>One more comment:<br>
+parents and teachers see only 18 records (filtered), so only 54 query  will run. But better one, and i didnt find other solution. :(<br>
+Advice?<br>
+Maybe the problem i:s both Parent and Teacher connected (UIser), and sqlalchely ca'nt resolve this.<br>
+Tom</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#25</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-13T18:49:06Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-13T18:49:06Z</span>
+  </p>
+  <div>
+    <p>@Pirity: I'm sorry but I don't understand the logic that you are using. If you have ~200 rows in the meet table, then you will be running ~601 queries to get your data, not 54. A low number of rows in the student or teacher tables do not affect the total number of queries that need to be run inside your for-loop. You asked me about the elegant solution. I haven't changed my answer, this is all doable in a single query, with raw SQL or with SQLAlchemy's query builder, since both can generate exactly the same queries.</p>
+  </div>
+</div>
+    </li>
+    
+  </ul>
+</div>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxi-user-notifications/page/1#comments">&laquo;&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxi-user-notifications/page/0#comments">&laquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxi-user-notifications/page/2#comments">&raquo;</a></li>
+    <li class="page-item"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xxi-user-notifications/page/0#comments">&raquo;&raquo;</a></li>
+  </ul>
+</nav>
+
+
+
+<div id="comment-form">
+  <h3>Leave a Comment</h3>
+
+  
+  
+  
+
+  
+<form action="#comment-form" method="post">
+  <input id="url" name="url" type="hidden" value="">
+<input id="csrf_token" name="csrf_token" type="hidden" value="ImViMGQ4ZWQ0ZjRkNWNkZTUzZWM1YWE4MmYwMGEyNTg3NjgwMDQyYTYi.ajz8kQ.ChXXz95SkfL8itj3REHIkuIZepY">
+    
+  <div class="mb-3">
+    <label class="form-label" for="name">Name</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="name" name="name" required type="text" value="">
+    </div>
+  </div>
+
+    
+    
+  <div class="mb-3">
+    <label class="form-label" for="email">Email</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="email" name="email" required type="text" value="">
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="comment">Comment</label>
+    <div class="input-group has-validation">
+      <textarea class="form-control" id="comment" name="comment" required>
+</textarea>
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="captcha">Captcha</label>
+    <div class="input-group has-validation">
+      
+<script src='https://www.google.com/recaptcha/api.js' async defer></script>
+<div class="g-recaptcha" data-sitekey="6Ld5Zs4SAAAAAOY0DOi4r18bgHlEaz41qAoRf__S"></div>
+
+    </div>
+  </div>
+
+    
+  <input class="btn btn-primary mb-3" id="submit" name="submit" type="submit" value="Submit">
+
+      
+</form>
+
+</div>
+
+
+</div>
+
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div id="sidebar">
+        
+          
+  
+
+
+
+<div class="card">
+  
+  
+  <div class="card-header">Flask Web Development, 2nd Edition</div>
+  <a class="card-book-cover" href="https://amzn.to/3lE2mok">
+    <img src="/static/flask2e-book-cover-small.png" alt="Flask Web Development, 2nd Edition">
+  </a>
+  <div class="card-body">
+    <p class="card-text">If you want to learn modern web development techniques with Python and Flask, you may find the second edition of my <a href="https://amzn.to/3lE2mok">O'Reilly book</a> useful.</p>
+  </div>
+  <div class="card-body">
+    <a class="card-link" href="https://amzn.to/3lE2mok">Click here to get this Book!</a><br />
+  </div>
+
+  
+</div>
+        
+        <div class="card">
+  <div class="card-header">About Miguel</div>
+  <div class="card-body">
+    <img style="float: right; margin: 0px 8px 8px 0px; padding: 4px; border: 1px solid #ccc;" src="/static/miguel.jpg" />
+    <p class="card-text">Welcome to my blog!</p>
+    <p class="card-text">I'm a software engineer and technical writer, currently living in Drogheda, Ireland.</p>
+    <p><u>Generative AI notice:</u> I do not use LLMs, agents or any other generative AI tools for help with writing, coding, image creation or any other tasks related to this blog or my open source work.</p>
+    <p class="card-text">You can also find me on
+      <a href="https://github.com/miguelgrinberg">Github</a>,
+      <a href="http://www.linkedin.com/in/miguelgrinberg">LinkedIn</a>,
+      <a href="https://bsky.app/profile/miguelgrinberg.com">Bluesky</a>,
+      <a href="https://mstdn.social/@miguelgrinberg">Mastodon</a>,
+      <a href="https://twitter.com/miguelgrinberg">Twitter</a>,
+      <a href="https://youtube.com/miguelgrinberg">YouTube</a>,
+      <!--<a href="https://www.facebook.com/miguelgrinbergblog">Facebook</a>,-->
+      <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy Me a Coffee</a>,
+      and <a href="https://patreon.com/miguelgrinberg">Patreon</a>.</p>
+    <p class="card-text">Thank you for visiting!</p>
+  </div>
+</div>
+        
+        <div class="card" id="categories">
+  <div class="card-header">Categories</div>
+  <div class="card-body">
+    
+    <div class="category">
+      <a href="/category/AI/feed"><img src="/static/rss-small.png" title="AI RSS Feed" label="AI RSS Feed" alt="AI RSS Feed" /></a>
+      <form action="/category/AI" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="AI" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Arduino/feed"><img src="/static/rss-small.png" title="Arduino RSS Feed" label="Arduino RSS Feed" alt="Arduino RSS Feed" /></a>
+      <form action="/category/Arduino" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Arduino" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Authentication/feed"><img src="/static/rss-small.png" title="Authentication RSS Feed" label="Authentication RSS Feed" alt="Authentication RSS Feed" /></a>
+      <form action="/category/Authentication" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Authentication" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Blog/feed"><img src="/static/rss-small.png" title="Blog RSS Feed" label="Blog RSS Feed" alt="Blog RSS Feed" /></a>
+      <form action="/category/Blog" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Blog" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/C++/feed"><img src="/static/rss-small.png" title="C++ RSS Feed" label="C++ RSS Feed" alt="C++ RSS Feed" /></a>
+      <form action="/category/C++" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="C++" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/CSS/feed"><img src="/static/rss-small.png" title="CSS RSS Feed" label="CSS RSS Feed" alt="CSS RSS Feed" /></a>
+      <form action="/category/CSS" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="CSS" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Cloud/feed"><img src="/static/rss-small.png" title="Cloud RSS Feed" label="Cloud RSS Feed" alt="Cloud RSS Feed" /></a>
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" /> <small><em>12</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Database/feed"><img src="/static/rss-small.png" title="Database RSS Feed" label="Database RSS Feed" alt="Database RSS Feed" /></a>
+      <form action="/category/Database" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Database" /> <small><em>33</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Docker/feed"><img src="/static/rss-small.png" title="Docker RSS Feed" label="Docker RSS Feed" alt="Docker RSS Feed" /></a>
+      <form action="/category/Docker" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Docker" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Filmmaking/feed"><img src="/static/rss-small.png" title="Filmmaking RSS Feed" label="Filmmaking RSS Feed" alt="Filmmaking RSS Feed" /></a>
+      <form action="/category/Filmmaking" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Filmmaking" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Flask/feed"><img src="/static/rss-small.png" title="Flask RSS Feed" label="Flask RSS Feed" alt="Flask RSS Feed" /></a>
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" /> <small><em>130</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Games/feed"><img src="/static/rss-small.png" title="Games RSS Feed" label="Games RSS Feed" alt="Games RSS Feed" /></a>
+      <form action="/category/Games" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Games" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Infra/feed"><img src="/static/rss-small.png" title="Infra RSS Feed" label="Infra RSS Feed" alt="Infra RSS Feed" /></a>
+      <form action="/category/Infra" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Infra" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/IoT/feed"><img src="/static/rss-small.png" title="IoT RSS Feed" label="IoT RSS Feed" alt="IoT RSS Feed" /></a>
+      <form action="/category/IoT" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="IoT" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/JavaScript/feed"><img src="/static/rss-small.png" title="JavaScript RSS Feed" label="JavaScript RSS Feed" alt="JavaScript RSS Feed" /></a>
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" /> <small><em>37</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/MicroPython/feed"><img src="/static/rss-small.png" title="MicroPython RSS Feed" label="MicroPython RSS Feed" alt="MicroPython RSS Feed" /></a>
+      <form action="/category/MicroPython" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="MicroPython" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microdot/feed"><img src="/static/rss-small.png" title="Microdot RSS Feed" label="Microdot RSS Feed" alt="Microdot RSS Feed" /></a>
+      <form action="/category/Microdot" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microdot" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microservices/feed"><img src="/static/rss-small.png" title="Microservices RSS Feed" label="Microservices RSS Feed" alt="Microservices RSS Feed" /></a>
+      <form action="/category/Microservices" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microservices" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Movie Reviews/feed"><img src="/static/rss-small.png" title="Movie Reviews RSS Feed" label="Movie Reviews RSS Feed" alt="Movie Reviews RSS Feed" /></a>
+      <form action="/category/Movie%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Movie Reviews" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Personal/feed"><img src="/static/rss-small.png" title="Personal RSS Feed" label="Personal RSS Feed" alt="Personal RSS Feed" /></a>
+      <form action="/category/Personal" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Personal" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Photography/feed"><img src="/static/rss-small.png" title="Photography RSS Feed" label="Photography RSS Feed" alt="Photography RSS Feed" /></a>
+      <form action="/category/Photography" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Photography" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Product Reviews/feed"><img src="/static/rss-small.png" title="Product Reviews RSS Feed" label="Product Reviews RSS Feed" alt="Product Reviews RSS Feed" /></a>
+      <form action="/category/Product%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Product Reviews" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Programming/feed"><img src="/static/rss-small.png" title="Programming RSS Feed" label="Programming RSS Feed" alt="Programming RSS Feed" /></a>
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" /> <small><em>198</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Project Management/feed"><img src="/static/rss-small.png" title="Project Management RSS Feed" label="Project Management RSS Feed" alt="Project Management RSS Feed" /></a>
+      <form action="/category/Project%20Management" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Project Management" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Python/feed"><img src="/static/rss-small.png" title="Python RSS Feed" label="Python RSS Feed" alt="Python RSS Feed" /></a>
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" /> <small><em>187</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/REST/feed"><img src="/static/rss-small.png" title="REST RSS Feed" label="REST RSS Feed" alt="REST RSS Feed" /></a>
+      <form action="/category/REST" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="REST" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Raspberry Pi/feed"><img src="/static/rss-small.png" title="Raspberry Pi RSS Feed" label="Raspberry Pi RSS Feed" alt="Raspberry Pi RSS Feed" /></a>
+      <form action="/category/Raspberry%20Pi" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Raspberry Pi" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/React/feed"><img src="/static/rss-small.png" title="React RSS Feed" label="React RSS Feed" alt="React RSS Feed" /></a>
+      <form action="/category/React" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="React" /> <small><em>19</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Reviews/feed"><img src="/static/rss-small.png" title="Reviews RSS Feed" label="Reviews RSS Feed" alt="Reviews RSS Feed" /></a>
+      <form action="/category/Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Reviews" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Robotics/feed"><img src="/static/rss-small.png" title="Robotics RSS Feed" label="Robotics RSS Feed" alt="Robotics RSS Feed" /></a>
+      <form action="/category/Robotics" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Robotics" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Security/feed"><img src="/static/rss-small.png" title="Security RSS Feed" label="Security RSS Feed" alt="Security RSS Feed" /></a>
+      <form action="/category/Security" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Security" /> <small><em>14</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Video/feed"><img src="/static/rss-small.png" title="Video RSS Feed" label="Video RSS Feed" alt="Video RSS Feed" /></a>
+      <form action="/category/Video" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Video" /> <small><em>22</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/WebSocket/feed"><img src="/static/rss-small.png" title="WebSocket RSS Feed" label="WebSocket RSS Feed" alt="WebSocket RSS Feed" /></a>
+      <form action="/category/WebSocket" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="WebSocket" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Webcast/feed"><img src="/static/rss-small.png" title="Webcast RSS Feed" label="Webcast RSS Feed" alt="Webcast RSS Feed" /></a>
+      <form action="/category/Webcast" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Webcast" /> <small><em>3</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Windows/feed"><img src="/static/rss-small.png" title="Windows RSS Feed" label="Windows RSS Feed" alt="Windows RSS Feed" /></a>
+      <form action="/category/Windows" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Windows" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+  </div>
+</div>
+        
+      </div>
+    </div>
+    
+  </div>
+  <div id="footer">
+    
+    <p>&copy; 2012-<script type="text/javascript">document.write(new Date().getFullYear());</script> by Miguel Grinberg. All rights reserved. <a href="mailto:webmaster _at_ miguelgrinberg _dot_ com">Questions?</a></p>
+  </div>
+</div>
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="/static/prettify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js" integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg==" crossorigin="anonymous"></script>
+
+<script>
+moment.locale("en");
+function flask_moment_render(elem) {{
+    const timestamp = moment(elem.dataset.timestamp);
+    const func = elem.dataset.function;
+    const format = elem.dataset.format;
+    const timestamp2 = elem.dataset.timestamp2;
+    const no_suffix = elem.dataset.nosuffix;
+    const units = elem.dataset.units;
+    let args = [];
+    if (format)
+        args.push(format);
+    if (timestamp2)
+        args.push(moment(timestamp2));
+    if (no_suffix)
+        args.push(no_suffix);
+    if (units)
+        args.push(units);
+    elem.textContent = timestamp[func].apply(timestamp, args);
+    elem.classList.remove('flask-moment');
+    elem.style.display = "";
+}}
+function flask_moment_render_all() {{
+    const moments = document.querySelectorAll('.flask-moment');
+    moments.forEach(function(moment) {{
+        flask_moment_render(moment);
+        const refresh = moment.dataset.refresh;
+        if (refresh && refresh > 0) {{
+            (function(elem, interval) {{
+                setInterval(function() {{
+                    flask_moment_render(elem);
+                }}, interval);
+            }})(moment, refresh);
+        }}
+    }})
+}}
+document.addEventListener("DOMContentLoaded", flask_moment_render_all);
+</script>
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-20EHZP9GRZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-20EHZP9GRZ');
+  </script>
+  
+  <script type="text/javascript">
+    function setThemeUI() {
+      document.getElementById('select-theme-auto').classList.remove('active');
+      document.getElementById('select-theme-light').classList.remove('active');
+      document.getElementById('select-theme-dark').classList.remove('active');
+      const theme = getPreferredTheme();
+      const actualTheme = document.documentElement.getAttribute('data-bs-theme', 'light');
+      document.getElementById('select-theme-' + theme).classList.add('active');
+      document.getElementById('current-theme').href.baseVal = `#icon-theme-${actualTheme}`;
+    };
+
+    function updateTheme(theme) {
+      if (theme === 'auto') {
+        localStorage.removeItem('theme')
+      }
+      else {
+        localStorage.setItem('theme', theme)
+      }
+      setTheme(getPreferredTheme());
+    }
+
+    setThemeUI();
+
+    const darkModePreference = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModePreference.addEventListener("change", e => {
+      if (getPreferredTheme() === 'auto') {
+        setTheme('auto');
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // add prettyprint class to all <pre><code></code></pre> blocks
+      let prettify = false;
+      document.querySelectorAll('div.post-body pre code').forEach((code) => {
+        code.parentNode.classList.add('prettyprint');
+        prettify = true;
+      });
+      prettyPrint();
+    });
+  </script>
+
+  </body>
+</html>

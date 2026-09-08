@@ -1,0 +1,1204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    
+  <script type="text/javascript">
+    function getPreferredTheme() {
+      const storedTheme = localStorage.getItem('theme')
+      if (storedTheme) {
+        return storedTheme
+      }
+      return 'auto';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    };
+
+    setTheme(getPreferredTheme());
+  </script>
+  
+    <title>
+  
+    The Flask Mega-Tutorial, Part XVIII: Deployment on Heroku - miguelgrinberg.com
+  
+</title>
+  
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="miguelgrinberg.com">
+  <meta name="copyright" content="Copyright (c) 2012-2024 Miguel Grinberg">
+  <meta name="author" content="Miguel Grinberg">
+  
+  <meta name="keywords" content="heroku, python, flask, programming">
+  
+  
+  <link rel="canonical" href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">
+  
+
+  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+
+  <link href="/static/tomorrow.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/tomorrow-night.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/social.css" rel="stylesheet" type="text/css" />
+  <link href="/static/style_20260305.css" rel="stylesheet" type="text/css" />
+
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  <link rel="alternate" type="application/rss+xml" href="/feed" title="miguelgrinberg.com RSS feed">
+
+    <meta property="og:title" content="The Flask Mega-Tutorial, Part XVIII: Deployment on Heroku">
+    <meta property="og:description" content="This is the eighteenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to deploy Microblog to the Heroku cloud platform.You are reading the 2024 edition of the Flask Mega-Tutorial…">
+    <meta property="og:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xviii-deployment-on-heroku.jpg">
+    <meta property="og:url" content="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">
+    <meta name="twitter:title" content="The Flask Mega-Tutorial, Part XVIII: Deployment on Heroku">
+    <meta name="twitter:description" content="This is the eighteenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to deploy Microblog to the Heroku cloud platform.You are reading the 2024 edition of the Flask Mega-Tutorial…">
+    <meta name="twitter:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xviii-deployment-on-heroku.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@miguelgrinberg">
+
+  </head>
+  <body>
+    <svg style="display: none" version="2.0">
+      <defs>
+        <symbol id="icon-theme-auto" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-circle-half" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/>
+        </symbol>
+        <symbol id="icon-theme-light" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </symbol>
+        <symbol id="icon-theme-dark" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-moon-stars-fill" viewBox="0 0 16 16">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+        </symbol>
+      </defs>
+    </svg>
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/index">miguelgrinberg.com</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/index">Home</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/my-courses-and-books">My Courses and Books</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/hire-me">Consulting</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/about-me">About Me</a></li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <svg width="20" height="20" version="2.0"><use id="current-theme" href="#icon-theme-light"></svg>
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a id="select-theme-light" class="dropdown-item" href="javascript:updateTheme('light'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-light"></svg>&nbsp; Light Mode
+              </a>
+            </li>
+            <li>
+              <a id="select-theme-dark" class="dropdown-item" href="javascript:updateTheme('dark'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-dark"></svg>&nbsp; Dark Mode
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a id="select-theme-auto" class="dropdown-item" href="javascript:updateTheme('auto'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-auto"></svg>&nbsp; System Default
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item social-icons">
+          <a href="http://github.com/miguelgrinberg"><img src="/static/social/github.png" alt="GitHub" title="GitHub" /></a>
+          <a href="http://www.linkedin.com/in/miguelgrinberg"><img src="/static/social/linkedin.png" alt="LinkedIn" title="LinkedIn" /></a>
+          <a href="https://bsky.app/profile/miguelgrinberg.com"><img src="/static/social/bluesky.png" alt="Bluesky" title="Bluesky" /></a>
+          <a rel="me" href="https://mstdn.social/@miguelgrinberg"><img src="/static/social/mastodon.png" alt="Mastodon" title="Mastodon" /></a>
+          <a href="https://twitter.com/miguelgrinberg"><img src="/static/social/twitter.png" alt="Twitter" title="Twitter" /></a>
+          <a href="https://youtube.com/miguelgrinberg"><img src="/static/social/youtube.png" alt="YouTube" title="YouTube" /></a>
+          <a href="https://www.buymeacoffee.com/miguelgrinberg"><img src="/static/social/buymeacoffee.png" alt="Buy Me a Coffee" title="Buy Me a Coffee" /></a>
+          <a href="https://patreon.com/miguelgrinberg"><img src="/static/social/patreon.png" alt="Patreon" title="Patreon" /></a>
+          <a type="application/rss+xml" href="/feed"><img src="/static/social/rss.png" alt="RSS Feed" title="RSS Feed" /></a>
+          <!--<a href="https://www.facebook.com/miguelgrinbergblog"><img src="/static/social/facebook.png" alt="Facebook" title="Facebook" /></a>-->
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <div id="main">
+        
+        
+        
+        
+        
+
+<div class="post">
+
+<div class="post-header">
+  <h1><a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">The Flask Mega-Tutorial, Part XVIII: Deployment on Heroku</a></h1>
+  <h2>
+    Posted by
+    <form action="/author/Miguel%20Grinberg" method="POST">
+      <input type="submit" class="btn btn-danger btn-sm" value="Miguel Grinberg" />
+    </form>
+    on
+    <button class="btn btn-secondary btn-sm" disabled><span class="flask-moment" data-timestamp="2023-12-03T10:40:20Z" data-function="format" data-format="LL" data-refresh="0" style="display: none">2023-12-03T10:40:20Z</span></button>
+    under
+    
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" />
+      </form>
+    
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" />
+      </form>
+    
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" />
+      </form>
+    
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" />
+      </form>
+    
+    
+  </h2>
+</div>
+<div class="post-body"><p>This is the eighteenth installment of the Flask Mega-Tutorial series, in which I'm going to deploy Microblog to the Heroku cloud platform.</p>
+<p>You are reading the 2024 edition of the Flask Mega-Tutorial. The complete course is also available to order in e-book and paperback formats from <a href="https://amzn.to/3ahVnPN">Amazon</a>. Thank you for your support!</p>
+<p>If you are looking for the 2018 edition of this course, you can find it <a href="/post/the-flask-mega-tutorial-part-i-hello-world-2018">here</a>.</p>
+<p>For your reference, here is the complete list of articles in this series:</p>
+<ul>
+<li><a href="/post/the-flask-mega-tutorial-part-i-hello-world">Chapter 1:  Hello, World!</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ii-templates">Chapter 2:  Templates</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iii-web-forms">Chapter 3:  Web Forms</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iv-database">Chapter 4:  Database</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5:  User Logins</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vi-profile-page-and-avatars">Chapter 6:  Profile Page and Avatars</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7:  Error Handling</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-viii-followers">Chapter 8:  Followers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ix-pagination">Chapter 9:  Pagination</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-x-email-support">Chapter 10:  Email Support</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xi-facelift">Chapter 11:  Facelift</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xii-dates-and-times">Chapter 12:  Dates and Times</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiii-i18n-and-l10n">Chapter 13:  I18n and L10n</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiv-ajax">Chapter 14:  Ajax</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15:  A Better Application Structure</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16:  Full-Text Search</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17:  Deployment on Linux</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18:  Deployment on Heroku</a> (this article)</li>
+<li><a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">Chapter 19:  Deployment on Docker Containers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">Chapter 20:  Some JavaScript Magic</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21:  User Notifications</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">Chapter 22:  Background Jobs</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">Chapter 23:  Application Programming Interfaces (APIs)</a></li>
+</ul>
+<p>In the previous article I showed you the "traditional" way to host a Python application, and I gave you an actual example of deployment to a Linux based server. If you are not used to manage a Linux system, you probably thought that the amount of effort that needs to be put into the task was big, and that surely there must be an easier way.</p>
+<p>In this chapter I'm going to show you a completely different approach, in which you rely on a third-party <em>cloud</em> hosting provider to perform most of the administration tasks, freeing you to spend more time working on your application.</p>
+<p>Many cloud hosting providers offer a managed platform on which applications can run. All you need to provide to have your application deployed on these platforms is the actual application, because the hardware, operating system, scripting language interpreters, database, etc. are all managed by the service. This type of service is called <a href="https://en.wikipedia.org/wiki/Platform_as_a_service">Platform as a Service</a>, or PaaS.</p>
+<p>Sounds too good to be true, right?</p>
+<p>I will look at deploying Microblog to <a href="http://heroku.com">Heroku</a>, a popular cloud hosting service that is very friendly for Python applications. Unfortunately Heroku has eliminated their popular free tier, so going through this deployment exercise is going to cost you a small amount of money. If you decide to try this, make sure you delete your project when you are done experimenting.</p>
+<p><em>The GitHub links for this chapter are: <a href="https://github.com/miguelgrinberg/microblog/tree/v0.18">Browse</a>, <a href="https://github.com/miguelgrinberg/microblog/archive/v0.18.zip">Zip</a>, <a href="https://github.com/miguelgrinberg/microblog/compare/v0.17...v0.18">Diff</a>.</em></p>
+<h2>Hosting on Heroku</h2>
+<p>Heroku was one of the first "platform-as-a-service" providers. It started as a hosting option for Ruby based applications, but then grew to support many other languages like Java, Node.js and of course Python.</p>
+<p>Deploying a web application to Heroku is done through the <code>git</code> version control tool, so you must have your application in a git repository. Heroku looks for a file called <em>Procfile</em> in the application's root directory for instructions on how to start the application. For Python projects, Heroku also expects a <em>requirements.txt</em> file that lists all the module dependencies that need to be installed. After the application is uploaded to Heroku's servers through a git push operation, you are essentially done and just need to wait a few seconds until the application is online. It's really that simple.</p>
+<p>The different service tiers Heroku offers allow you to choose how much computing power and time you get for your application, so as your user base grows you may need to buy more units of computing, which Heroku calls "dynos".</p>
+<p>Ready to try Heroku? Let's get started!</p>
+<h2>Creating a Heroku account</h2>
+<p>Before you can deploy to Heroku you need to have an account with them. So visit <a href="https://id.heroku.com/signup">heroku.com</a> and create an account. Once you have an account and log in to Heroku, you will have access to a dashboard, where all your applications are listed.</p>
+<h2>Installing the Heroku CLI</h2>
+<p>Heroku provides a command-line tool for interacting with their service called <a href="https://devcenter.heroku.com/articles/heroku-cli">Heroku CLI</a>, available for Windows, Mac OS X and Linux. The documentation includes installation instructions for all the supported platforms. Go ahead and install it on your system if you plan on deploying the application to test the service.</p>
+<p>The first thing you should do once the CLI is installed is login to your Heroku account:</p>
+<pre><code>$ heroku login
+</code></pre>
+<p>Heroku CLI will ask you to enter your email address and your account password. Your authenticated status will be remembered in subsequent commands.</p>
+<h2>Setting Up Git</h2>
+<p>The <code>git</code> tool is core to the deployment of applications to Heroku, so you must install it on your system if you don't have it yet. If you don't have a package available for your operating system, you can visit the <a href="https://git-scm.com/">git website</a> to download an installer.</p>
+<p>There are a lot of reasons why using <code>git</code> for your projects makes sense. If you plan to deploy to Heroku, you have one more, because to deploy to Heroku, your application must be in a <code>git</code> repository. If you are going to do a test deployment for Microblog, you can clone my version of this application from GitHub:</p>
+<pre><code>$ git clone https://github.com/miguelgrinberg/microblog
+$ cd microblog
+$ git checkout v0.18
+</code></pre>
+<p>The <code>git checkout</code> command selects the specific commit that has the application at the point in its history that corresponds to this chapter.</p>
+<p>If you prefer to work with your own code instead of mine, you can transform your own project into a <code>git</code> repository by running <code>git init .</code> on the top-level directory (note the period after <code>init</code>, which tells git that you want to create the repository in the current directory). Once the git repository is created, use the <code>git add</code> command to add all your source files, and <code>git commit</code> to commit them to the repository.</p>
+<h2>Creating a Heroku Application</h2>
+<p>To register a new application with Heroku, you use the <code>apps:create</code> command from the root directory of the application, passing the application name as the only argument:</p>
+<pre><code>$ heroku apps:create flask-microblog
+Creating flask-microblog... done
+http://flask-microblog.herokuapp.com/ | https://git.heroku.com/flask-microblog.git
+</code></pre>
+<p>Heroku requires that applications have a unique name. The name <code>flask-microblog</code> that I used above is not going to be available to you because I'm using it, so you will need to pick a different name for your deployment.</p>
+<p>The output of this command will include the URL that Heroku assigned to the application, and also its git repository on Heroku's servers. Your local git repository will be configured with an extra <em>remote</em>, called <code>heroku</code> set to this repository. You can verify that it exists with the <code>git remote</code> command:</p>
+<pre><code>$ git remote -v
+heroku  https://git.heroku.com/flask-microblog.git (fetch)
+heroku  https://git.heroku.com/flask-microblog.git (push)
+</code></pre>
+<p>Depending on how you created your git repository, the output of the above command could also include another remote called <code>origin</code> which is not used by Heroku.</p>
+<h2>The Ephemeral File System</h2>
+<p>The Heroku platform is different to other deployment platforms in that it features an <em>ephemeral</em> file system that runs on a virtualized platform. What does that mean? It means that at any time, Heroku can reset the virtual server on which your server runs back to a clean state. You cannot assume that any data that you save to the file system will persist, and in fact, Heroku recycles servers very often.</p>
+<p>Working under these conditions introduces some problems for my application, which uses a few files:</p>
+<ul>
+<li>The default SQLite database engine writes data in a disk file</li>
+<li>Logs for the application are also written to the file system</li>
+<li>The compiled language translation repositories are also written to local files</li>
+</ul>
+<p>The following sections will address these three areas.</p>
+<h2>Working with a Heroku Postgres Database</h2>
+<p>To address the first problem, I'm going to switch to a different database engine. In <a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17</a> you saw me use a MySQL database to add robustness to the Ubuntu deployment. Heroku has a database offering of its own, based on the Postgres database, so I'm going to switch to that to avoid the file-based SQLite.</p>
+<p>Databases for Heroku applications are provisioned with the same Heroku CLI. In this case I'm going to create a database on the free tier:</p>
+<pre><code>$ heroku addons:create heroku-postgresql:mini
+Creating heroku-postgresql:mini on flask-microblog... $5/month
+Database has been created and is available
+ ! This database is empty. If upgrading, you can transfer
+ ! data from another database with pg:copy
+Created postgresql-parallel-56076 as DATABASE_URL
+Use heroku addons:docs heroku-postgresql to view documentation
+</code></pre>
+<p>The URL for the newly created database is stored in a <code>DATABASE_URL</code> environment variable that will be available when the application runs on Heroku's platform. This is very convenient, because the application already looks for the database URL in that variable.</p>
+<p>To make sure that the <code>DATABASE_URL</code> variable is configured in your Heroku application, you can use the following command:</p>
+<pre><code>$ heroku config
+DATABASE_URL:  postgres://...
+</code></pre>
+<p>An unfortunate problem with recent versions of SQLAlchemy is that they expect Postgres database URLs to begin with <code>postgresql://</code>, instead of the <code>postgres://</code> that Heroku uses. To ensure that the application can connect to the database, it is necessary to update the URL to the format required by SQLAlchemy. This can be done with a string replacement operation in the <code>Config</code> class:</p>
+<p class="code_title"><em>config.py</em>: Fix Postgres database URLs to be compatible with SQLAlchemy.</p>
+
+<pre><code class="language-python">class Config:
+    # ...
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', '').replace(
+        'postgres://', 'postgresql://') or \
+        'sqlite:///' + os.path.join(basedir, 'app.db')
+    # ...
+</code></pre>
+<p>This string replacement operation is safe to use even when the <code>DATABASE_URL</code> variable is set to a different database, in which case it will not affect it.</p>
+<h2>Logging to stdout</h2>
+<p>Heroku expects applications to log directly to <code>stdout</code>. Anything the application prints to the standard output is saved and returned when you use the <code>heroku logs</code> command. So I'm going to add a configuration variable that indicates if I need to log to <code>stdout</code> or to a file like I've been doing. Here is the change in the configuration:</p>
+<p class="code_title"><em>config.py</em>: Option to log to stdout.</p>
+
+<pre><code class="language-python">class Config:
+    # ...
+    LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT')
+</code></pre>
+<p>Then in the application factory function I can check this configuration to know how to configure the application's logger:</p>
+<p class="code_title"><em>app/__init__.py</em>: Log to stdout or file.</p>
+
+<pre><code class="language-python">def create_app(config_class=Config):
+    # ...
+    if not app.debug and not app.testing:
+        # ...
+
+        if app.config['LOG_TO_STDOUT']:
+            stream_handler = logging.StreamHandler()
+            stream_handler.setLevel(logging.INFO)
+            app.logger.addHandler(stream_handler)
+        else:
+            if not os.path.exists('logs'):
+                os.mkdir('logs')
+            file_handler = RotatingFileHandler('logs/microblog.log',
+                                               maxBytes=10240, backupCount=10)
+            file_handler.setFormatter(logging.Formatter(
+                '%(asctime)s %(levelname)s: %(message)s '
+                '[in %(pathname)s:%(lineno)d]'))
+            file_handler.setLevel(logging.INFO)
+            app.logger.addHandler(file_handler)
+
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('Microblog startup')
+
+    return app
+</code></pre>
+<p>So now I need to set the <code>LOG_TO_STDOUT</code> environment variable when the application runs in Heroku, but not in other configurations. The Heroku CLI makes this easy, as it provides an option to set environment variables to be used at runtime:</p>
+<pre><code>$ heroku config:set LOG_TO_STDOUT=1
+Setting LOG_TO_STDOUT and restarting flask-microblog... done, v4
+LOG_TO_STDOUT: 1
+</code></pre>
+<h2>Compiled Translations</h2>
+<p>The third aspect of Microblog that relies on local files is the compiled language translation files. The more direct option to ensure those files never disappear from the ephemeral file system is to add the compiled language files to the git repository, so that they become part of the initial state of the application once it is deployed to Heroku.</p>
+<p>A more elegant option, in my opinion, is to include the <code>flask translate compile</code> command in the start-up command given to Heroku, so that any time the server is restarted those files are compiled again. I'm going to go with this option, since I know that my start-up procedure is going to require more than one command anyway, as I also need to run the database migrations. So for now, I will set this problem aside, and will revisit it later when I write the <em>Procfile</em>.</p>
+<h2>Elasticsearch Hosting</h2>
+<p>Elasticsearch is one of the many services that can be added to a Heroku project, but unlike Postgres, this is not a service provided by Heroku, but by third parties that partner with Heroku to provide add-ons. At the time I'm writing this, there are three different providers of an integrated Elasticsearch service. If you prefer not to deploy the search feature, then skip this section. You will still be able to deploy the application, but the search functionality is not going to be enabled.</p>
+<p>Out of the Elasticsearch options that are available as add-ons, I decided to try <a href="https://elements.heroku.com/addons/searchbox">SearchBox</a>, which comes with a free starter plan. To add SearchBox to your account, you have to run the following command while being logged in to Heroku:</p>
+<pre><code>$ heroku addons:create searchbox:starter
+</code></pre>
+<p>This command will deploy an Elasticsearch service and leave the connection URL for the service in a <code>SEARCHBOX_URL</code> environment variable associated with your application. Once more keep in mind that this command will fail unless you add your credit card to your Heroku account.</p>
+<p>If you recall from <a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16</a>, my application looks for the Elasticsearch connection URL in the <code>ELASTICSEARCH_URL</code> variable, so I need to add this variable and set it to the connection URL assigned by SearchBox:</p>
+<pre><code>$ heroku config:get SEARCHBOX_URL
+&lt;your-elasticsearch-url&gt;
+$ heroku config:set ELASTICSEARCH_URL=&lt;your-elasticsearch-url&gt;
+</code></pre>
+<p>Here I first asked Heroku to print the value of <code>SEARCHBOX_URL</code>, and then I added a new environment variable with the name <code>ELASTICSEARCH_URL</code> set to that same value.</p>
+<p>Many other features of the application are also configured through environment variables, for example <code>SECRET_KEY</code>, <code>MS_TRANSLATOR_KEY</code>, <code>MAIL_SERVER</code> and a few more. These variables need to also be copied over to the Heroku deployment, so that they are accessible to the application. The <code>heroku config:set</code> can be used to transfer these variables from your <em>.env</em> file to Heroku.</p>
+<p>The example below configures a secret key:</p>
+<pre><code>heroku config:set SECRET_KEY=7853fbd853a249c586f7d810a7938b43
+</code></pre>
+<h2>Updates to Requirements</h2>
+<p>Heroku expects the dependencies to be in the <em>requirements.txt</em> file, exactly like I defined it in <a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15</a>. But for the application to run on Heroku I need to add two new dependencies to this file.</p>
+<p>Heroku does not provide a web server of its own. Instead, it expects the application to start its own web server on the port number given in the environment variable <code>$PORT</code>. Since the Flask development web server is not robust enough to use for production, I'm going to use <a href="http://gunicorn.org/">Gunicorn</a> again, the server recommended by Heroku for Python applications.</p>
+<p>The application will also be connecting to a Postgres database, and for that SQLAlchemy requires the <code>psycopg2</code> or <code>psycopg2-binary</code> packages to be installed. The binary version is, in general, preferred as it installs an already built version of this package, as opposite to <code>psycopg2</code> which requires a C compiler to be installed to build the package during installation.</p>
+<p>Both <code>gunicorn</code> and <code>psycopg2-binary</code> need to be added to the <em>requirements.txt</em> file.</p>
+<h2>The Procfile</h2>
+<p>Heroku needs to know how to execute the application, and for that it uses a file named <em>Procfile</em> in the root directory of the application. The format of this file is simple, each line includes a process name, a colon, and then the command that starts the process. The most common type of application that runs on Heroku is a web application, and for this type of application the process name should be <code>web</code>. Below you can see a <em>Procfile</em> for Microblog:</p>
+<p class="code_title"><em>Procfile</em>: Heroku Procfile.</p>
+
+<pre><code>web: flask db upgrade; flask translate compile; gunicorn microblog:app
+</code></pre>
+<p>Here I defined the command to start the web application as three commands in sequence. First I run a database migration upgrade, then I compile the language translations, and finally I start the server.</p>
+<p>Because the first two sub-commands are based on the <code>flask</code> command, I need to add the <code>FLASK_APP</code> environment variable:</p>
+<pre><code>$ heroku config:set FLASK_APP=microblog.py
+Setting FLASK_APP and restarting flask-microblog... done, v6
+FLASK_APP: microblog.py
+</code></pre>
+<p>The application also relies on other environment variables, such as those that configure the email server or the token for the live translations. Those need to be added with more <code>heroku config:set</code> commands.</p>
+<p>The <code>gunicorn</code> command is simpler than what I used for the Ubuntu deployment, because this server has a very good integration with the Heroku environment. For example, the <code>$PORT</code> environment variable is honored by default, and instead of using the <code>-w</code> option to set the number of workers, Heroku recommends adding a variable called <code>WEB_CONCURRENCY</code>, which <code>gunicorn</code> uses when <code>-w</code> is not provided, giving you the flexibility to control the number of workers without having to modify the <em>Procfile</em>.</p>
+<h2>Deploying the Application</h2>
+<p>All the preparatory steps are complete, so now it is time to run the deployment. To upload the application to Heroku's servers for deployment, the <code>git push</code> command is used. This is similar to how you push changes in your local git repository to GitHub or other remote git server.</p>
+<p>There are a couple of variations on how to do this, depending on how you created your git repository. If you are using my <code>v0.18</code> code, then you need to create a branch based on this tag, and push it as the remote <code>main</code> branch, as follows:</p>
+<pre><code>$ git checkout -b deploy
+$ git push heroku deploy:main
+</code></pre>
+<p>If instead, you are working with your own repository, then your code is already in a <code>main</code> or <code>master</code> branch, so you first need to make sure that your changes are committed:</p>
+<pre><code>$ git commit -a -m &quot;heroku deployment changes&quot;
+</code></pre>
+<p>And then you can run the following to start the deployment:</p>
+<pre><code>$ git push heroku main  # you may need to use &quot;master&quot; instead of &quot;main&quot;
+</code></pre>
+<p>Regardless of how you push the branch, you should see the following output from Heroku:</p>
+<pre><code>$ git push heoroku deploy:main
+Enumerating objects: 264, done.
+Counting objects: 100% (264/264), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (183/183), done.
+Writing objects: 100% (264/264), 59.44 KiB | 5.94 MiB/s, done.
+Total 264 (delta 132), reused 143 (delta 62)
+remote: Compressing source files... done.
+remote: Building source:
+remote:
+remote: -----&gt; Building on the Heroku-20 stack
+remote: -----&gt; Determining which buildpack to use for this app
+remote: -----&gt; Python app detected
+remote: -----&gt; No Python version was specified. Using the buildpack default: python-3.9.6
+remote:        To use a different version, see: https://devcenter.heroku.com/articles/...
+remote: -----&gt; Installing python-3.9.6
+remote: -----&gt; Installing pip 20.2.4, setuptools 47.1.1 and wheel 0.36.2
+remote: -----&gt; Installing SQLite3
+remote: -----&gt; Installing requirements with pip
+...
+remote:
+remote: -----&gt; Discovering process types
+remote:        Procfile declares types -&gt; web
+remote:
+remote: -----&gt; Compressing...
+remote:        Done: 69.2M
+remote: -----&gt; Launching...
+remote:        Released v7
+remote:        https://flask-microblog.herokuapp.com/ deployed to Heroku
+remote:
+remote: Verifying deploy... done.
+To https://git.heroku.com/flask-microblog.git
+ * [new branch]      deploy -&gt; main
+</code></pre>
+<p>The label <code>heroku</code> that we used in the <code>git push</code> command is the remote that was automatically added by the Heroku CLI when the application was created. The <code>deploy:main</code> argument means that I'm pushing the code from the local repository referenced by the <code>deploy</code> branch to the <code>main</code> branch on the Heroku repository. When you work with your own projects, you will likely be pushing with the command <code>git push heroku main</code>, which pushes your local <code>main</code> branch. Because of the way this project is structured, I'm pushing a branch that is not <code>main</code>, but the destination branch on the Heroku side always needs to be <code>main</code> or <code>master</code> as those are the only branch names that Heroku accepts for deployment.</p>
+<p>And that is it, the application should now be deployed at the URL that you were given in the output of the command that created the application. In my case, the URL was <em>https://flask-microblog.herokuapp.com</em>, so that is what I need to type to access the application.</p>
+<p>If you want to see the log entries for the running application, use the <code>heroku logs</code> command. This can be useful if for any reason the application fails to start. If there were any errors, those will be in the logs.</p>
+<h2>Deploying Application Updates</h2>
+<p>To deploy a new version of the application, you just need to run a new <code>git push</code> command with the new code. This will repeat the deployment process, take the old deployment offline, and then replace it with the new code. The commands in the <em>Procfile</em> will run again as part of the new deployment, so any new database migrations or translations will be updated during the process.</p>
+<p>Continue on to the <a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">next chapter</a>.</p></div>
+
+<h2>Buy me a coffee?</h2>
+<p class="card-text">Thank you for visiting my blog! If you enjoyed this article, please consider supporting my work and keeping me caffeinated with a small one-time donation through <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy me a coffee</a>. Thanks!</p>
+<a href="https://www.buymeacoffee.com/miguelgrinberg" target="_blank"><img src="/static/buymeacoffee-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+
+<h2>Share this post</h2>
+<!-- Sharingbutton Hacker News -->
+<a class="resp-sharing-button__link" href="https://news.ycombinator.com/submitlink?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku&amp;t=The%20Flask%20Mega-Tutorial%2C%20Part%20XVIII%3A%20Deployment%20on%20Heroku" target="_blank" rel="noopener" aria-label="Hacker News">
+  <div class="resp-sharing-button resp-sharing-button--hackernews resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><path fill-rule="evenodd" d="M60.94 82.314L17 0h20.08l25.85 52.093c.397.927.86 1.888 1.39 2.883.53.994.995 2.02 1.393 3.08.265.4.463.764.596 1.095.13.334.262.63.395.898.662 1.325 1.26 2.618 1.79 3.877.53 1.26.993 2.42 1.39 3.48 1.06-2.254 2.22-4.673 3.48-7.258 1.26-2.585 2.552-5.27 3.877-8.052L103.49 0h18.69L77.84 83.308v53.087h-16.9v-54.08z"></path></svg></div>Hacker News</div>
+</a>
+
+<!-- Sharingbutton Reddit -->
+<a class="resp-sharing-button__link" href="https://reddit.com/submit/?url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku&amp;resubmit=true&amp;title=The Flask Mega-Tutorial, Part XVIII: Deployment on Heroku" target="_blank" rel="noopener" aria-label="Reddit">
+  <div class="resp-sharing-button resp-sharing-button--reddit resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-6.07-1.72.08-1.1.4-3.05 1.52-3.7.72-.4 1.73-.24 3 .5C17.2 6.3 18.46 7.5 20 7.5c1.65 0 3-1.35 3-3s-1.35-3-3-3c-1.38 0-2.54.94-2.88 2.22-1.43-.72-2.64-.8-3.6-.25-1.64.94-1.95 3.47-2 4.55-2.33.08-4.45.7-6.1 1.72C4.86 8.98 3.96 8.5 3 8.5c-1.65 0-3 1.35-3 3 0 1.32.84 2.44 2.05 2.84-.03.22-.05.44-.05.66 0 3.86 4.5 7 10 7s10-3.14 10-7c0-.22-.02-.44-.05-.66 1.2-.4 2.05-1.54 2.05-2.84zM2.3 13.37C1.5 13.07 1 12.35 1 11.5c0-1.1.9-2 2-2 .64 0 1.22.32 1.6.82-1.1.85-1.92 1.9-2.3 3.05zm3.7.13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9.8 4.8c-1.08.63-2.42.96-3.8.96-1.4 0-2.74-.34-3.8-.95-.24-.13-.32-.44-.2-.68.15-.24.46-.32.7-.18 1.83 1.06 4.76 1.06 6.6 0 .23-.13.53-.05.67.2.14.23.06.54-.18.67zm.2-2.8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm5.7-2.13c-.38-1.16-1.2-2.2-2.3-3.05.38-.5.97-.82 1.6-.82 1.1 0 2 .9 2 2 0 .84-.53 1.57-1.3 1.87z"/></svg></div>Reddit</div>
+</a>
+
+<!-- Sharingbutton Twitter -->
+<a class="resp-sharing-button__link" href="https://twitter.com/intent/tweet/?text=The%20Flask%20Mega-Tutorial%2C%20Part%20XVIII%3A%20Deployment%20on%20Heroku&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku" target="_blank" rel="noopener" aria-label="Twitter">
+  <div class="resp-sharing-button resp-sharing-button--twitter resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/></svg></div>Twitter</div>
+</a>
+
+<!-- Sharingbutton LinkedIn -->
+<a class="resp-sharing-button__link" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku&amp;title=The%20Flask%20Mega-Tutorial%2C%20Part%20XVIII%3A%20Deployment%20on%20Heroku&amp;summary=The%20Flask%20Mega-Tutorial%2C%20Part%20XVIII%3A%20Deployment%20on%20Heroku&amp;source=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku" target="_blank" rel="noopener" aria-label="LinkedIn">
+  <div class="resp-sharing-button resp-sharing-button--linkedin resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.5 21.5h-5v-13h5v13zM4 6.5C2.5 6.5 1.5 5.3 1.5 4s1-2.4 2.5-2.4c1.6 0 2.5 1 2.6 2.5 0 1.4-1 2.5-2.6 2.5zm11.5 6c-1 0-2 1-2 2v7h-5v-13h5V10s1.6-1.5 4-1.5c3 0 5 2.2 5 6.3v6.7h-5v-7c0-1-1-2-2-2z"/></svg></div>LinkedIn</div>
+</a>
+
+<!-- Sharingbutton Facebook -->
+<a class="resp-sharing-button__link" href="https://facebook.com/sharer/sharer.php?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku" target="_blank" rel="noopener" aria-label="Facebook">
+  <div class="resp-sharing-button resp-sharing-button--facebook resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/></svg></div>Facebook</div>
+</a>
+
+<!-- Sharingbutton E-Mail -->
+<a class="resp-sharing-button__link" href="mailto:?subject=The%20Flask%20Mega-Tutorial%2C%20Part%20XVIII%3A%20Deployment%20on%20Heroku&amp;body=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku" target="_self" rel="noopener" aria-label="E-Mail">
+  <div class="resp-sharing-button resp-sharing-button--email resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 4H2C.9 4 0 4.9 0 6v12c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7.25 14.43l-3.5 2c-.08.05-.17.07-.25.07-.17 0-.34-.1-.43-.25-.14-.24-.06-.55.18-.68l3.5-2c.24-.14.55-.06.68.18.14.24.06.55-.18.68zm4.75.07c-.1 0-.2-.03-.27-.08l-8.5-5.5c-.23-.15-.3-.46-.15-.7.15-.22.46-.3.7-.14L12 13.4l8.23-5.32c.23-.15.54-.08.7.15.14.23.07.54-.16.7l-8.5 5.5c-.08.04-.17.07-.27.07zm8.93 1.75c-.1.16-.26.25-.43.25-.08 0-.17-.02-.25-.07l-3.5-2c-.24-.13-.32-.44-.18-.68s.44-.32.68-.18l3.5 2c.24.13.32.44.18.68z"/></svg></div>E-Mail</div>
+</a>
+
+<div id="comments" class="post-comment-count">
+  
+  <a class="btn btn-outline-secondary" href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku#comments">12 comments</a>
+  
+</div>
+
+
+<div class="comments">
+  <ul>
+    
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/cbf202e070e73836ef16d26974a1125d?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#1</span> <span class="badge text-bg-warning">Elena</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-20T03:07:16Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-20T03:07:16Z</span>
+  </p>
+  <div>
+    <p>Hi, Miguel, thank you for this amazing tutorial! I have learned a lot of things and good practices!! I'm deploying in <a href="http://render.com" rel="nofollow">render.com</a>, which it also uses a <code>Procfile</code> -- My flask-babel works perfect in dev stage but it's not working in production. It's not translating anything. This is what I wrote in my Profile: <br>
+<code>web: pybabel compile -d app/translations; gunicorn main:app</code>  but still doesn't translate to Spanish. I'm not getting any errors. Any idea what could I do to make it work?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#2</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-20T14:43:22Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-20T14:43:22Z</span>
+  </p>
+  <div>
+    <p>@Elena: You would need to debug this to determine why the translations do not appear. Is it because Flask-Babel decides the client wants English, or is it because the Spanish translations are for some reason unavailable? You can try setting <code>'es'</code> as a hardcoded language in the <code>get_locale()</code> function, as shown in the corresponding chapter.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/4a9238a726cabf28302c939c2a322ff7?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#3</span> <span class="badge text-bg-warning">Jakob</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-03-07T23:28:01Z" data-function="fromNow" data-refresh="0" style="display: none">2024-03-07T23:28:01Z</span>
+  </p>
+  <div>
+    <p>Hey Miguel, revisiting this after doing the one in 2018.</p>
+<p>I'm having an issue with where Elastic Search will log that there is no such index as post. This causes several internal server errors. For example when trying to submit a post it will almost immdiately fail ungracefully and return a Internal server error. If I simply remove the ELASTICSEARCH_URL var in Heroku posting will work just fine.</p>
+<p>elasticsearch.NotFoundError: NotFoundError(404, 'index_not_found_exception', 'no such index [post]', post, index_or_alias)<br>
+2024-03-07T22:40:19.226460+00:00 app[web.1]: 10.1.21.161 - - [07/Mar/2024:22:40:19 +0000] "GET /search?q=hello HTTP/1.1" 500 4731 "<a href="https://mymicroblog.herokuapp.com/index" rel="nofollow">https://mymicroblog.herokuapp.com/index</a>" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"</p>
+<p>I'm not sure how to proceed.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#4</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-03-08T14:38:09Z" data-function="fromNow" data-refresh="0" style="display: none">2024-03-08T14:38:09Z</span>
+  </p>
+  <div>
+    <p>@Jakob: are you using the SearchBox extension? They have changed their defaults and now they do not automatically create indexes, as the regular Elasticsearch service does by default. You need to manually create the index via CLI or dashboard, then you should be fine.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/e05da5302421ace12903de6cd8f84064?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#5</span> <span class="badge text-bg-warning">Declan</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-03-29T18:15:09Z" data-function="fromNow" data-refresh="0" style="display: none">2024-03-29T18:15:09Z</span>
+  </p>
+  <div>
+    <p>@Jakob I was experiencing the same error as you so I tried Miguels suggestion to manually create the index but then got a new error about version incompatability.</p>
+<p>Reading the SearchBox Documentation, the most recent version of elastic that can be used is 7 but we developed this project using the python module version 8.11, so the fix is to downgrade the elasticsearch, elastic-transport and urllib3 dependencies to 7.* (and use elastic 7 for local dev with docker), change the elastic search parameters in <a href="http://search.py" rel="nofollow">search.py</a> to match v7 style</p>
+<p>I think there was some major change to Elastic's licensing with v8 which makes SeachBox unable to release their own versioning of the tool.</p>
+<p>Related github issue: <a href="https://github.com/elastic/elasticsearch-ruby/issues/1429" rel="nofollow">https://github.com/elastic/elasticsearch-ruby/issues/1429</a></p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/c304ad42ac4fa40b21c05e170b7d854c?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#6</span> <span class="badge text-bg-warning">Pedro</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-01-10T13:58:25Z" data-function="fromNow" data-refresh="0" style="display: none">2025-01-10T13:58:25Z</span>
+  </p>
+  <div>
+    <p>Hi Miguel, thanks for the tutorial it is great. I have a question regarding the environment variables set in heroku. Those such as SECRET_KEY, MAIL_USERNAME and MAIL_PASSWORD should also be there?</p>
+<p>Is there any security issues in doing so?</p>
+<p>Thanks!</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#7</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-01-10T14:52:10Z" data-function="fromNow" data-refresh="0" style="display: none">2025-01-10T14:52:10Z</span>
+  </p>
+  <div>
+    <p>@Pedro: yes, any environment variables that the application needs should be added so that they are accessible when the application runs on Heroku. Heroku will not expose your secrets, and presumably will take good care of them and keep the encrypted. Considering it a risk or not depends on the trust you place on Heroku to keep these secrets safe.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/0003a5de12ca6966eb8705fb880d72e9?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#8</span> <span class="badge text-bg-warning">blakeko</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-01-20T03:57:51Z" data-function="fromNow" data-refresh="0" style="display: none">2025-01-20T03:57:51Z</span>
+  </p>
+  <div>
+    <p>⚠ Since posting on Jan. 19, 2025 ⚠</p>
+<p>$ git checkout -b deploy<br>
+$ git push heroku deploy:main</p>
+<p>defaults to python version 3.13 and build FAILS because of greenlet outdated incompatibility. My fix, I made my own .git repo and setup .python-version file and calling py version 3.10. and then used command: </p>
+<p>git push heroku main</p>
+<p>And success! This was racking my brain for the longest!</p>
+<p>Link to heroku specifying py ver: <a href="https://devcenter.heroku.com/articles/python-runtimes" rel="nofollow">https://devcenter.heroku.com/articles/python-runtimes</a></p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7bd0473751211567b9b37abd26a140cf?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#9</span> <span class="badge text-bg-warning">jp</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-21T21:07:22Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-21T21:07:22Z</span>
+  </p>
+  <div>
+    <p>I was also trying to deploy but was getting error: failed-wheel-build-for-install. It was also due to greenlet. I had that problem and something similar to @blakeko. So I made my own .git repo, created a .python-version file calling version 3.14, and also in the requirements.txt file I used the newest version of greenlet (version 3.3.0 as of 01/21/2026). <br>
+Then I updated the repository with: git add requirements.txt, git commit -m "new requirements file).</p>
+<p>Now I'm getting an Application error when opening the url.  On my app page on Heroku it says it's deployed. But the logs show errrors:</p>
+<p>2026-01-21T21:01:08.932650+00:00 app[web.1]:     self.reap_workers()<br>
+2026-01-21T21:01:08.932650+00:00 app[web.1]:     ~~~~~~~~~~~~~~~~~^^<br>
+2026-01-21T21:01:08.932652+00:00 app[web.1]:   File "/app/.heroku/python/lib/python3.14/site-packages/gunicorn/<a href="http://arbiter.py" rel="nofollow">arbiter.py</a>", line 530, in reap_workers<br>
+2026-01-21T21:01:08.932652+00:00 app[web.1]:     raise HaltServer(reason, self.WORKER_BOOT_ERROR)<br>
+2026-01-21T21:01:08.932671+00:00 app[web.1]: gunicorn.errors.HaltServer: &lt;HaltServer 'Worker failed to boot.' 3&gt;<br>
+2026-01-21T21:01:08.998746+00:00 heroku[web.1]: Process exited with status 1<br>
+2026-01-21T21:01:09.024541+00:00 heroku[web.1]: State changed from starting to crashed<br>
+2026-01-21T21:01:37.466564+00:00 heroku[router]: at=error code=H10 desc="App crashed" method=GET path="/" host=<a href="http://jp-microblog-6fd901338afb.herokuapp.com" rel="nofollow">jp-microblog-6fd901338afb.herokuapp.com</a> request_id=f4323d22-4833-15be-fff7-fd5314282758 fwd="" dyno= connect=0ms service=0ms status=503 bytes=567 protocol=http1.1 tls=true tls_version=unknown<br>
+2026-01-21T21:01:41.604735+00:00 heroku[router]: at=error code=H10 desc="App crashed" method=GET path="/favicon.ico" host=<a href="http://jp-microblog-6fd901338afb.herokuapp.com" rel="nofollow">jp-microblog-6fd901338afb.herokuapp.com</a> request_id=0f989af0-bd7a-7524-4755-57a7576be681 fwd="" dyno= connect=0ms service=0ms status=503 bytes=567 protocol=http1.1 tls=true tls_version=unknown<br>
+2026-01-21T21:01:42.269735+00:00 heroku[router]: at=error code=H10 desc="App crashed" method=GET path="/favicon.ico" host=<a href="http://jp-microblog-6fd901338afb.herokuapp.com" rel="nofollow">jp-microblog-6fd901338afb.herokuapp.com</a> request_id=dc151e98-3c70-5b4a-7bc3-7cc199d7f7e4 fwd="" dyno= connect=0ms service=0ms status=503 bytes=567 protocol=http1.1 tls=true tls_version=unknown</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#10</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-21T23:19:33Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-21T23:19:33Z</span>
+  </p>
+  <div>
+    <p>@jp: there must have been more error information in your Heroku log, such as a longer, more detailed stack trace. This does not seem related to the greenlet issue, it looks like the application crashing for some reason.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/fc4f0e6d7d154694f5c90c0c4de2e220?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#11</span> <span class="badge text-bg-warning">jp</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-30T19:37:09Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-30T19:37:09Z</span>
+  </p>
+  <div>
+    <p>Thanks for the reply. I started over from the beginning. I'm using my own git repository. I skipped two sections: Compiled Translations, Elasticsearch Hosting. I successfully deploy: <a href="https://jp-microblog-5f8f8c24ef63.herokuapp.com/" rel="nofollow">https://jp-microblog-5f8f8c24ef63.herokuapp.com/</a><br>
+However, when opening the url I get an application error. Here are the full logs from the Heroku CLI:</p>
+<pre><code>C:\Users\jpilbeam\jp-microblog&gt;heroku logs
+...
+2026-01-30T18:36:34.995423+00:00 app[web.1]: mod = importlib.import_module(module)
+2026-01-30T18:36:34.995423+00:00 app[web.1]: File &quot;/app/.heroku/python/lib/python3.14/importlib/<a href="http://__init__.py" rel="nofollow">__init__.py</a>&quot;, line 88, in import_module
+2026-01-30T18:36:34.995423+00:00 app[web.1]: return _bootstrap._gcd_import(name[level:], package, level)
+2026-01-30T18:36:34.995424+00:00 app[web.1]: ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-01-30T18:36:34.995424+00:00 app[web.1]: File &quot;&lt;frozen importlib._bootstrap&gt;&quot;, line 1398, in _gcd_import
+2026-01-30T18:36:34.995432+00:00 app[web.1]: File &quot;&lt;frozen importlib._bootstrap&gt;&quot;, line 1371, in _find_and_load
+2026-01-30T18:36:34.995433+00:00 app[web.1]: File &quot;&lt;frozen importlib._bootstrap&gt;&quot;, line 1335, in _find_and_load_unlocked2026-01-30T18:36:34.995433+00:00 app[web.1]: ModuleNotFoundError: No module named 'jp-microblog'
+2026-01-30T18:36:34.995482+00:00 app[web.1]: [2026-01-30 18:36:34 +0000] [11] [INFO] Worker exiting (pid: 11)
+2026-01-30T18:36:35.030319+00:00 app[web.1]: [2026-01-30 18:36:35 +0000] [2] [ERROR] Worker (pid:11) exited with code 3
+2026-01-30T18:36:35.030628+00:00 app[web.1]: [2026-01-30 18:36:35 +0000] [2] [ERROR] Shutting down: Master
+2026-01-30T18:36:35.030638+00:00 app[web.1]: [2026-01-30 18:36:35 +0000] [2] [ERROR] Reason: Worker failed to boot.
+2026-01-30T18:36:35.092322+00:00 heroku[web.1]: Process exited with status 3
+2026-01-30T18:36:35.156535+00:00 heroku[web.1]: State changed from starting to crashed
+</code></pre>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#12</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2026-01-31T10:44:49Z" data-function="fromNow" data-refresh="0" style="display: none">2026-01-31T10:44:49Z</span>
+  </p>
+  <div>
+    <p>@jp: You need to read the stack traces that you get in the log. The error is:</p>
+<pre><code>ModuleNotFoundError: No module named 'jp-microblog'
+</code></pre>
+  </div>
+</div>
+    </li>
+    
+  </ul>
+</div>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku/page/1#comments">&laquo;&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku/page/0#comments">&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku/page/0#comments">&raquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku/page/0#comments">&raquo;&raquo;</a></li>
+  </ul>
+</nav>
+
+
+
+<div id="comment-form">
+  <h3>Leave a Comment</h3>
+
+  
+  
+  
+
+  
+<form action="#comment-form" method="post">
+  <input id="url" name="url" type="hidden" value="">
+<input id="csrf_token" name="csrf_token" type="hidden" value="ImE3NjRiNGVmOTI1MzlhM2Y0NWQ5MmI0MWNlNTFkZWY4MDQ4YTY5Yjgi.ajz8jA.57hqTounxzp_-S9wUbI6fAnY5Mw">
+    
+  <div class="mb-3">
+    <label class="form-label" for="name">Name</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="name" name="name" required type="text" value="">
+    </div>
+  </div>
+
+    
+    
+  <div class="mb-3">
+    <label class="form-label" for="email">Email</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="email" name="email" required type="text" value="">
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="comment">Comment</label>
+    <div class="input-group has-validation">
+      <textarea class="form-control" id="comment" name="comment" required>
+</textarea>
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="captcha">Captcha</label>
+    <div class="input-group has-validation">
+      
+<script src='https://www.google.com/recaptcha/api.js' async defer></script>
+<div class="g-recaptcha" data-sitekey="6Ld5Zs4SAAAAAOY0DOi4r18bgHlEaz41qAoRf__S"></div>
+
+    </div>
+  </div>
+
+    
+  <input class="btn btn-primary mb-3" id="submit" name="submit" type="submit" value="Submit">
+
+      
+</form>
+
+</div>
+
+
+</div>
+
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div id="sidebar">
+        
+          
+  
+
+
+
+<div class="card">
+  
+  
+  
+  
+  <div class="card-header">
+    <div class="row">
+      <div class="col">The Flask Mega-Tutorial</div>
+      <div class="col text-end">
+        <a href="/post/announcing-the-flask-mega-tutorial-2024-edition">
+          <h5 style="margin-bottom: 0px"><span class="badge text-bg-warning">2024 Edition!</span></h5>
+        </a>
+      </div>
+    </div>
+  </div>
+  <a class="card-book-cover" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">
+    <img src="/static/mega-tutorial-2024-small.png" alt="The New Flask Mega-Tutorial">
+  </a>
+  <div class="card-body">
+    <p class="card-text">If you would you like to support my work on my <a href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world">Flask Mega-Tutorial series</a> on this blog and as a reward have access to the complete tutorial in book format, you can now order it directly from my <a href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Courses</a> site or from <a href="https://amzn.to/3MQffrm">Amazon</a>.</p>
+  </div>
+  <div class="card-body">
+    <a class="card-link" href="https://learn.miguelgrinberg.com/product/flask-mega-tutorial">Click here to get this Book!</a><br />
+  </div>
+
+  
+</div>
+        
+        <div class="card">
+  <div class="card-header">About Miguel</div>
+  <div class="card-body">
+    <img style="float: right; margin: 0px 8px 8px 0px; padding: 4px; border: 1px solid #ccc;" src="/static/miguel.jpg" />
+    <p class="card-text">Welcome to my blog!</p>
+    <p class="card-text">I'm a software engineer and technical writer, currently living in Drogheda, Ireland.</p>
+    <p><u>Generative AI notice:</u> I do not use LLMs, agents or any other generative AI tools for help with writing, coding, image creation or any other tasks related to this blog or my open source work.</p>
+    <p class="card-text">You can also find me on
+      <a href="https://github.com/miguelgrinberg">Github</a>,
+      <a href="http://www.linkedin.com/in/miguelgrinberg">LinkedIn</a>,
+      <a href="https://bsky.app/profile/miguelgrinberg.com">Bluesky</a>,
+      <a href="https://mstdn.social/@miguelgrinberg">Mastodon</a>,
+      <a href="https://twitter.com/miguelgrinberg">Twitter</a>,
+      <a href="https://youtube.com/miguelgrinberg">YouTube</a>,
+      <!--<a href="https://www.facebook.com/miguelgrinbergblog">Facebook</a>,-->
+      <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy Me a Coffee</a>,
+      and <a href="https://patreon.com/miguelgrinberg">Patreon</a>.</p>
+    <p class="card-text">Thank you for visiting!</p>
+  </div>
+</div>
+        
+        <div class="card" id="categories">
+  <div class="card-header">Categories</div>
+  <div class="card-body">
+    
+    <div class="category">
+      <a href="/category/AI/feed"><img src="/static/rss-small.png" title="AI RSS Feed" label="AI RSS Feed" alt="AI RSS Feed" /></a>
+      <form action="/category/AI" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="AI" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Arduino/feed"><img src="/static/rss-small.png" title="Arduino RSS Feed" label="Arduino RSS Feed" alt="Arduino RSS Feed" /></a>
+      <form action="/category/Arduino" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Arduino" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Authentication/feed"><img src="/static/rss-small.png" title="Authentication RSS Feed" label="Authentication RSS Feed" alt="Authentication RSS Feed" /></a>
+      <form action="/category/Authentication" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Authentication" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Blog/feed"><img src="/static/rss-small.png" title="Blog RSS Feed" label="Blog RSS Feed" alt="Blog RSS Feed" /></a>
+      <form action="/category/Blog" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Blog" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/C++/feed"><img src="/static/rss-small.png" title="C++ RSS Feed" label="C++ RSS Feed" alt="C++ RSS Feed" /></a>
+      <form action="/category/C++" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="C++" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/CSS/feed"><img src="/static/rss-small.png" title="CSS RSS Feed" label="CSS RSS Feed" alt="CSS RSS Feed" /></a>
+      <form action="/category/CSS" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="CSS" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Cloud/feed"><img src="/static/rss-small.png" title="Cloud RSS Feed" label="Cloud RSS Feed" alt="Cloud RSS Feed" /></a>
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" /> <small><em>12</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Database/feed"><img src="/static/rss-small.png" title="Database RSS Feed" label="Database RSS Feed" alt="Database RSS Feed" /></a>
+      <form action="/category/Database" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Database" /> <small><em>33</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Docker/feed"><img src="/static/rss-small.png" title="Docker RSS Feed" label="Docker RSS Feed" alt="Docker RSS Feed" /></a>
+      <form action="/category/Docker" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Docker" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Filmmaking/feed"><img src="/static/rss-small.png" title="Filmmaking RSS Feed" label="Filmmaking RSS Feed" alt="Filmmaking RSS Feed" /></a>
+      <form action="/category/Filmmaking" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Filmmaking" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Flask/feed"><img src="/static/rss-small.png" title="Flask RSS Feed" label="Flask RSS Feed" alt="Flask RSS Feed" /></a>
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" /> <small><em>130</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Games/feed"><img src="/static/rss-small.png" title="Games RSS Feed" label="Games RSS Feed" alt="Games RSS Feed" /></a>
+      <form action="/category/Games" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Games" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Infra/feed"><img src="/static/rss-small.png" title="Infra RSS Feed" label="Infra RSS Feed" alt="Infra RSS Feed" /></a>
+      <form action="/category/Infra" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Infra" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/IoT/feed"><img src="/static/rss-small.png" title="IoT RSS Feed" label="IoT RSS Feed" alt="IoT RSS Feed" /></a>
+      <form action="/category/IoT" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="IoT" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/JavaScript/feed"><img src="/static/rss-small.png" title="JavaScript RSS Feed" label="JavaScript RSS Feed" alt="JavaScript RSS Feed" /></a>
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" /> <small><em>37</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/MicroPython/feed"><img src="/static/rss-small.png" title="MicroPython RSS Feed" label="MicroPython RSS Feed" alt="MicroPython RSS Feed" /></a>
+      <form action="/category/MicroPython" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="MicroPython" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microdot/feed"><img src="/static/rss-small.png" title="Microdot RSS Feed" label="Microdot RSS Feed" alt="Microdot RSS Feed" /></a>
+      <form action="/category/Microdot" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microdot" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microservices/feed"><img src="/static/rss-small.png" title="Microservices RSS Feed" label="Microservices RSS Feed" alt="Microservices RSS Feed" /></a>
+      <form action="/category/Microservices" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microservices" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Movie Reviews/feed"><img src="/static/rss-small.png" title="Movie Reviews RSS Feed" label="Movie Reviews RSS Feed" alt="Movie Reviews RSS Feed" /></a>
+      <form action="/category/Movie%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Movie Reviews" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Personal/feed"><img src="/static/rss-small.png" title="Personal RSS Feed" label="Personal RSS Feed" alt="Personal RSS Feed" /></a>
+      <form action="/category/Personal" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Personal" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Photography/feed"><img src="/static/rss-small.png" title="Photography RSS Feed" label="Photography RSS Feed" alt="Photography RSS Feed" /></a>
+      <form action="/category/Photography" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Photography" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Product Reviews/feed"><img src="/static/rss-small.png" title="Product Reviews RSS Feed" label="Product Reviews RSS Feed" alt="Product Reviews RSS Feed" /></a>
+      <form action="/category/Product%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Product Reviews" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Programming/feed"><img src="/static/rss-small.png" title="Programming RSS Feed" label="Programming RSS Feed" alt="Programming RSS Feed" /></a>
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" /> <small><em>198</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Project Management/feed"><img src="/static/rss-small.png" title="Project Management RSS Feed" label="Project Management RSS Feed" alt="Project Management RSS Feed" /></a>
+      <form action="/category/Project%20Management" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Project Management" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Python/feed"><img src="/static/rss-small.png" title="Python RSS Feed" label="Python RSS Feed" alt="Python RSS Feed" /></a>
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" /> <small><em>187</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/REST/feed"><img src="/static/rss-small.png" title="REST RSS Feed" label="REST RSS Feed" alt="REST RSS Feed" /></a>
+      <form action="/category/REST" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="REST" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Raspberry Pi/feed"><img src="/static/rss-small.png" title="Raspberry Pi RSS Feed" label="Raspberry Pi RSS Feed" alt="Raspberry Pi RSS Feed" /></a>
+      <form action="/category/Raspberry%20Pi" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Raspberry Pi" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/React/feed"><img src="/static/rss-small.png" title="React RSS Feed" label="React RSS Feed" alt="React RSS Feed" /></a>
+      <form action="/category/React" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="React" /> <small><em>19</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Reviews/feed"><img src="/static/rss-small.png" title="Reviews RSS Feed" label="Reviews RSS Feed" alt="Reviews RSS Feed" /></a>
+      <form action="/category/Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Reviews" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Robotics/feed"><img src="/static/rss-small.png" title="Robotics RSS Feed" label="Robotics RSS Feed" alt="Robotics RSS Feed" /></a>
+      <form action="/category/Robotics" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Robotics" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Security/feed"><img src="/static/rss-small.png" title="Security RSS Feed" label="Security RSS Feed" alt="Security RSS Feed" /></a>
+      <form action="/category/Security" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Security" /> <small><em>14</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Video/feed"><img src="/static/rss-small.png" title="Video RSS Feed" label="Video RSS Feed" alt="Video RSS Feed" /></a>
+      <form action="/category/Video" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Video" /> <small><em>22</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/WebSocket/feed"><img src="/static/rss-small.png" title="WebSocket RSS Feed" label="WebSocket RSS Feed" alt="WebSocket RSS Feed" /></a>
+      <form action="/category/WebSocket" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="WebSocket" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Webcast/feed"><img src="/static/rss-small.png" title="Webcast RSS Feed" label="Webcast RSS Feed" alt="Webcast RSS Feed" /></a>
+      <form action="/category/Webcast" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Webcast" /> <small><em>3</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Windows/feed"><img src="/static/rss-small.png" title="Windows RSS Feed" label="Windows RSS Feed" alt="Windows RSS Feed" /></a>
+      <form action="/category/Windows" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Windows" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+  </div>
+</div>
+        
+      </div>
+    </div>
+    
+  </div>
+  <div id="footer">
+    
+    <p>&copy; 2012-<script type="text/javascript">document.write(new Date().getFullYear());</script> by Miguel Grinberg. All rights reserved. <a href="mailto:webmaster _at_ miguelgrinberg _dot_ com">Questions?</a></p>
+  </div>
+</div>
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="/static/prettify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js" integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg==" crossorigin="anonymous"></script>
+
+<script>
+moment.locale("en");
+function flask_moment_render(elem) {{
+    const timestamp = moment(elem.dataset.timestamp);
+    const func = elem.dataset.function;
+    const format = elem.dataset.format;
+    const timestamp2 = elem.dataset.timestamp2;
+    const no_suffix = elem.dataset.nosuffix;
+    const units = elem.dataset.units;
+    let args = [];
+    if (format)
+        args.push(format);
+    if (timestamp2)
+        args.push(moment(timestamp2));
+    if (no_suffix)
+        args.push(no_suffix);
+    if (units)
+        args.push(units);
+    elem.textContent = timestamp[func].apply(timestamp, args);
+    elem.classList.remove('flask-moment');
+    elem.style.display = "";
+}}
+function flask_moment_render_all() {{
+    const moments = document.querySelectorAll('.flask-moment');
+    moments.forEach(function(moment) {{
+        flask_moment_render(moment);
+        const refresh = moment.dataset.refresh;
+        if (refresh && refresh > 0) {{
+            (function(elem, interval) {{
+                setInterval(function() {{
+                    flask_moment_render(elem);
+                }}, interval);
+            }})(moment, refresh);
+        }}
+    }})
+}}
+document.addEventListener("DOMContentLoaded", flask_moment_render_all);
+</script>
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-20EHZP9GRZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-20EHZP9GRZ');
+  </script>
+  
+  <script type="text/javascript">
+    function setThemeUI() {
+      document.getElementById('select-theme-auto').classList.remove('active');
+      document.getElementById('select-theme-light').classList.remove('active');
+      document.getElementById('select-theme-dark').classList.remove('active');
+      const theme = getPreferredTheme();
+      const actualTheme = document.documentElement.getAttribute('data-bs-theme', 'light');
+      document.getElementById('select-theme-' + theme).classList.add('active');
+      document.getElementById('current-theme').href.baseVal = `#icon-theme-${actualTheme}`;
+    };
+
+    function updateTheme(theme) {
+      if (theme === 'auto') {
+        localStorage.removeItem('theme')
+      }
+      else {
+        localStorage.setItem('theme', theme)
+      }
+      setTheme(getPreferredTheme());
+    }
+
+    setThemeUI();
+
+    const darkModePreference = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModePreference.addEventListener("change", e => {
+      if (getPreferredTheme() === 'auto') {
+        setTheme('auto');
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // add prettyprint class to all <pre><code></code></pre> blocks
+      let prettify = false;
+      document.querySelectorAll('div.post-body pre code').forEach((code) => {
+        code.parentNode.classList.add('prettyprint');
+        prettify = true;
+      });
+      prettyPrint();
+    });
+  </script>
+
+  </body>
+</html>

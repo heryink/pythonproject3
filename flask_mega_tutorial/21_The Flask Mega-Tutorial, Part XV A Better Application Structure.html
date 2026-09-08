@@ -1,0 +1,1427 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    
+  <script type="text/javascript">
+    function getPreferredTheme() {
+      const storedTheme = localStorage.getItem('theme')
+      if (storedTheme) {
+        return storedTheme
+      }
+      return 'auto';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      document.documentElement.setAttribute('data-bs-theme', theme);
+    };
+
+    setTheme(getPreferredTheme());
+  </script>
+  
+    <title>
+  
+    The Flask Mega-Tutorial, Part XV: A Better Application Structure - miguelgrinberg.com
+  
+</title>
+  
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="miguelgrinberg.com">
+  <meta name="copyright" content="Copyright (c) 2012-2024 Miguel Grinberg">
+  <meta name="author" content="Miguel Grinberg">
+  
+  <meta name="keywords" content="python, flask, programming, blueprints, factory pattern">
+  
+  
+  <link rel="canonical" href="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">
+  
+
+  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+
+  <link href="/static/tomorrow.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/tomorrow-night.min.css" type="text/css" rel="stylesheet" />
+  <link href="/static/social.css" rel="stylesheet" type="text/css" />
+  <link href="/static/style_20260305.css" rel="stylesheet" type="text/css" />
+
+  <link rel="shortcut icon" href="/static/favicon.ico">
+  <link rel="alternate" type="application/rss+xml" href="/feed" title="miguelgrinberg.com RSS feed">
+
+    <meta property="og:title" content="The Flask Mega-Tutorial, Part XV: A Better Application Structure">
+    <meta property="og:description" content="This is the fifteenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to restructure the application using a style that is appropriate for larger applications.You are reading the…">
+    <meta property="og:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xv-a-better-application-structure.jpg">
+    <meta property="og:url" content="https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">
+    <meta name="twitter:title" content="The Flask Mega-Tutorial, Part XV: A Better Application Structure">
+    <meta name="twitter:description" content="This is the fifteenth installment of the Flask Mega-Tutorial series, in which I&#39;m going to restructure the application using a style that is appropriate for larger applications.You are reading the…">
+    <meta name="twitter:image" content="https://blog.miguelgrinberg.com/static/cards/the-flask-mega-tutorial-part-xv-a-better-application-structure.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@miguelgrinberg">
+
+  </head>
+  <body>
+    <svg style="display: none" version="2.0">
+      <defs>
+        <symbol id="icon-theme-auto" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-circle-half" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/>
+        </symbol>
+        <symbol id="icon-theme-light" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-brightness-high-fill" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </symbol>
+        <symbol id="icon-theme-dark" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-moon-stars-fill" viewBox="0 0 16 16">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+        </symbol>
+      </defs>
+    </svg>
+<nav class="navbar navbar-expand-lg">
+  <div class="container">
+    <a class="navbar-brand" href="/index">miguelgrinberg.com</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/index">Home</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/my-courses-and-books">My Courses and Books</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/hire-me">Consulting</a></li>
+        <li class="nav-item"><a class="nav-link" aria-current="page" href="/post/about-me">About Me</a></li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <svg width="20" height="20" version="2.0"><use id="current-theme" href="#icon-theme-light"></svg>
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a id="select-theme-light" class="dropdown-item" href="javascript:updateTheme('light'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-light"></svg>&nbsp; Light Mode
+              </a>
+            </li>
+            <li>
+              <a id="select-theme-dark" class="dropdown-item" href="javascript:updateTheme('dark'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-dark"></svg>&nbsp; Dark Mode
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a id="select-theme-auto" class="dropdown-item" href="javascript:updateTheme('auto'); setThemeUI();">
+                <svg width="16" height="16" version="2.0"><use href="#icon-theme-auto"></svg>&nbsp; System Default
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item social-icons">
+          <a href="http://github.com/miguelgrinberg"><img src="/static/social/github.png" alt="GitHub" title="GitHub" /></a>
+          <a href="http://www.linkedin.com/in/miguelgrinberg"><img src="/static/social/linkedin.png" alt="LinkedIn" title="LinkedIn" /></a>
+          <a href="https://bsky.app/profile/miguelgrinberg.com"><img src="/static/social/bluesky.png" alt="Bluesky" title="Bluesky" /></a>
+          <a rel="me" href="https://mstdn.social/@miguelgrinberg"><img src="/static/social/mastodon.png" alt="Mastodon" title="Mastodon" /></a>
+          <a href="https://twitter.com/miguelgrinberg"><img src="/static/social/twitter.png" alt="Twitter" title="Twitter" /></a>
+          <a href="https://youtube.com/miguelgrinberg"><img src="/static/social/youtube.png" alt="YouTube" title="YouTube" /></a>
+          <a href="https://www.buymeacoffee.com/miguelgrinberg"><img src="/static/social/buymeacoffee.png" alt="Buy Me a Coffee" title="Buy Me a Coffee" /></a>
+          <a href="https://patreon.com/miguelgrinberg"><img src="/static/social/patreon.png" alt="Patreon" title="Patreon" /></a>
+          <a type="application/rss+xml" href="/feed"><img src="/static/social/rss.png" alt="RSS Feed" title="RSS Feed" /></a>
+          <!--<a href="https://www.facebook.com/miguelgrinbergblog"><img src="/static/social/facebook.png" alt="Facebook" title="Facebook" /></a>-->
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <div id="main">
+        
+        
+        
+        
+        
+
+<div class="post">
+
+<div class="post-header">
+  <h1><a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">The Flask Mega-Tutorial, Part XV: A Better Application Structure</a></h1>
+  <h2>
+    Posted by
+    <form action="/author/Miguel%20Grinberg" method="POST">
+      <input type="submit" class="btn btn-danger btn-sm" value="Miguel Grinberg" />
+    </form>
+    on
+    <button class="btn btn-secondary btn-sm" disabled><span class="flask-moment" data-timestamp="2023-12-03T10:40:20Z" data-function="format" data-format="LL" data-refresh="0" style="display: none">2023-12-03T10:40:20Z</span></button>
+    under
+    
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" />
+      </form>
+    
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" />
+      </form>
+    
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" />
+      </form>
+    
+    
+  </h2>
+</div>
+<div class="post-body"><p>This is the fifteenth installment of the Flask Mega-Tutorial series, in which I'm going to restructure the application using a style that is appropriate for larger applications.</p>
+<p>You are reading the 2024 edition of the Flask Mega-Tutorial. The complete course is also available to order in e-book and paperback formats from <a href="https://amzn.to/3ahVnPN">Amazon</a>. Thank you for your support!</p>
+<p>If you are looking for the 2018 edition of this course, you can find it <a href="/post/the-flask-mega-tutorial-part-i-hello-world-2018">here</a>.</p>
+<p>For your reference, here is the complete list of articles in this series:</p>
+<ul>
+<li><a href="/post/the-flask-mega-tutorial-part-i-hello-world">Chapter 1:  Hello, World!</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ii-templates">Chapter 2:  Templates</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iii-web-forms">Chapter 3:  Web Forms</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-iv-database">Chapter 4:  Database</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-v-user-logins">Chapter 5:  User Logins</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vi-profile-page-and-avatars">Chapter 6:  Profile Page and Avatars</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-vii-error-handling">Chapter 7:  Error Handling</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-viii-followers">Chapter 8:  Followers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-ix-pagination">Chapter 9:  Pagination</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-x-email-support">Chapter 10:  Email Support</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xi-facelift">Chapter 11:  Facelift</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xii-dates-and-times">Chapter 12:  Dates and Times</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiii-i18n-and-l10n">Chapter 13:  I18n and L10n</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xiv-ajax">Chapter 14:  Ajax</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure">Chapter 15:  A Better Application Structure</a> (this article)</li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">Chapter 16:  Full-Text Search</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xvii-deployment-on-linux">Chapter 17:  Deployment on Linux</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xviii-deployment-on-heroku">Chapter 18:  Deployment on Heroku</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xix-deployment-on-docker-containers">Chapter 19:  Deployment on Docker Containers</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xx-some-javascript-magic">Chapter 20:  Some JavaScript Magic</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxi-user-notifications">Chapter 21:  User Notifications</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxii-background-jobs">Chapter 22:  Background Jobs</a></li>
+<li><a href="/post/the-flask-mega-tutorial-part-xxiii-application-programming-interfaces-apis">Chapter 23:  Application Programming Interfaces (APIs)</a></li>
+</ul>
+<p>Microblog is already an application of a decent size, so I thought this is a good opportunity to discuss how a Flask application can grow without becoming messy or too difficult to manage. Flask is a framework that is designed to give you the option to organize your project in any way you want, and as part of that philosophy, it makes it possible to change or adapt the structure of the application as it becomes larger, or as your needs or level of experience change.</p>
+<p>In this chapter I'm going to discuss some patterns that apply to large applications, and to demonstrate them I'm going to make some changes to the way my Microblog project is structured, with the goal of making the code more maintainable and better organized. But of course, in true Flask spirit, I encourage you to take these changes just as a recommendation when trying to decide on a way to organize your own projects.</p>
+<p><em>The GitHub links for this chapter are: <a href="https://github.com/miguelgrinberg/microblog/tree/v0.15">Browse</a>, <a href="https://github.com/miguelgrinberg/microblog/archive/v0.15.zip">Zip</a>, <a href="https://github.com/miguelgrinberg/microblog/compare/v0.14...v0.15">Diff</a>.</em></p>
+<h2>Current Limitations</h2>
+<p>There are two basic problems with the application in its current state. If you look at how the application is structured, you are going to notice that there are a few different subsystems that can be identified, but the code that supports them is all intermixed, without any clear boundaries. Let's review what those subsystems are:</p>
+<ul>
+<li>The user authentication subsystem, which includes some view functions in <em>app/routes.py</em>, some forms in <em>app/forms.py</em>, some templates in <em>app/templates</em> and the email support in <em>app/email.py</em>.</li>
+<li>The error subsystem, which defines error handlers in <em>app/errors.py</em> and templates in <em>app/templates</em>.</li>
+<li>The core application functionality, which includes displaying and writing blog posts, user profiles and following, and live translations of blog posts, which is spread through most of the application modules and templates.</li>
+</ul>
+<p>Thinking about these three subsystems that I have identified and how they are structured, you can probably notice a pattern. So far, the organization logic that I've been following is based on having modules dedicated to different application functions. There is a module for view functions, another one for web forms, one for errors, one for emails, a directory for HTML templates, and so on. While this is a structure that makes sense for small projects, once a project starts to grow, it tends to make some of these modules really large and messy.</p>
+<p>One way to clearly see the problem is to consider how you would start a second project by reusing as much as you can from this one. For example, the user authentication portion should work well in other applications, but if you wanted to use that code as it is, you would have to go into several modules and copy/paste the pertinent sections into new files in the new project. See how inconvenient that is? Wouldn't it be better if this project had all the authentication related files separated from the rest of the application? The <em>blueprints</em> feature of Flask helps achieve a more practical organization that makes it easier to reuse code.</p>
+<p>There is a second problem that is not that evident. The Flask application instance is created as a global variable in <em>app/__init__.py</em>, and then imported by a lot of application modules. While this in itself is not a problem, having the application as a global variable can complicate certain scenarios, in particular those related to testing. Imagine you want to test this application under different configurations. Because the application is defined as a global variable, there is really no way to instantiate two applications that use different configuration variables. Another situation that is not ideal is that all the tests use the same application, so a test could be making changes to the application that affect another test that runs later. Ideally you want all tests to run on a pristine application instance.</p>
+<p>You can actually see in the <em>tests.py</em> module that I'm resorting to the trick of overwriting the <code>DATABASE_URL</code> environment variable before the application is imported, so that the tests use an in-memory database instead of the default SQLite database based on disk.</p>
+<p>A better solution would be to not use a global variable for the application, and instead use an <em>application factory</em> function to create the function at runtime. This would be a function that accepts a configuration object as an argument, and returns a Flask application instance, configured with those settings. If I could modify the application to work with an application factory function, then writing tests that require special configuration would become easy, because each test can create its own application.</p>
+<p>In this chapter I'm going to refactor the application to introduce blueprints for the three subsystems I have identified above, and an application factory function. Showing you the detailed list of changes is going to be impractical, because there are little changes in pretty much every file that is part of the application, so I'm going to discuss the steps that I took to do the refactoring, and you can then <a href="https://github.com/miguelgrinberg/microblog/archive/v0.15.zip">download</a> the application with these changes made.</p>
+<h2>Blueprints</h2>
+<p>In Flask, a blueprint is a logical structure that represents a subset of the application. A blueprint can include elements such as routes, view functions, forms, templates and static files. If you write your blueprint in a separate Python package, then you have a component that encapsulates the elements related to specific feature of the application.</p>
+<p>The contents of a blueprint are initially in a dormant state. To activate these elements, the blueprint needs to be registered with the application. During the registration, all the elements that were added to the blueprint are passed on to the application. So you can think of a blueprint as a temporary storage for application functionality that helps in organizing your code.</p>
+<h3>Error Handling Blueprint</h3>
+<p>The first blueprint that I created was one that encapsulates the support for error handlers. The structure of this blueprint is as follows:</p>
+<pre><code>app/
+    errors/                             &lt;-- blueprint package
+        __init__.py                     &lt;-- blueprint creation
+        handlers.py                     &lt;-- error handlers
+    templates/
+        errors/                         &lt;-- error templates
+            404.html
+            500.html
+    __init__.py                         &lt;-- blueprint registration
+</code></pre>
+<p>In essence, what I did is move the <em>app/errors.py</em> module into <em>app/errors/handlers.py</em> and the two error templates into <em>app/templates/errors</em>, so that they are separated from the other templates. I also had to change the <code>render_template()</code> calls in both error handlers to use the new <em>errors</em> template subdirectory. After that I added the blueprint creation to the <em>app/errors/__init__.py</em> module, and the blueprint registration to <em>app/__init__.py</em>, after the application instance is created.</p>
+<p>I should note that Flask blueprints can be configured to have a separate directory for templates or static files. I have decided to move the templates into a subdirectory of the application's template directory so that all templates are in a single hierarchy, but if you prefer to have the templates that belong to a blueprint inside the blueprint package, that is supported. For example, if you add a <code>template_folder='templates'</code> argument to the <code>Blueprint()</code> constructor, you can then store the blueprint's templates in <em>app/errors/templates</em>.</p>
+<p>The creation of a blueprint is fairly similar to the creation of an application. This is done in the ___init__.py module of the blueprint package:</p>
+<p class="code_title"><em>app/errors/__init__.py</em>: Errors blueprint.</p>
+
+<pre><code class="language-python">from flask import Blueprint
+
+bp = Blueprint('errors', __name__)
+
+from app.errors import handlers
+</code></pre>
+<p>The <code>Blueprint</code> class takes the name of the blueprint, the name of the base module (typically set to <code>__name__</code> like in the Flask application instance), and a few optional arguments, which in this case I do not need. After the blueprint object is created, I import the <em>handlers.py</em> module, so that the error handlers in it are registered with the blueprint. This import is at the bottom to avoid circular dependencies.</p>
+<p>In the <em>handlers.py</em> module, instead of attaching the error handlers to the application with the <code>@app.errorhandler</code> decorator, I use the blueprint's <code>@bp.app_errorhandler</code> decorator. While both decorators achieve the same end result, the idea is to try to make the blueprint independent of the application so that it is more portable. I also need to modify the path to the two error templates to account for the new <em>errors</em> subdirectory where they were moved.</p>
+<p>The final step to complete the refactoring of the error handlers is to register the blueprint with the application:</p>
+<p class="code_title"><em>app/__init__.py</em>: Register the errors blueprint with the application.</p>
+
+<pre><code class="language-python">app = Flask(__name__)
+
+# ...
+
+from app.errors import bp as errors_bp
+app.register_blueprint(errors_bp)
+
+# ...
+
+from app import routes, models  # &lt;-- remove errors from this import!
+</code></pre>
+<p>To register a blueprint, the <code>register_blueprint()</code> method of the Flask application instance is used. When a blueprint is registered, any view functions, templates, static files, error handlers, etc. are connected to the application. I put the import of the blueprint right above the <code>app.register_blueprint()</code> to avoid circular dependencies.</p>
+<h3>Authentication Blueprint</h3>
+<p>The process to refactor the authentication functions of the application into a blueprint is fairly similar to that of the error handlers. Here is a diagram of the refactored blueprint:</p>
+<pre><code>app/
+    auth/                               &lt;-- blueprint package
+        __init__.py                     &lt;-- blueprint creation
+        email.py                        &lt;-- authentication emails
+        forms.py                        &lt;-- authentication forms
+        routes.py                       &lt;-- authentication routes
+    templates/
+        auth/                           &lt;-- blueprint templates
+            login.html
+            register.html
+            reset_password_request.html
+            reset_password.html
+    __init__.py                         &lt;-- blueprint registration
+</code></pre>
+<p>To create this blueprint I had to move all the authentication related functionality to new modules I created in the blueprint. This includes a few view functions, web forms, and support functions such as the one that sends password reset tokens by email. I also moved the templates into a subdirectory to separate them from the rest of the application, like I did with the error pages.</p>
+<p>When defining routes in a blueprint, the <code>@bp.route</code> decorate is used instead of <code>@app.route</code>. There is also a required change in the syntax used in the <code>url_for()</code> to build URLs. For regular view functions attached directly to the application, the first argument to <code>url_for()</code> is the view function name. When a route is defined in a blueprint, this argument must include the blueprint name and the view function name, separated by a period. So for example, I had to replace all occurrences of <code>url_for('login')</code> with <code>url_for('auth.login')</code>, and same for the remaining view functions.</p>
+<p>To register the <code>auth</code> blueprint with the application, I used a slightly different format:</p>
+<p class="code_title"><em>app/__init__.py</em>: Register the authentication blueprint with the application.</p>
+
+<pre><code class="language-python"># ...
+from app.auth import bp as auth_bp
+app.register_blueprint(auth_bp, url_prefix='/auth')
+# ...
+</code></pre>
+<p>The <code>register_blueprint()</code> call in this case has an extra argument, <code>url_prefix</code>. This is entirely optional, but Flask gives you the option to attach a blueprint under a URL prefix, so any routes defined in the blueprint get this prefix in their URLs. In many cases this is useful as a sort of "namespacing" that keeps all the routes in the blueprint separated from other routes in the application or other blueprints. For authentication, I thought it was nice to have all the routes starting with <em>/auth</em>, so I added the prefix. So now the login URL is going to be <em>http://localhost:5000/auth/login</em>. Because I'm using <code>url_for()</code> to generate the URLs, all URLs will automatically incorporate the prefix.</p>
+<h3>Main Application Blueprint</h3>
+<p>The third blueprint contains the core application logic. Refactoring this blueprint requires the same process that I used with the previous two blueprints. I gave this blueprint the name <code>main</code>, so all <code>url_for()</code> calls that referenced view functions had to get a <code>main.</code> prefix. Given that this is the core functionality of the application, I decided to leave the templates in the same locations. This is not a problem because I have moved the templates from the other two blueprints into subdirectories.</p>
+<h2>The Application Factory Pattern</h2>
+<p>As I mentioned in the introduction to this chapter, having the application as a global variable introduces some complications, mainly in the form of limitations for some testing scenarios. Before I introduced blueprints, the application had to be a global variable, because all the view functions and error handlers needed to be decorated with decorators that come from <code>app</code>, such as <code>@app.route</code>. But now that all routes and error handlers were moved to blueprints, there are a lot less reasons to keep the application global.</p>
+<p>So what I'm going to do is add a function called <code>create_app()</code> that constructs a Flask application instance, and eliminate the global variable. The transformation was not trivial, I had to sort out a few complications, but let's first look at the application factory function:</p>
+<p class="code_title"><em>app/__init__.py</em>: Application factory function.</p>
+
+<pre><code class="language-python"># ...
+db = SQLAlchemy()
+migrate = Migrate()
+login = LoginManager()
+login.login_view = 'auth.login'
+login.login_message = _l('Please log in to access this page.')
+mail = Mail()
+moment = Moment()
+babel = Babel()
+
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+
+    db.init_app(app)
+    migrate.init_app(app, db)
+    login.init_app(app)
+    mail.init_app(app)
+    moment.init_app(app)
+    babel.init_app(app)
+
+    # ... no changes to blueprint registration
+
+    if not app.debug and not app.testing:
+        # ... no changes to logging setup
+
+    return app
+</code></pre>
+<p>You have seen that most Flask extensions are initialized by creating an instance of the extension and passing the application as an argument. When the application does not exist as a global variable, there is an alternative mode in which extensions are initialized in two phases. The extension instance is first created in the global scope as before, but no arguments are passed to it. This creates an instance of the extension that is not attached to the application. At the time the application instance is created in the factory function, the <code>init_app()</code> method must be invoked on the extension instances to bind it to the now known application.</p>
+<p>Other tasks performed during initialization remain the same, but are moved to the factory function instead of being in the global scope. This includes the registration of blueprints and logging configuration. Note that I have added a <code>not app.testing</code> clause to the conditional that decides if email and file logging should be enabled or not, so that all this logging is skipped during unit tests. The <code>app.testing</code> flag is going to be <code>True</code> when running unit tests, due to the <code>TESTING</code> variable being set to <code>True</code> in the configuration.</p>
+<p>So who calls the application factory function? The obvious place to use this function is the top-level <em>microblog.py</em> script, which is the only module in which the application now exists in the global scope. The other place is in <em>tests.py</em>, and I will discuss unit testing in more detail in the next section.</p>
+<p>As I mentioned above, most references to <code>app</code> went away with the introduction of blueprints, but there were some still in the code that I had to address. For example, the <em>app/models.py</em>, <em>app/translate.py</em>, and <em>app/main/routes.py</em> modules all had references to <code>app.config</code>. Fortunately, the Flask developers tried to make it easy for view functions to access the application instance without having to import it like I have been doing until now. The <code>current_app</code> variable that Flask provides is a special "context" variable that Flask initializes with the application before it dispatches a request. You have already seen another context variable before, the <code>g</code> variable in which I'm storing the current locale. These two, along with Flask-Login's <code>current_user</code> and a few others you haven't seen yet, are somewhat "magical" variables, in that they work like global variables, but are only accessible during the handling of a request, and only in the thread that is handling it.</p>
+<p>Replacing <code>app</code> with Flask's <code>current_app</code> variable eliminates the need of importing the application instance as a global variable. I was able to change all references to <code>app.config</code> with <code>current_app.config</code> without any difficulty through simple search and replace.</p>
+<p>The <em>app/email.py</em> module presented a slightly bigger challenge, so I had to use a small trick:</p>
+<p class="code_title"><em>app/email.py</em>: Pass application instance to another thread.</p>
+
+<pre><code class="language-python">from flask import current_app
+
+def send_async_email(app, msg):
+    with app.app_context():
+        mail.send(msg)
+
+def send_email(subject, sender, recipients, text_body, html_body):
+    msg = Message(subject, sender=sender, recipients=recipients)
+    msg.body = text_body
+    msg.html = html_body
+    Thread(target=send_async_email,
+           args=(current_app._get_current_object(), msg)).start()
+</code></pre>
+<p>In the <code>send_email()</code> function, the application instance is passed as an argument to a background thread that will then deliver the email without blocking the main application. Using <code>current_app</code> directly in the <code>send_async_email()</code> function that runs as a background thread would not have worked, because <code>current_app</code> is a context-aware variable that is tied to the thread that is handling the client request. In a different thread, <code>current_app</code> would not have a value assigned. Passing <code>current_app</code> directly as an argument to the thread object would not have worked either, because <code>current_app</code> is really a <em>proxy object</em> that is dynamically mapped to the application instance. So passing the proxy object would be the same as using <code>current_app</code> directly in the thread. What I needed to do is access the real application instance that is stored inside the proxy object, and pass that as the <code>app</code> argument. The <code>current_app._get_current_object()</code> expression extracts the actual application instance from inside the proxy object, so that is what I passed to the thread as an argument.</p>
+<p>Another module that was tricky was <em>app/cli.py</em>, which implements a few shortcut commands for managing language translations and uses the <code>@app.cli.group()</code> decorator. Replacing <code>app</code> with <code>current_app</code> does not work in this case because these commands are registered at start up, not during the handling of a request, which is the only time when <code>current_app</code> can be used. To remove the reference to <code>app</code> in this module, I created another blueprint:</p>
+<p class="code_title"><em>app/cli.py</em>: Blueprint for custom application commands.</p>
+
+<pre><code class="language-python">import os
+from flask import Blueprint
+import click
+
+bp = Blueprint('cli', __name__, cli_group=None)
+
+
+@bp.cli.group()
+def translate():
+    &quot;&quot;&quot;Translation and localization commands.&quot;&quot;&quot;
+    pass
+
+@translate.command()
+@click.argument('lang')
+def init(lang):
+    &quot;&quot;&quot;Initialize a new language.&quot;&quot;&quot;
+    # ...
+
+@translate.command()
+def update():
+    &quot;&quot;&quot;Update all languages.&quot;&quot;&quot;
+    # ...
+
+@translate.command()
+def compile():
+    &quot;&quot;&quot;Compile all languages.&quot;&quot;&quot;
+    # ...
+</code></pre>
+<p>Flask puts commands that are attached to blueprints under a group with the blueprint's name by default. That would have caused these commands to be available as <code>flask cli translate ...</code>. To avoid the extra <code>cli</code> group, the <code>cli_group=None</code> is given to the blueprint.</p>
+<p>Then I register this <code>cli</code> blueprint in the application factory function:</p>
+<p class="code_title"><em>app/__init__.py</em>: Application factory function.</p>
+
+<pre><code class="language-python"># ...
+
+def create_app(config_class=Config):
+    # ...
+    from app.cli import bp as cli_bp
+    app.register_blueprint(cli_bp)
+    # ...
+
+    return app
+</code></pre>
+<h2>Unit Testing Improvements</h2>
+<p>As I hinted in the beginning of this chapter, a lot of the work that I did so far had the goal of improving the unit testing workflow. When you are running unit tests you want to make sure the application is configured in a way that it does not interfere with your development resources, such as your database.</p>
+<p>The current version of <em>tests.py</em> resorts to the trick of modifying the configuration after it was applied to the application instance, which is a dangerous practice as not all types of changes will work when done that late. What I want is to have a chance to specify my testing configuration before it gets added to the application.</p>
+<p>The <code>create_app()</code> function now accepts a configuration class as an argument. By default, the <code>Config</code> class defined in <em>config.py</em> is used, but I can now create an application instance that uses different configuration simply by passing a new class to the factory function. Here is an example configuration class that would be suitable to use for my unit tests:</p>
+<p class="code_title"><em>tests.py</em>: Testing configuration.</p>
+
+<pre><code class="language-python">from config import Config
+
+class TestConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite://'
+</code></pre>
+<p>What I'm doing here is creating a subclass of the application's <code>Config</code> class, and overriding the SQLAlchemy configuration to use an in-memory SQLite database. I also added a <code>TESTING</code> attribute set to <code>True</code>, which is useful when the application needs to determine if it is running under unit tests or not.</p>
+<p>If you recall, my unit tests relied on the <code>setUp()</code> and <code>tearDown()</code> methods, invoked automatically by the unit testing framework to create and destroy an environment that is appropriate for each test to run. I can now use these two methods to also create and destroy a brand-new application for each test:</p>
+<p class="code_title"><em>tests.py</em>: Create an application for each test.</p>
+
+<pre><code class="language-python">class UserModelCase(unittest.TestCase):
+    def setUp(self):
+        self.app = create_app(TestConfig)
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+</code></pre>
+<p>The new application will be stored in <code>self.app</code>, and as before, an application context will be created from it, but what is this exactly?</p>
+<p>Remember the <code>current_app</code> variable, which somehow acts as a proxy for the application when there is no global application to import? This variable knows the application instance because it looks for the application context that was pushed in the current thread. If it finds one, it gets the application instance from it. If there is no context, then there is no way to know what application is active, so <code>current_app</code> raises an exception. Below you can see how this works in a Python console. This needs to be a console started by running <code>python</code>, because the <code>flask shell</code> command automatically activates an application context for convenience.</p>
+<pre><code class="language-python">&gt;&gt;&gt; from flask import current_app
+&gt;&gt;&gt; current_app.config['SQLALCHEMY_DATABASE_URI']
+Traceback (most recent call last):
+    ...
+RuntimeError: Working outside of application context.
+
+&gt;&gt;&gt; from app import create_app
+&gt;&gt;&gt; app = create_app()
+&gt;&gt;&gt; app.app_context().push()
+&gt;&gt;&gt; current_app.config['SQLALCHEMY_DATABASE_URI']
+'sqlite:////home/miguel/microblog/app.db'
+</code></pre>
+<p>So that's the secret! Before invoking your view functions, Flask pushes an application context, which brings <code>current_app</code> and <code>g</code> to life. When the request is complete, the context is removed, along with these variables. For the <code>db.create_all()</code> call to work in the <code>setUp()</code> method, an application context for the application instance must be pushed, and in that way, <code>db.create_all()</code> can use <code>current_app.config</code> to know where is the database. Then in the <code>tearDown()</code> method I pop the context to reset everything to a clean state.</p>
+<p>You should also know that the application context is one of two contexts that Flask uses. There is also a <em>request context</em>, which is more specific, as it applies to a request. When a request context is activated right before a request is handled, Flask's <code>request</code> and <code>session</code> variables become available, as well as Flask-Login's <code>current_user</code>.</p>
+<h2>Environment Variables</h2>
+<p>As you have seen as I built this application, there are a number of configuration options that depend on having variables set up in your environment before you start the server. This includes your secret key, email server information, database URL, and Microsoft Translator API key. You'll probably agree with me that this is inconvenient, because each time you open a new terminal session those variables need to be set again.</p>
+<p>A common pattern for applications that depend on lots of environment variables is to store these in a <em>.env</em> file in the root application directory. The application imports the variables in this file when it starts, and that way, there is no need to have all these variables manually set by you.</p>
+<p>There is a Python package that supports <em>.env</em> files called <code>python-dotenv</code>, and it is already installed because I used it with the <em>.flaskenv</em> file. While the <em>.env</em> and <em>.flaskenv</em> files are similar, Flask expects Flask's own configuration variables to be in <em>.flaskenv</em>, while application configuration variables (including some that can be of a sensitive nature) to be in <em>.env</em>. The <em>.flaskenv</em> file can be added to your source control, as it does not contain any secrets or passwords. The <em>.env</em> file is not supposed to be added to source control to ensure that your secrets are protected.</p>
+<p>The <code>flask</code> command automatically imports into the environment any variables defined in the <em>.flaskenv</em> and <em>.env</em> files. This is sufficient for the <em>.flaskenv</em> file, because its contents are only needed when running the application through the <code>flask</code> command. The <em>.env</em> file, however, is going to be used also in the production deployment of this application, which is not going to use the <code>flask</code> command. For that reason, it is a good idea to explicitly import the contents of the <em>.env</em> file.</p>
+<p>Since the <em>config.py</em> module is where I read all the environment variables, I'm going to import the <em>.env</em> file before the <code>Config</code> class is created, so that the variables are already set when the class is constructed:</p>
+<p class="code_title"><em>config.py</em>: Import a .env file with environment variables.</p>
+
+<pre><code class="language-python">import os
+from dotenv import load_dotenv
+
+basedir = os.path.abspath(os.path.dirname(__file__))
+load_dotenv(os.path.join(basedir, '.env'))
+
+class Config:
+    # ...
+</code></pre>
+<p>So now you can create a <em>.env</em> file with all the environment variables that your application needs. It is important that you do not add your <em>.env</em> file to source control. You do not want to have a file that contains passwords and other sensitive information included in your source code repository.</p>
+<p>The <em>.env</em> file can be used for all the configuration-time variables, but it cannot be used for Flask's <code>FLASK_APP</code> and <code>FLASK_DEBUG</code> environment variables, because these are needed very early in the application bootstrap process, before the application instance and its configuration object exist.</p>
+<p>The following example shows a <em>.env</em> file that defines a secret key, configures email to go out on a locally running mail server on port 8025 and no authentication, sets up the Microsoft Translator API key, and leaves the database configuration to use the defaults:</p>
+<pre><code>SECRET_KEY=a-really-long-and-unique-key-that-nobody-knows
+MAIL_SERVER=localhost
+MAIL_PORT=8025
+MS_TRANSLATOR_KEY=&lt;your-translator-key-here&gt;
+</code></pre>
+<h2>Requirements File</h2>
+<p>At this point I have installed a fair number of packages in the Python virtual environment. If you ever need to regenerate your environment on another machine, you are going to have trouble remembering what packages you had to install, so the generally accepted practice is to write a <em>requirements.txt</em> file in the root folder of your project listing all the dependencies, along with their versions. Producing this list is actually easy:</p>
+<pre><code>(venv) $ pip freeze &gt; requirements.txt
+</code></pre>
+<p>The <code>pip freeze</code> command will dump all the packages that are installed on your virtual environment in the correct format for the <em>requirements.txt</em> file. Now, if you need to create the same virtual environment on another machine, instead of installing packages one by one, you can run:</p>
+<pre><code>(venv) $ pip install -r requirements.txt
+</code></pre>
+<p>Continue on to the <a href="/post/the-flask-mega-tutorial-part-xvi-full-text-search">next chapter</a>.</p></div>
+
+<h2>Buy me a coffee?</h2>
+<p class="card-text">Thank you for visiting my blog! If you enjoyed this article, please consider supporting my work and keeping me caffeinated with a small one-time donation through <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy me a coffee</a>. Thanks!</p>
+<a href="https://www.buymeacoffee.com/miguelgrinberg" target="_blank"><img src="/static/buymeacoffee-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+
+<h2>Share this post</h2>
+<!-- Sharingbutton Hacker News -->
+<a class="resp-sharing-button__link" href="https://news.ycombinator.com/submitlink?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xv-a-better-application-structure&amp;t=The%20Flask%20Mega-Tutorial%2C%20Part%20XV%3A%20A%20Better%20Application%20Structure" target="_blank" rel="noopener" aria-label="Hacker News">
+  <div class="resp-sharing-button resp-sharing-button--hackernews resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140"><path fill-rule="evenodd" d="M60.94 82.314L17 0h20.08l25.85 52.093c.397.927.86 1.888 1.39 2.883.53.994.995 2.02 1.393 3.08.265.4.463.764.596 1.095.13.334.262.63.395.898.662 1.325 1.26 2.618 1.79 3.877.53 1.26.993 2.42 1.39 3.48 1.06-2.254 2.22-4.673 3.48-7.258 1.26-2.585 2.552-5.27 3.877-8.052L103.49 0h18.69L77.84 83.308v53.087h-16.9v-54.08z"></path></svg></div>Hacker News</div>
+</a>
+
+<!-- Sharingbutton Reddit -->
+<a class="resp-sharing-button__link" href="https://reddit.com/submit/?url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xv-a-better-application-structure&amp;resubmit=true&amp;title=The Flask Mega-Tutorial, Part XV: A Better Application Structure" target="_blank" rel="noopener" aria-label="Reddit">
+  <div class="resp-sharing-button resp-sharing-button--reddit resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 11.5c0-1.65-1.35-3-3-3-.96 0-1.86.48-2.42 1.24-1.64-1-3.75-1.64-6.07-1.72.08-1.1.4-3.05 1.52-3.7.72-.4 1.73-.24 3 .5C17.2 6.3 18.46 7.5 20 7.5c1.65 0 3-1.35 3-3s-1.35-3-3-3c-1.38 0-2.54.94-2.88 2.22-1.43-.72-2.64-.8-3.6-.25-1.64.94-1.95 3.47-2 4.55-2.33.08-4.45.7-6.1 1.72C4.86 8.98 3.96 8.5 3 8.5c-1.65 0-3 1.35-3 3 0 1.32.84 2.44 2.05 2.84-.03.22-.05.44-.05.66 0 3.86 4.5 7 10 7s10-3.14 10-7c0-.22-.02-.44-.05-.66 1.2-.4 2.05-1.54 2.05-2.84zM2.3 13.37C1.5 13.07 1 12.35 1 11.5c0-1.1.9-2 2-2 .64 0 1.22.32 1.6.82-1.1.85-1.92 1.9-2.3 3.05zm3.7.13c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9.8 4.8c-1.08.63-2.42.96-3.8.96-1.4 0-2.74-.34-3.8-.95-.24-.13-.32-.44-.2-.68.15-.24.46-.32.7-.18 1.83 1.06 4.76 1.06 6.6 0 .23-.13.53-.05.67.2.14.23.06.54-.18.67zm.2-2.8c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm5.7-2.13c-.38-1.16-1.2-2.2-2.3-3.05.38-.5.97-.82 1.6-.82 1.1 0 2 .9 2 2 0 .84-.53 1.57-1.3 1.87z"/></svg></div>Reddit</div>
+</a>
+
+<!-- Sharingbutton Twitter -->
+<a class="resp-sharing-button__link" href="https://twitter.com/intent/tweet/?text=The%20Flask%20Mega-Tutorial%2C%20Part%20XV%3A%20A%20Better%20Application%20Structure&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xv-a-better-application-structure" target="_blank" rel="noopener" aria-label="Twitter">
+  <div class="resp-sharing-button resp-sharing-button--twitter resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M23.44 4.83c-.8.37-1.5.38-2.22.02.93-.56.98-.96 1.32-2.02-.88.52-1.86.9-2.9 1.1-.82-.88-2-1.43-3.3-1.43-2.5 0-4.55 2.04-4.55 4.54 0 .36.03.7.1 1.04-3.77-.2-7.12-2-9.36-4.75-.4.67-.6 1.45-.6 2.3 0 1.56.8 2.95 2 3.77-.74-.03-1.44-.23-2.05-.57v.06c0 2.2 1.56 4.03 3.64 4.44-.67.2-1.37.2-2.06.08.58 1.8 2.26 3.12 4.25 3.16C5.78 18.1 3.37 18.74 1 18.46c2 1.3 4.4 2.04 6.97 2.04 8.35 0 12.92-6.92 12.92-12.93 0-.2 0-.4-.02-.6.9-.63 1.96-1.22 2.56-2.14z"/></svg></div>Twitter</div>
+</a>
+
+<!-- Sharingbutton LinkedIn -->
+<a class="resp-sharing-button__link" href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xv-a-better-application-structure&amp;title=The%20Flask%20Mega-Tutorial%2C%20Part%20XV%3A%20A%20Better%20Application%20Structure&amp;summary=The%20Flask%20Mega-Tutorial%2C%20Part%20XV%3A%20A%20Better%20Application%20Structure&amp;source=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xv-a-better-application-structure" target="_blank" rel="noopener" aria-label="LinkedIn">
+  <div class="resp-sharing-button resp-sharing-button--linkedin resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.5 21.5h-5v-13h5v13zM4 6.5C2.5 6.5 1.5 5.3 1.5 4s1-2.4 2.5-2.4c1.6 0 2.5 1 2.6 2.5 0 1.4-1 2.5-2.6 2.5zm11.5 6c-1 0-2 1-2 2v7h-5v-13h5V10s1.6-1.5 4-1.5c3 0 5 2.2 5 6.3v6.7h-5v-7c0-1-1-2-2-2z"/></svg></div>LinkedIn</div>
+</a>
+
+<!-- Sharingbutton Facebook -->
+<a class="resp-sharing-button__link" href="https://facebook.com/sharer/sharer.php?u=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xv-a-better-application-structure" target="_blank" rel="noopener" aria-label="Facebook">
+  <div class="resp-sharing-button resp-sharing-button--facebook resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/></svg></div>Facebook</div>
+</a>
+
+<!-- Sharingbutton E-Mail -->
+<a class="resp-sharing-button__link" href="mailto:?subject=The%20Flask%20Mega-Tutorial%2C%20Part%20XV%3A%20A%20Better%20Application%20Structure&amp;body=https%3A//blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-xv-a-better-application-structure" target="_self" rel="noopener" aria-label="E-Mail">
+  <div class="resp-sharing-button resp-sharing-button--email resp-sharing-button--medium"><div aria-hidden="true" class="resp-sharing-button__icon resp-sharing-button__icon--solid">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 4H2C.9 4 0 4.9 0 6v12c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM7.25 14.43l-3.5 2c-.08.05-.17.07-.25.07-.17 0-.34-.1-.43-.25-.14-.24-.06-.55.18-.68l3.5-2c.24-.14.55-.06.68.18.14.24.06.55-.18.68zm4.75.07c-.1 0-.2-.03-.27-.08l-8.5-5.5c-.23-.15-.3-.46-.15-.7.15-.22.46-.3.7-.14L12 13.4l8.23-5.32c.23-.15.54-.08.7.15.14.23.07.54-.16.7l-8.5 5.5c-.08.04-.17.07-.27.07zm8.93 1.75c-.1.16-.26.25-.43.25-.08 0-.17-.02-.25-.07l-3.5-2c-.24-.13-.32-.44-.18-.68s.44-.32.68-.18l3.5 2c.24.13.32.44.18.68z"/></svg></div>E-Mail</div>
+</a>
+
+<div id="comments" class="post-comment-count">
+  
+  <a class="btn btn-outline-secondary" href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure#comments">22 comments</a>
+  
+</div>
+
+
+<div class="comments">
+  <ul>
+    
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7b55337f0d5f31d1871388c36cf261c2?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#1</span> <span class="badge text-bg-warning">Kourosh</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-06T09:06:30Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-06T09:06:30Z</span>
+  </p>
+  <div>
+    <p>Hi.<br>
+Thanks for the tutorial. Its amazing.<br>
+I was working on learning Flask for 2 months.<br>
+I see the comments or gone.<br>
+They were really helping.<br>
+For now, I am using google cache for them.<br>
+Is there any reason for removing them?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#2</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2023-12-06T10:01:54Z" data-function="fromNow" data-refresh="0" style="display: none">2023-12-06T10:01:54Z</span>
+  </p>
+  <div>
+    <p>@Kourosh: The comments are not gone. The tutorial has received a major update a couple of days ago. Look at the top of any tutorial chapter for the link to the previous version, where you will find all the comments that apply to that version of the tutorial.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/0286c6a87475f8dae95c0bc9bc493893?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#3</span> <span class="badge text-bg-warning">Vladimir Kuzmenkov</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-01-09T17:15:03Z" data-function="fromNow" data-refresh="0" style="display: none">2024-01-09T17:15:03Z</span>
+  </p>
+  <div>
+    <p>Most difficult to understand chapter :)</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/f67805d15114b9fb692a6d99a4b713e8?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#4</span> <span class="badge text-bg-warning">AJ</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-20T18:34:06Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-20T18:34:06Z</span>
+  </p>
+  <div>
+    <p>I was having an issue setting up the DB/migration and after restarting through the tutorial i found that i needed to add the line <code>from app import models</code>. Im a bit confused about this line, but i think its somehow necessary for the migrations to find the model definitions? is there a different way to "discover" the models or must we import the models file in an unused import?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#5</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-02-20T23:13:59Z" data-function="fromNow" data-refresh="0" style="display: none">2024-02-20T23:13:59Z</span>
+  </p>
+  <div>
+    <p>@AJ: That is correct. Models are registered with SQLAlchemy when they are imported. You must import them even if they are not needed for SQLAlchemy to see them.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/61995bb5b31430c33106212d5ecc3b85?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#6</span> <span class="badge text-bg-warning">Noah</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-17T14:27:24Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-17T14:27:24Z</span>
+  </p>
+  <div>
+    <p>Hi, Miguel.</p>
+<p>How you make git know <code>404.html</code> and <code>login.html</code> are renamed in single commit? I tried but it only worked in working directory, after adding to staging, git marked <code>404.html</code> and <code>login.html</code> were new files and old files were deleted.<br>
+I could make 2 seperate commits, first to renamed, second to update content of <code>404.html</code> and <code>login.html</code>, but I still wonder how you did it in 1 commit.</p>
+<p>Thanks,</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#7</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-17T22:46:56Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-17T22:46:56Z</span>
+  </p>
+  <div>
+    <p>@Noah: I did not do anything special, I did not even try to help git figure out the renames, I just changed what I needed to change. The fact that git decided the files were renamed was not a goal of mine, I don't think that is important.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/bb3d119194e1aebdb8346345c313ab03?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#8</span> <span class="badge text-bg-warning">Vijay</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-04-26T18:31:22Z" data-function="fromNow" data-refresh="0" style="display: none">2024-04-26T18:31:22Z</span>
+  </p>
+  <div>
+    <p>As an entry level developer who's learning flask to get my first job, this is probably the best chapter. It goes so in detail and feels 'heavy' sometimes but the whole idea of application context, current_app and how it works behind the scenes, is just brilliant. </p>
+<p>I feel like I know how flask works now more than ever. I still need to read and understand more for it to sink in. </p>
+<p>Thank you for this amazing blog. I'm following your Udemy course as well. Hope you keep teaching Miguel. It's a privilege.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/d4f11151f9b1d59cbfbd384ca2a25493?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#9</span> <span class="badge text-bg-warning">TheBlack</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-15T17:08:27Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-15T17:08:27Z</span>
+  </p>
+  <div>
+    <p>Hi, is there any reasons behind putting TestConfig class into <a href="http://tests.py" rel="nofollow">tests.py</a> instead of <a href="http://config.py" rel="nofollow">config.py</a> module? I wanted to put it into <a href="http://config.py" rel="nofollow">config.py</a> so all config classes would be in one config file, but wasn't sure there is no any hidden underwater stones. Thanks for your answer in advance.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#10</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-16T18:53:11Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-16T18:53:11Z</span>
+  </p>
+  <div>
+    <p>@TheBlack: it's really up to you. I don't see any problem with moving the test configuration to <a href="http://config.py" rel="nofollow">config.py</a>.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/1f8af14c1bcc8b55baf6f8b0e92186d3?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#11</span> <span class="badge text-bg-warning">Sadnesh</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-30T07:47:48Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-30T07:47:48Z</span>
+  </p>
+  <div>
+    <p>Hello Miguel ! Thanks a lot for the mega tutorial. I have gotten myself into an issue. As you demonstrated the context of current_app where simply running </p>
+<pre><code>&gt;&gt;&gt; from flask import current_app
+&gt;&gt;&gt; current_app.config['SQLALCHEMY_DATABASE_URI']
+</code></pre>
+<p>raised an error as we were working outside application context but running</p>
+<pre><code>&gt;&gt;&gt; from app import create_app
+&gt;&gt;&gt; app = create_app()
+</code></pre>
+<p>worked out as we were creating the application with defined configuration. But when I tried to do the same, the first was the same as you demonstrated but the second one still raised an error </p>
+<pre><code>RuntimeError: Working outside of application context.
+</code></pre>
+<p>and further information was given as </p>
+<pre><code>This typically means that you attempted to use functionality that needed the current application. To solve this, set up an application context with app.app_context(). See the documentation for more information.
+</code></pre>
+<p>I am not sure if I am doing anything wrong.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#12</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-30T09:49:33Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-30T09:49:33Z</span>
+  </p>
+  <div>
+    <p>@Sadnesh: you said you tried to do "the same", but you haven't shown me exactly what you've done. Without seeing what you've done I cannot provide advice.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/1f8af14c1bcc8b55baf6f8b0e92186d3?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#13</span> <span class="badge text-bg-warning">Sadnesh</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-31T06:00:55Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-31T06:00:55Z</span>
+  </p>
+  <div>
+    <p>Sorry for not elaborating my issue in detail, from "the same" I meant running</p>
+<pre><code>&gt;&gt;&gt; from flask import current_app
+&gt;&gt;&gt; current_app.config['SQLALCHEMY_DATABASE_URI']
+</code></pre>
+<p>resulted in raising error which is </p>
+<pre><code>RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+</code></pre>
+<p>and running the following code raised an error too, which is not an expected behavior</p>
+<pre><code>&gt;&gt;&gt; from app import create_app
+&gt;&gt;&gt; app = create_app()
+</code></pre>
+<p>which is </p>
+<pre><code>RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+</code></pre>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/1f8af14c1bcc8b55baf6f8b0e92186d3?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#14</span> <span class="badge text-bg-warning">Sadnesh</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-07-31T09:33:10Z" data-function="fromNow" data-refresh="0" style="display: none">2024-07-31T09:33:10Z</span>
+  </p>
+  <div>
+    <p>Hello Miguel ! Sorry for the inconvenience,  it was my bad that I didn't recheck the code, the issue was I imported current_app in the <a href="http://microblog.py" rel="nofollow">microblog.py</a> instead of create_app which caused the problem.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/e209d845b5daefe3d6d4575d4d6e6082?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#15</span> <span class="badge text-bg-warning">Anil Ravuri</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-08-06T17:49:13Z" data-function="fromNow" data-refresh="0" style="display: none">2024-08-06T17:49:13Z</span>
+  </p>
+  <div>
+    <p>is there an easy way to separate out the models from the sqlalchemy code dependency?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#16</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2024-08-06T18:34:41Z" data-function="fromNow" data-refresh="0" style="display: none">2024-08-06T18:34:41Z</span>
+  </p>
+  <div>
+    <p>@Anil: the models are an integral part of SQLAlchemy. If you want to create objects in a similar way, then you may want to consider using Python dataclasses, or possibly Pydantic, both of which allow you to design models without an association with a database.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/7bf347bb83b16d44c64101958d2ba4c0?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#17</span> <span class="badge text-bg-warning">Chr1s</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-01-26T17:18:55Z" data-function="fromNow" data-refresh="0" style="display: none">2025-01-26T17:18:55Z</span>
+  </p>
+  <div>
+    <p>Hello Miguel! Thanks for your free tutorial first of all.  It has fairly been more helpful to the flask fresh like me than the official doc.<br>
+The issus comes when treating the <code>cli</code> module as a <code>blueprint</code> to enable the use of <code>translate</code> command groups. On the hand, I dont think it have actual subsystem logic like the other three blueprints, which really puzzles me. On the other hand, both the official doc and source code treat <code>current_app</code> as the "global application context" rather than the "request context".<br>
+Of course the problem still lies if we import <code>current_app</code> in <code><a href="http://cli.py" rel="nofollow">cli.py</a></code>, because it's at the application setup. This made me think of "shell context" part in <code><a href="http://microblog.py" rel="nofollow">microblog.py</a></code>, which, like '<a href="http://cli.py" rel="nofollow">cli.py</a>', uses <code>app</code> as well. So I am wondering if treating both <code><a href="http://cli.py" rel="nofollow">cli.py</a></code> and "shell context" as "enhancements for the development environment" or something might be better? <br>
+The way I am considering is to directly insert the code from <code><a href="http://cli.py" rel="nofollow">cli.py</a></code> into <code><a href="http://microblog.py" rel="nofollow">microblog.py</a></code>, or alternatively, place the extended part in <code><a href="http://develop_ext.py" rel="nofollow">develop_ext.py</a></code> (or else filename?) and use <code>app</code> by importing it from <code><a href="http://microblog.py" rel="nofollow">microblog.py</a></code>. I am using the latter and it works.<br>
+Expect your opinion on this. Thank you.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#18</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-01-26T18:54:52Z" data-function="fromNow" data-refresh="0" style="display: none">2025-01-26T18:54:52Z</span>
+  </p>
+  <div>
+    <p>@Chr1s: </p>
+<blockquote>
+<p>The issus comes when treating the cli module as a blueprint to enable the use of translate command groups.</p>
+</blockquote>
+<p>What is the issue here? The code as is on the GitHub repository and my blog works well, as far as I know.</p>
+<blockquote>
+<p>Of course the problem still lies if we import current_app in <a href="http://cli.py" rel="nofollow">cli.py</a></p>
+</blockquote>
+<p>I don't see any reference to <code>current_app</code> in <a href="http://cli.py" rel="nofollow">cli.py</a>.</p>
+<p>Are you reading this chapter in detail? The problems are discussed and solutions are provided. The code as it is should work just fine, at least I have no reports of it being broken.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/a8cc36a625ca53c19f568665fdd4d27b?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#19</span> <span class="badge text-bg-warning">matthew</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-02-12T12:18:55Z" data-function="fromNow" data-refresh="0" style="display: none">2025-02-12T12:18:55Z</span>
+  </p>
+  <div>
+    <p>I'm curious if the model could be incorporated into the blueprint folders as well.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#20</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-02-12T14:36:48Z" data-function="fromNow" data-refresh="0" style="display: none">2025-02-12T14:36:48Z</span>
+  </p>
+  <div>
+    <p>@matthew: Yes, why not. You may need to be more careful about how you organize your imports, but there is really nothing that requires the models to be all in one place.</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/791489b74485a55bb2d8dd7b0437cb38?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#21</span> <span class="badge text-bg-warning">Michel</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-09-08T16:32:54Z" data-function="fromNow" data-refresh="0" style="display: none">2025-09-08T16:32:54Z</span>
+  </p>
+  <div>
+    <p>Hi @Miguel,</p>
+<p>Is there any purpose to keep those variable global:<br>
+<i>db = SQLAlchemy()<br>
+migrate = Migrate()<br>
+login = LoginManager()<br>
+login.login_view = 'auth.login'<br>
+login.login_message = _l('Please log in to access this page.')<br>
+mail = Mail()<br>
+moment = Moment()<br>
+babel = Babel()</i></p>
+<p>Could I add them in app ?</p>
+  </div>
+</div>
+    </li>
+    
+    <li>
+      <div class="comment-thumbnail"><img class="rounded" src="https://gravatar.com/avatar/729e26a2a2c7ff24a71958d4aa4e5f35?s=60&d=identicon"></div>
+<div class="comment-body">
+  
+  <p>
+    
+    <span class="badge bg-secondary">#22</span> <span class="badge text-bg-danger">Miguel Grinberg</span> said
+    
+    <span class="flask-moment" data-timestamp="2025-09-08T18:33:18Z" data-function="fromNow" data-refresh="0" style="display: none">2025-09-08T18:33:18Z</span>
+  </p>
+  <div>
+    <p>@Michel: it really depends on your preference. They are kept global because of convenience. It's nicer to be able to say <code>db.commit()</code>, and that requires <code>db</code> to be a global variable, even though it is fully initialized inside the application factory function.</p>
+  </div>
+</div>
+    </li>
+    
+  </ul>
+</div>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure/page/1#comments">&laquo;&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure/page/0#comments">&laquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure/page/0#comments">&raquo;</a></li>
+    <li class="page-item disabled"><a class="page-link" href="/post/the-flask-mega-tutorial-part-xv-a-better-application-structure/page/0#comments">&raquo;&raquo;</a></li>
+  </ul>
+</nav>
+
+
+
+<div id="comment-form">
+  <h3>Leave a Comment</h3>
+
+  
+  
+  
+
+  
+<form action="#comment-form" method="post">
+  <input id="url" name="url" type="hidden" value="">
+<input id="csrf_token" name="csrf_token" type="hidden" value="ImVmNGI4N2Y2ZGZhN2VhZDA5ZjUzMTg0MzYyMmQ2NjgyOTZkODFmZjMi.ajz8gw.SYSezFfz5Jkc_0BTNQVDj1KYtDo">
+    
+  <div class="mb-3">
+    <label class="form-label" for="name">Name</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="name" name="name" required type="text" value="">
+    </div>
+  </div>
+
+    
+    
+  <div class="mb-3">
+    <label class="form-label" for="email">Email</label>
+    <div class="input-group has-validation">
+      <input class="form-control" id="email" name="email" required type="text" value="">
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="comment">Comment</label>
+    <div class="input-group has-validation">
+      <textarea class="form-control" id="comment" name="comment" required>
+</textarea>
+    </div>
+  </div>
+
+    
+  <div class="mb-3">
+    <label class="form-label" for="captcha">Captcha</label>
+    <div class="input-group has-validation">
+      
+<script src='https://www.google.com/recaptcha/api.js' async defer></script>
+<div class="g-recaptcha" data-sitekey="6Ld5Zs4SAAAAAOY0DOi4r18bgHlEaz41qAoRf__S"></div>
+
+    </div>
+  </div>
+
+    
+  <input class="btn btn-primary mb-3" id="submit" name="submit" type="submit" value="Submit">
+
+      
+</form>
+
+</div>
+
+
+</div>
+
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div id="sidebar">
+        
+          
+  
+
+
+
+<div class="card">
+  
+  
+  <div class="card-header">Flask Web Development, 2nd Edition</div>
+  <a class="card-book-cover" href="https://amzn.to/3lE2mok">
+    <img src="/static/flask2e-book-cover-small.png" alt="Flask Web Development, 2nd Edition">
+  </a>
+  <div class="card-body">
+    <p class="card-text">If you want to learn modern web development techniques with Python and Flask, you may find the second edition of my <a href="https://amzn.to/3lE2mok">O'Reilly book</a> useful.</p>
+  </div>
+  <div class="card-body">
+    <a class="card-link" href="https://amzn.to/3lE2mok">Click here to get this Book!</a><br />
+  </div>
+
+  
+</div>
+        
+        <div class="card">
+  <div class="card-header">About Miguel</div>
+  <div class="card-body">
+    <img style="float: right; margin: 0px 8px 8px 0px; padding: 4px; border: 1px solid #ccc;" src="/static/miguel.jpg" />
+    <p class="card-text">Welcome to my blog!</p>
+    <p class="card-text">I'm a software engineer and technical writer, currently living in Drogheda, Ireland.</p>
+    <p><u>Generative AI notice:</u> I do not use LLMs, agents or any other generative AI tools for help with writing, coding, image creation or any other tasks related to this blog or my open source work.</p>
+    <p class="card-text">You can also find me on
+      <a href="https://github.com/miguelgrinberg">Github</a>,
+      <a href="http://www.linkedin.com/in/miguelgrinberg">LinkedIn</a>,
+      <a href="https://bsky.app/profile/miguelgrinberg.com">Bluesky</a>,
+      <a href="https://mstdn.social/@miguelgrinberg">Mastodon</a>,
+      <a href="https://twitter.com/miguelgrinberg">Twitter</a>,
+      <a href="https://youtube.com/miguelgrinberg">YouTube</a>,
+      <!--<a href="https://www.facebook.com/miguelgrinbergblog">Facebook</a>,-->
+      <a href="https://www.buymeacoffee.com/miguelgrinberg">Buy Me a Coffee</a>,
+      and <a href="https://patreon.com/miguelgrinberg">Patreon</a>.</p>
+    <p class="card-text">Thank you for visiting!</p>
+  </div>
+</div>
+        
+        <div class="card" id="categories">
+  <div class="card-header">Categories</div>
+  <div class="card-body">
+    
+    <div class="category">
+      <a href="/category/AI/feed"><img src="/static/rss-small.png" title="AI RSS Feed" label="AI RSS Feed" alt="AI RSS Feed" /></a>
+      <form action="/category/AI" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="AI" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Arduino/feed"><img src="/static/rss-small.png" title="Arduino RSS Feed" label="Arduino RSS Feed" alt="Arduino RSS Feed" /></a>
+      <form action="/category/Arduino" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Arduino" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Authentication/feed"><img src="/static/rss-small.png" title="Authentication RSS Feed" label="Authentication RSS Feed" alt="Authentication RSS Feed" /></a>
+      <form action="/category/Authentication" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Authentication" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Blog/feed"><img src="/static/rss-small.png" title="Blog RSS Feed" label="Blog RSS Feed" alt="Blog RSS Feed" /></a>
+      <form action="/category/Blog" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Blog" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/C++/feed"><img src="/static/rss-small.png" title="C++ RSS Feed" label="C++ RSS Feed" alt="C++ RSS Feed" /></a>
+      <form action="/category/C++" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="C++" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/CSS/feed"><img src="/static/rss-small.png" title="CSS RSS Feed" label="CSS RSS Feed" alt="CSS RSS Feed" /></a>
+      <form action="/category/CSS" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="CSS" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Cloud/feed"><img src="/static/rss-small.png" title="Cloud RSS Feed" label="Cloud RSS Feed" alt="Cloud RSS Feed" /></a>
+      <form action="/category/Cloud" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Cloud" /> <small><em>12</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Database/feed"><img src="/static/rss-small.png" title="Database RSS Feed" label="Database RSS Feed" alt="Database RSS Feed" /></a>
+      <form action="/category/Database" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Database" /> <small><em>33</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Docker/feed"><img src="/static/rss-small.png" title="Docker RSS Feed" label="Docker RSS Feed" alt="Docker RSS Feed" /></a>
+      <form action="/category/Docker" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Docker" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Filmmaking/feed"><img src="/static/rss-small.png" title="Filmmaking RSS Feed" label="Filmmaking RSS Feed" alt="Filmmaking RSS Feed" /></a>
+      <form action="/category/Filmmaking" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Filmmaking" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Flask/feed"><img src="/static/rss-small.png" title="Flask RSS Feed" label="Flask RSS Feed" alt="Flask RSS Feed" /></a>
+      <form action="/category/Flask" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Flask" /> <small><em>130</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Games/feed"><img src="/static/rss-small.png" title="Games RSS Feed" label="Games RSS Feed" alt="Games RSS Feed" /></a>
+      <form action="/category/Games" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Games" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Infra/feed"><img src="/static/rss-small.png" title="Infra RSS Feed" label="Infra RSS Feed" alt="Infra RSS Feed" /></a>
+      <form action="/category/Infra" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Infra" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/IoT/feed"><img src="/static/rss-small.png" title="IoT RSS Feed" label="IoT RSS Feed" alt="IoT RSS Feed" /></a>
+      <form action="/category/IoT" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="IoT" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/JavaScript/feed"><img src="/static/rss-small.png" title="JavaScript RSS Feed" label="JavaScript RSS Feed" alt="JavaScript RSS Feed" /></a>
+      <form action="/category/JavaScript" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="JavaScript" /> <small><em>37</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/MicroPython/feed"><img src="/static/rss-small.png" title="MicroPython RSS Feed" label="MicroPython RSS Feed" alt="MicroPython RSS Feed" /></a>
+      <form action="/category/MicroPython" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="MicroPython" /> <small><em>10</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microdot/feed"><img src="/static/rss-small.png" title="Microdot RSS Feed" label="Microdot RSS Feed" alt="Microdot RSS Feed" /></a>
+      <form action="/category/Microdot" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microdot" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Microservices/feed"><img src="/static/rss-small.png" title="Microservices RSS Feed" label="Microservices RSS Feed" alt="Microservices RSS Feed" /></a>
+      <form action="/category/Microservices" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Microservices" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Movie Reviews/feed"><img src="/static/rss-small.png" title="Movie Reviews RSS Feed" label="Movie Reviews RSS Feed" alt="Movie Reviews RSS Feed" /></a>
+      <form action="/category/Movie%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Movie Reviews" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Personal/feed"><img src="/static/rss-small.png" title="Personal RSS Feed" label="Personal RSS Feed" alt="Personal RSS Feed" /></a>
+      <form action="/category/Personal" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Personal" /> <small><em>5</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Photography/feed"><img src="/static/rss-small.png" title="Photography RSS Feed" label="Photography RSS Feed" alt="Photography RSS Feed" /></a>
+      <form action="/category/Photography" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Photography" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Product Reviews/feed"><img src="/static/rss-small.png" title="Product Reviews RSS Feed" label="Product Reviews RSS Feed" alt="Product Reviews RSS Feed" /></a>
+      <form action="/category/Product%20Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Product Reviews" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Programming/feed"><img src="/static/rss-small.png" title="Programming RSS Feed" label="Programming RSS Feed" alt="Programming RSS Feed" /></a>
+      <form action="/category/Programming" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Programming" /> <small><em>198</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Project Management/feed"><img src="/static/rss-small.png" title="Project Management RSS Feed" label="Project Management RSS Feed" alt="Project Management RSS Feed" /></a>
+      <form action="/category/Project%20Management" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Project Management" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Python/feed"><img src="/static/rss-small.png" title="Python RSS Feed" label="Python RSS Feed" alt="Python RSS Feed" /></a>
+      <form action="/category/Python" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Python" /> <small><em>187</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/REST/feed"><img src="/static/rss-small.png" title="REST RSS Feed" label="REST RSS Feed" alt="REST RSS Feed" /></a>
+      <form action="/category/REST" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="REST" /> <small><em>7</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Raspberry Pi/feed"><img src="/static/rss-small.png" title="Raspberry Pi RSS Feed" label="Raspberry Pi RSS Feed" alt="Raspberry Pi RSS Feed" /></a>
+      <form action="/category/Raspberry%20Pi" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Raspberry Pi" /> <small><em>8</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/React/feed"><img src="/static/rss-small.png" title="React RSS Feed" label="React RSS Feed" alt="React RSS Feed" /></a>
+      <form action="/category/React" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="React" /> <small><em>19</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Reviews/feed"><img src="/static/rss-small.png" title="Reviews RSS Feed" label="Reviews RSS Feed" alt="Reviews RSS Feed" /></a>
+      <form action="/category/Reviews" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Reviews" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Robotics/feed"><img src="/static/rss-small.png" title="Robotics RSS Feed" label="Robotics RSS Feed" alt="Robotics RSS Feed" /></a>
+      <form action="/category/Robotics" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Robotics" /> <small><em>6</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Security/feed"><img src="/static/rss-small.png" title="Security RSS Feed" label="Security RSS Feed" alt="Security RSS Feed" /></a>
+      <form action="/category/Security" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Security" /> <small><em>14</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Video/feed"><img src="/static/rss-small.png" title="Video RSS Feed" label="Video RSS Feed" alt="Video RSS Feed" /></a>
+      <form action="/category/Video" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Video" /> <small><em>22</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/WebSocket/feed"><img src="/static/rss-small.png" title="WebSocket RSS Feed" label="WebSocket RSS Feed" alt="WebSocket RSS Feed" /></a>
+      <form action="/category/WebSocket" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="WebSocket" /> <small><em>2</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Webcast/feed"><img src="/static/rss-small.png" title="Webcast RSS Feed" label="Webcast RSS Feed" alt="Webcast RSS Feed" /></a>
+      <form action="/category/Webcast" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Webcast" /> <small><em>3</em></small>
+      </form>
+    </div>
+    
+    <div class="category">
+      <a href="/category/Windows/feed"><img src="/static/rss-small.png" title="Windows RSS Feed" label="Windows RSS Feed" alt="Windows RSS Feed" /></a>
+      <form action="/category/Windows" method="POST">
+        <input type="submit" class="btn btn-primary btn-sm" value="Windows" /> <small><em>1</em></small>
+      </form>
+    </div>
+    
+  </div>
+</div>
+        
+      </div>
+    </div>
+    
+  </div>
+  <div id="footer">
+    
+    <p>&copy; 2012-<script type="text/javascript">document.write(new Date().getFullYear());</script> by Miguel Grinberg. All rights reserved. <a href="mailto:webmaster _at_ miguelgrinberg _dot_ com">Questions?</a></p>
+  </div>
+</div>
+
+  
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="/static/prettify.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js" integrity="sha512-42PE0rd+wZ2hNXftlM78BSehIGzezNeQuzihiBCvUEB3CVxHvsShF86wBWwQORNxNINlBPuq7rG4WWhNiTVHFg==" crossorigin="anonymous"></script>
+
+<script>
+moment.locale("en");
+function flask_moment_render(elem) {{
+    const timestamp = moment(elem.dataset.timestamp);
+    const func = elem.dataset.function;
+    const format = elem.dataset.format;
+    const timestamp2 = elem.dataset.timestamp2;
+    const no_suffix = elem.dataset.nosuffix;
+    const units = elem.dataset.units;
+    let args = [];
+    if (format)
+        args.push(format);
+    if (timestamp2)
+        args.push(moment(timestamp2));
+    if (no_suffix)
+        args.push(no_suffix);
+    if (units)
+        args.push(units);
+    elem.textContent = timestamp[func].apply(timestamp, args);
+    elem.classList.remove('flask-moment');
+    elem.style.display = "";
+}}
+function flask_moment_render_all() {{
+    const moments = document.querySelectorAll('.flask-moment');
+    moments.forEach(function(moment) {{
+        flask_moment_render(moment);
+        const refresh = moment.dataset.refresh;
+        if (refresh && refresh > 0) {{
+            (function(elem, interval) {{
+                setInterval(function() {{
+                    flask_moment_render(elem);
+                }}, interval);
+            }})(moment, refresh);
+        }}
+    }})
+}}
+document.addEventListener("DOMContentLoaded", flask_moment_render_all);
+</script>
+
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-20EHZP9GRZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-20EHZP9GRZ');
+  </script>
+  
+  <script type="text/javascript">
+    function setThemeUI() {
+      document.getElementById('select-theme-auto').classList.remove('active');
+      document.getElementById('select-theme-light').classList.remove('active');
+      document.getElementById('select-theme-dark').classList.remove('active');
+      const theme = getPreferredTheme();
+      const actualTheme = document.documentElement.getAttribute('data-bs-theme', 'light');
+      document.getElementById('select-theme-' + theme).classList.add('active');
+      document.getElementById('current-theme').href.baseVal = `#icon-theme-${actualTheme}`;
+    };
+
+    function updateTheme(theme) {
+      if (theme === 'auto') {
+        localStorage.removeItem('theme')
+      }
+      else {
+        localStorage.setItem('theme', theme)
+      }
+      setTheme(getPreferredTheme());
+    }
+
+    setThemeUI();
+
+    const darkModePreference = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModePreference.addEventListener("change", e => {
+      if (getPreferredTheme() === 'auto') {
+        setTheme('auto');
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // add prettyprint class to all <pre><code></code></pre> blocks
+      let prettify = false;
+      document.querySelectorAll('div.post-body pre code').forEach((code) => {
+        code.parentNode.classList.add('prettyprint');
+        prettify = true;
+      });
+      prettyPrint();
+    });
+  </script>
+
+  </body>
+</html>
