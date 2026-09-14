@@ -5,16 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ec1e0e09-3a20-4681-aceb-94f4316f8978" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/PythonProject3.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/R.A.G.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api_testing.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dataset.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hello.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/prompt_eval.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/PythonProject3.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/PythonProject3.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Rag_chat_bot/unknown.py" beforeDir="false" afterPath="$PROJECT_DIR$/Rag_chat_bot/unknown.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_analysis.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,11 +20,75 @@
       <list>
         <option value="HTML File" />
         <option value="Python Script" />
+        <option value="Jupyter Notebook" />
       </list>
     </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0" />
+      <entry key="S2" value="1.0000010326204933" />
+      <entry key="S5" value="1.0094744034816134" />
+      <entry key="S10" value="1.280868559256555" />
+      <entry key="S30" value="5.569204102547626" />
+      <entry key="S60" value="13.536012878391377" />
+      <entry key="M2" value="27.73592505190512" />
+      <entry key="M5" value="59.960624858047304" />
+      <entry key="M10" value="94.79241173930653" />
+      <entry key="M15" value="120.6404458081016" />
+      <entry key="M30" value="182.69553505444912" />
+      <entry key="H1" value="295.2800262848132" />
+      <entry key="H2" value="493.1452305512592" />
+      <entry key="H4" value="727.2937875739314" />
+      <entry key="D1" value="1089.7198970383154" />
+      <entry key="W1" value="1176.6127692443185" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="1.3140363537016623E-139" />
+      <entry key="S2" value="1.9039338055617453E-35" />
+      <entry key="S5" value="1.2937809079011792E-14" />
+      <entry key="S10" value="1.1374449032376365E-7" />
+      <entry key="S30" value="0.004845366314136586" />
+      <entry key="S60" value="0.07023203163440586" />
+      <entry key="M2" value="0.31102001088984" />
+      <entry key="M5" value="1.6292025284577196" />
+      <entry key="M10" value="5.419267541437551" />
+      <entry key="M15" value="9.847625458074347" />
+      <entry key="M30" value="21.001835543266743" />
+      <entry key="H1" value="33.75029926812128" />
+      <entry key="H2" value="45.5138958825363" />
+      <entry key="H4" value="54.82556384924225" />
+      <entry key="D1" value="66.14490289213734" />
+      <entry key="W1" value="68.57717164796033" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="0.012779719664965326" />
+      <entry key="MS500" value="0.4181231999570314" />
+      <entry key="S2" value="0.8041306109427219" />
+      <entry key="S5" value="0.9257208272936799" />
+      <entry key="S10" value="1.2333657338539843" />
+      <entry key="S30" value="5.531224418656185" />
+      <entry key="S60" value="13.558358342560094" />
+      <entry key="M2" value="27.99611215412062" />
+      <entry key="M5" value="61.54194764733286" />
+      <entry key="M10" value="100.16375523551824" />
+      <entry key="M15" value="130.4382255494121" />
+      <entry key="M30" value="203.647883376947" />
+      <entry key="H1" value="328.9855859157956" />
+      <entry key="H2" value="538.6199970918583" />
+      <entry key="H4" value="782.0897242510406" />
+      <entry key="D1" value="1155.8572186568465" />
+      <entry key="W1" value="1245.1887664522221" />
+    </decayedShown>
   </component>
   <component name="ProblemsViewState">
     <hideBySeverity>
@@ -51,60 +109,187 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.Data_preprocessing.executor": "Run",
-    "Python.Docs_scrape.executor": "Run",
-    "Python.Dummy_agent.executor": "Run",
-    "Python.R.A.G.executor": "Run",
-    "Python.Storing.executor": "Run",
-    "Python.VectorDB.executor": "Run",
-    "Python.api_testing.executor": "Run",
-    "Python.bare_metal_api_calling.executor": "Run",
-    "Python.check.executor": "Run",
-    "Python.clean_course.executor": "Run",
-    "Python.data_analysis.executor": "Run",
-    "Python.donwload2.executor": "Run",
-    "Python.download.executor": "Run",
-    "Python.download2.executor": "Run",
-    "Python.download3.executor": "Run",
-    "Python.download4.executor": "Run",
-    "Python.embeddings_classification.executor": "Run",
-    "Python.firewall.executor": "Run",
-    "Python.hello.executor": "Run",
-    "Python.http.executor": "Run",
-    "Python.i_am.back.executor": "Run",
-    "Python.images.executor": "Run",
-    "Python.merge.executor": "Run",
-    "Python.neww.executor": "Run",
-    "Python.nothing.executor": "Run",
-    "Python.prompt_eval.executor": "Run",
-    "Python.tool.executor": "Run",
-    "Python.tool_use.executor": "Run",
-    "Python.unknown.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "run.code.analysis.last.selected.profile": "aDefault",
-    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.Data_preprocessing.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Data_visualization_101.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Docs_scrape.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Dummy_agent.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Nb_4_assignment.executor&quot;: &quot;Run&quot;,
+    &quot;Python.R.A.G.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Storing.executor&quot;: &quot;Run&quot;,
+    &quot;Python.VectorDB.executor&quot;: &quot;Run&quot;,
+    &quot;Python.api_testing.executor&quot;: &quot;Run&quot;,
+    &quot;Python.bare_metal_api_calling.executor&quot;: &quot;Run&quot;,
+    &quot;Python.check.executor&quot;: &quot;Run&quot;,
+    &quot;Python.clean_course.executor&quot;: &quot;Run&quot;,
+    &quot;Python.data_analysis.executor&quot;: &quot;Run&quot;,
+    &quot;Python.donwload2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.download.executor&quot;: &quot;Run&quot;,
+    &quot;Python.download2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.download3.executor&quot;: &quot;Run&quot;,
+    &quot;Python.download4.executor&quot;: &quot;Run&quot;,
+    &quot;Python.embeddings_classification.executor&quot;: &quot;Run&quot;,
+    &quot;Python.firewall.executor&quot;: &quot;Run&quot;,
+    &quot;Python.hello.executor&quot;: &quot;Run&quot;,
+    &quot;Python.http.executor&quot;: &quot;Run&quot;,
+    &quot;Python.i_am.back.executor&quot;: &quot;Run&quot;,
+    &quot;Python.images.executor&quot;: &quot;Run&quot;,
+    &quot;Python.merge.executor&quot;: &quot;Run&quot;,
+    &quot;Python.neww.executor&quot;: &quot;Run&quot;,
+    &quot;Python.nothing.executor&quot;: &quot;Run&quot;,
+    &quot;Python.probability.executor&quot;: &quot;Run&quot;,
+    &quot;Python.prompt_eval.executor&quot;: &quot;Run&quot;,
+    &quot;Python.recommendation_program.executor&quot;: &quot;Run&quot;,
+    &quot;Python.tool.executor&quot;: &quot;Run&quot;,
+    &quot;Python.tool_use.executor&quot;: &quot;Run&quot;,
+    &quot;Python.unknown.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/ayomide/pythonproject3&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;python.packages.toolwindow.project.migrated.to.right.top.v2&quot;: &quot;true&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;aDefault&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
-      "SVG"
+  &quot;keyToStringList&quot;: {
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
+      &quot;SVG&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\USER\PycharmProjects\PythonProject3\Rag_chat_bot" />
     </key>
   </component>
+  <component name="RunManager" selected="Python.Nb_4_assignment">
+    <configuration name="Data_visualization_101" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PythonProject3" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/DataScienceteer" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="DEBUG_JUST_MY_CODE" value="false" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/DataScienceteer/Data_visualization_101.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Nb_4_assignment" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PythonProject3" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="DEBUG_JUST_MY_CODE" value="false" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Nb_4_assignment.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="probability" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PythonProject3" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/DataScienceteer" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="DEBUG_JUST_MY_CODE" value="false" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/DataScienceteer/probability.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="recommendation_program" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PythonProject3" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/DataScienceteer" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="DEBUG_JUST_MY_CODE" value="false" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/DataScienceteer/recommendation_program.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.Nb_4_assignment" />
+        <item itemvalue="Python.probability" />
+        <item itemvalue="Python.Data_visualization_101" />
+        <item itemvalue="Python.recommendation_program" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-e0ed3721d81e-36ea0e71a18c-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.25410.159" />
+        <option value="bundled-python-sdk-eff1e8def5f5-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.10315.174" />
       </set>
     </attachedChunks>
   </component>
@@ -115,7 +300,17 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1776327220648</updated>
+      <workItem from="1789316153925" duration="2110000" />
+      <workItem from="1789318969918" duration="3792000" />
+      <workItem from="1789390969214" duration="7179000" />
+      <workItem from="1789399449963" duration="11355000" />
     </task>
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/pythonproject3$Nb_4_assignment.coverage" NAME="Nb_4_assignment Coverage Results" MODIFIED="1789401048981" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

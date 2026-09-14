@@ -1,4 +1,4 @@
-import numpy as np
+mport numpy as np
 import pandas as pd
 import chromadb
 from cohere import ClientV2

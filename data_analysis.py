@@ -7,3 +7,5 @@ print(vocab)
 
 
 np.random.seed(42)
+
+print("now back")
